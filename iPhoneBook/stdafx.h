@@ -18,16 +18,5 @@
 #include <tchar.h>
 #include <stdio.h>
 
-#ifdef UNICODE
-#define __strlen wcslen
-#define __strcpy_s wcscpy_s
-#define __sprintf_s swprintf_s
-#else
-#define __strlen strlen
-#define __strcpy_s strcpy_s
-#define __sprintf_s sprintf_s
-#endif
-
-
 
 // TODO: reference additional headers your program requires here

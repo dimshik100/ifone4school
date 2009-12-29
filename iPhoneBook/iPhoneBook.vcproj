@@ -46,8 +46,9 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
-				WarningLevel="3"
+				WarningLevel="4"
 				DebugInformationFormat="4"
+				CompileAs="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -175,15 +176,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\iPhoneBook.cpp"
+				RelativePath=".\EditButton.c"
 				>
 			</File>
 			<File
-				RelativePath=".\ListView.cpp"
+				RelativePath=".\iPhoneBook.c"
 				>
 			</File>
 			<File
-				RelativePath=".\stdafx.cpp"
+				RelativePath=".\ListView.c"
+				>
+			</File>
+			<File
+				RelativePath=".\stdafx.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -208,6 +213,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\EditButton.h"
+				>
+			</File>
 			<File
 				RelativePath=".\iPhoneBook.h"
 				>
