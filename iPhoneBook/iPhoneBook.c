@@ -6,6 +6,7 @@
 #include "stdafx.h"
 #include "iPhoneBook.h"
 #include "ListView.h"
+#include "EditButton.h"
 #include <commctrl.h>
 
 #define MAX_LOADSTRING 100
@@ -389,7 +390,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			// Keep a reference to the original Window Procedure of the button control.
 			defBtnProc = (WNDPROC)GetWindowLong(hBtn, GWL_WNDPROC);
 			// Set our own custom Window Procedure to handle the button events.
-			SetWindowLong(hBtn, GWL_WNDPROC, (LONG)BtnProc);
+			SetWindowLong(hBtn, GWL_WNDPROC, (LONG_PTR)BtnProc);
 
 			// Creates a standard windows type button
 			CreateWindowEx(0, TEXT("button"), TEXT("Test Button"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON| BS_NOTIFY, 
