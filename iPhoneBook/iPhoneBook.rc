@@ -142,9 +142,65 @@ END
 //
 // Bitmap
 //
+//NAME				TYPE					PATH
+IDB_OFF             BITMAP                  "imgs\\off.bmp"
+IDB_ON             BITMAP                  "imgs\\on.bmp"
 
-IDB_OFF             BITMAP                  "off.bmp"
-IDB_ON             BITMAP                  "on.bmp"
+
+
+IDB_IFONE_BG					BITMAP					"imgs\\ifone_bg.bmp"
+
+IDB_TOP_BAR_SKYPE_OFF			BITMAP					"imgs\\top_bar_skype_off.bmp"
+IDB_TOP_BAR_SKYPE_ON			BITMAP					"imgs\\top_bar_skype_on.bmp"
+
+IDB_MAIN_WND_UNDER_DATE_BG		BITMAP					"imgs\\main_wnd_under_date_bg.bmp"
+IDB_MAIN_WND_CENTER_PIC			BITMAP					"imgs\\main_wnd_center_pic.bmp"
+//////////////////////////MAIN WINDOW BUTTONS MENU//////////////////////////////////
+IDB_MAIN_WND_LOW_BAR_LEFT		BITMAP					"imgs\\main_wnd_low_bar_left.bmp"
+
+IDB_MAIN_WND_CLOCK_OFF			BITMAP					"imgs\\main_wnd_clock_off.bmp"
+IDB_MAIN_WND_CLOCK_ON			BITMAP					"imgs\\main_wnd_clock_on.bmp"
+
+IDB_MAIN_WND_CONTACT_OFF		BITMAP					"imgs\\main_wnd_contact_off.bmp"
+IDB_MAIN_WND_CONTACT_ON			BITMAP					"imgs\\main_wnd_contact_on.bmp"
+
+IDB_MAIN_WND_INFO_OFF			BITMAP					"imgs\\main_wnd_info_off.bmp"
+IDB_MAIN_WND_INFO_ON			BITMAP					"imgs\\main_wnd_info_on.bmp"
+
+IDB_MAIN_WND_BIN_FULL_OFF		BITMAP					"imgs\\main_wnd_bin_full_off.bmp"
+IDB_MAIN_WND_BIN_FULL_ON		BITMAP					"imgs\\main_wnd_bin_full_on.bmp"
+
+IDB_MAIN_WND_BIN_EMPTY_OFF		BITMAP					"imgs\\main_wnd_bin_empty_off.bmp"
+IDB_MAIN_WND_BIN_EMPTY_ON		BITMAP					"imgs\\main_wnd_bin_empty_on.bmp"
+
+IDB_MAIN_WND_LOW_BAR_RIGHT		BITMAP					"imgs\\main_wnd_low_bar_right.bmp"
+//////////////////////////CONTACT WINDOW//////////////////////////////////
+IDB_CONTACT_WND_APP_NAME		BITMAP					"imgs\\contact_wnd_app_name_bg.bmp"
+
+IDB_CONTACT_WND_SEARCH			BITMAP					"imgs\\contact_wnd_search_bg.bmp"
+
+IDB_CONTACT_WND_LET_SEP			BITMAP					"imgs\\contact_wnd_letter_seperator_bg.bmp"
+
+IDB_CONTACT_WND_NAME_BG_OFF		BITMAP					"imgs\\contact_wnd_name_bg_off.bmp"
+IDB_CONTACT_WND_NAME_BG_ON		BITMAP					"imgs\\contact_wnd_name_bg_on.bmp"
+//////////////////////////CONTACT WINDOW BUTTONS MENU//////////////////////////////////
+IDB_CONTACT_WND_BUTTON_BG		BITMAP					"imgs\\contact_wnd_button_bg.bmp"
+
+IDB_CONTACT_WND_BUTTON_CALL_OFF	BITMAP					"imgs\\contact_wnd_button_call_off.bmp"
+IDB_CONTACT_WND_BUTTON_CALL_ON	BITMAP					"imgs\\contact_wnd_button_call_on.bmp"
+
+IDB_CONTACT_WND_BUTTON_INFO_OFF	BITMAP					"imgs\\contact_wnd_button_info_off.bmp"
+IDB_CONTACT_WND_BUTTON_INFO_ON	BITMAP					"imgs\\contact_wnd_button_info_on.bmp"
+
+IDB_CONTACT_WND_BUTTON_EDIT_OFF	BITMAP					"imgs\\contact_wnd_button_edit_off.bmp"
+IDB_CONTACT_WND_BUTTON_EDIT_ON	BITMAP					"imgs\\contact_wnd_button_edit_on.bmp"
+
+IDB_CONTACT_WND_BUTTON_DEL_OFF	BITMAP					"imgs\\contact_wnd_button_delete_off.bmp"
+IDB_CONTACT_WND_BUTTON_DEL_ON	BITMAP					"imgs\\contact_wnd_button_delete_on.bmp"
+/////////////////////////////////////////////////////////////////////////////
+
+IDB_EXIT_BUTTON_OFF				BITMAP					"imgs\\exit_button_off.bmp"
+IDB_EXIT_BUTTON_ON				BITMAP					"imgs\\exit_button_on.bmp"
 /////////////////////////////////////////////////////////////////////////////
 
 #ifndef APSTUDIO_INVOKED
