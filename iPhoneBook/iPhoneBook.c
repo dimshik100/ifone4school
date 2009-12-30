@@ -7,6 +7,7 @@
 #include "iPhoneBook.h"
 #include "ListView.h"
 #include "EditButton.h"
+#include "HoverButton.h"
 #include <commctrl.h>
 
 #define MAX_LOADSTRING 100
@@ -316,26 +317,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_DRAWITEM:
 		{
-			LPDRAWITEMSTRUCT lpDrawItem = (LPDRAWITEMSTRUCT) lParam;
+			//LPDRAWITEMSTRUCT lpDrawItem = (LPDRAWITEMSTRUCT) lParam;
 
-			// Make sure that our control is a button
-			if (lpDrawItem->CtlType == ODT_BUTTON)
-			{
-				// If the button has focus or is highlighted, draw load the "Active" image.
-				// Else load the "Inactive" image.
-				if (((lpDrawItem->itemState & ODS_FOCUS) || (lpDrawItem->itemState & ODS_HOTLIGHT)))
-				{
-					inButton = 1;
-					setEditButtonImage(NULL, lpDrawItem->hDC, IDB_ON);
-				}
-				else
-				{
-					inButton = 0;
-					setEditButtonImage(NULL, lpDrawItem->hDC, IDB_OFF);
-				}
-			}
+			//// Make sure that our control is a button
+			//if (lpDrawItem->CtlType == ODT_BUTTON)
+			//{
+			//	// If the button has focus or is highlighted, draw load the "Active" image.
+			//	// Else load the "Inactive" image.
+			//	if (((lpDrawItem->itemState & ODS_FOCUS) || (lpDrawItem->itemState & ODS_HOTLIGHT)))
+			//	{
+			//		inButton = 1;
+			//		setEditButtonImage(NULL, lpDrawItem->hDC, IDB_ON);
+			//	}
+			//	else
+			//	{
+			//		inButton = 0;
+			//		setEditButtonImage(NULL, lpDrawItem->hDC, IDB_OFF);
+			//	}
+			//}
 
-			return TRUE;
+			//return TRUE;
 		}
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
@@ -364,6 +365,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 		{
 			TCHAR lpBuffer[1000], num[10];
+
+
+			createHoverButton(hWnd, hInst, 5, 155, 5 + 178, 155 + 178, 1, IDB_ON, IDB_OFF, "Test text");
+
+
+
+
 			// Create an Custom-Drawn list view control - see ListView.cpp for details.
 			hLV = createListView(hWnd, hInst);
 			// Creates a list box - this keeps a list of scroll-sizes
@@ -382,15 +390,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			addListViewItem(hLV, TEXT("הצילו, המוח שלי נפטר!!"), TEXT("G"));
 			addListViewItem(hLV, TEXT("A"), TEXT("G"));
 
-			// Define button size - not needed anymore...
-			btn1.left = 5; btn1.right = btn1.left + 178; btn1.top = 155; btn1.bottom = btn1.top + 177;
-			// Create an Owner-Drawn button and save it's handle.
-			hBtn = CreateWindowEx(0, TEXT("button"), TEXT("Test Button"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_OWNERDRAW | BS_NOTIFY, 
-				btn1.left, btn1.top, btn1.right - btn1.left, btn1.bottom - btn1.top, hWnd, NULL, hInst, NULL);
-			// Keep a reference to the original Window Procedure of the button control.
-			defBtnProc = (WNDPROC)GetWindowLong(hBtn, GWL_WNDPROC);
-			// Set our own custom Window Procedure to handle the button events.
-			SetWindowLong(hBtn, GWL_WNDPROC, (LONG_PTR)BtnProc);
+			//// Define button size - not needed anymore...
+			//btn1.left = 5; btn1.right = btn1.left + 178; btn1.top = 155; btn1.bottom = btn1.top + 177;
+			//// Create an Owner-Drawn button and save it's handle.
+			//hBtn = CreateWindowEx(0, TEXT("button"), TEXT("Test Button"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_OWNERDRAW | BS_NOTIFY, 
+			//	btn1.left, btn1.top, btn1.right - btn1.left, btn1.bottom - btn1.top, hWnd, NULL, hInst, NULL);
+			//// Keep a reference to the original Window Procedure of the button control.
+			//defBtnProc = (WNDPROC)GetWindowLong(hBtn, GWL_WNDPROC);
+			//// Set our own custom Window Procedure to handle the button events.
+			//SetWindowLong(hBtn, GWL_WNDPROC, (LONG_PTR)BtnProc);
 
 			// Creates a standard windows type button
 			CreateWindowEx(0, TEXT("button"), TEXT("Test Button"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON| BS_NOTIFY, 
