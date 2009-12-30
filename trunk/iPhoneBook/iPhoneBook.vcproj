@@ -180,6 +180,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HoverButton.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\iPhoneBook.c"
 				>
 			</File>
@@ -215,6 +219,10 @@
 			>
 			<File
 				RelativePath=".\EditButton.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HoverButton.h"
 				>
 			</File>
 			<File
