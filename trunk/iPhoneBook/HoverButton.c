@@ -10,6 +10,8 @@ WNDPROC wndDefHoverProc = NULL;
 
 LRESULT CALLBACK	HoverBtnProc(HWND, UINT, WPARAM, LPARAM);
 HoverButton *findButton(int cId, HWND hWnd);
+void invalidateButtonRect(HoverButton *hoverButton);
+void setHoverButtonImage(HoverButton *hoverButton, HDC hDC, int imageId);
 
 HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height, int controlId, int onImage, int offImage, TCHAR *caption)
 {
@@ -25,10 +27,12 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 		newHoverButton->buttonRect.right = x + width;
 		newHoverButton->buttonRect.top = y;
 		newHoverButton->buttonRect.bottom = y + height;
-		newHoverButton->hButton = CreateWindowEx(0, TEXT("button"), NULL, WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_OWNERDRAW, x, y, width, height,
+		newHoverButton->hButton = CreateWindowEx(0, TEXT("button"), NULL, WS_VISIBLE | WS_CHILD | BS_OWNERDRAW, x, y, width, height,
 			hWndParent, (HMENU)controlId, hInstance, NULL);
 		if (caption)
 			newHoverButton->caption = _tcsdup(caption);
+		newHoverButton->hFont = NULL;
+		newHoverButton->color = GetSysColor(COLOR_BTNTEXT); // Get the default color for button text
 
 		/// !!! Apply new window procedure to control !!! ///
 		wndDefHoverProc = (WNDPROC)SetWindowLong(newHoverButton->hButton, GWL_WNDPROC, (LONG_PTR)HoverBtnProc);
@@ -42,6 +46,55 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 void setDefaultHoverButtonProc(WNDPROC wndProc)
 {
 	wndDefHoverBtnProc = wndProc;
+}
+
+void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage)
+{
+	hoverButton->onImage = onImage;
+	hoverButton->offImage = offImage;
+	// Force redraw of the button
+	invalidateButtonRect(hoverButton);
+}
+
+void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption)
+{
+	if (hoverButton->caption)
+		free(hoverButton->caption);
+	if (caption)
+		hoverButton->caption = _tcsdup(caption);
+	else
+		hoverButton->caption = NULL;
+	// Force redraw of the button
+	invalidateButtonRect(hoverButton);
+}
+
+void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize)
+{
+	HDC hDC;
+	LOGFONT logFont = {0};
+
+	hDC = GetDC(hoverButton->hButton);
+	_tcscpy_s(logFont.lfFaceName, 32, fontName);
+	logFont.lfHeight = -MulDiv(fontSize, GetDeviceCaps(hDC, LOGPIXELSY), 72);
+	ReleaseDC(hoverButton->hButton, hDC);
+	
+	if (hoverButton->hFont)
+		DeleteObject(hoverButton->hFont);
+	hoverButton->hFont = CreateFontIndirect(&logFont);
+	// Force redraw of the button
+	invalidateButtonRect(hoverButton);
+}
+
+void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color)
+{
+	hoverButton->color = color;	
+	// Force redraw of the button
+	invalidateButtonRect(hoverButton);
+}
+
+void lockHoverButtonImage(HoverButton *hoverButton, int enable)
+{
+	hoverButton->isLocked = enable;
 }
 
 void setHoverButtonImage(HoverButton *hoverButton, HDC hDC, int imageId)
@@ -67,29 +120,9 @@ void setHoverButtonImage(HoverButton *hoverButton, HDC hDC, int imageId)
 	DeleteObject(hbmpImage);
 }
 
-void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption)
-{
-	RECT rc;
-
-	if (hoverButton->caption)
-		free(hoverButton->caption);
-	if (caption)
-		hoverButton->caption = _tcsdup(caption);
-	else
-		hoverButton->caption = NULL;
-	GetClientRect(hoverButton->hButton, &rc);
-	InvalidateRect(hoverButton->hButton, &rc, FALSE);
-}
-
-void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize)
-{
-}
-
 LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	WNDPROC wndDefault = NULL;
 	HoverButton *hoverButton;
-	RECT rc;
 	PAINTSTRUCT ps;
 	HDC hdc;
 
@@ -98,7 +131,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	case WM_MOUSEMOVE:
 		{
 			hoverButton = findButton(0, hWnd);
-			if (!hoverButton->isHovering)
+			if (!hoverButton->isHovering && !hoverButton->isLocked)
 			{
 				TRACKMOUSEEVENT tme;
 				
@@ -110,32 +143,45 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 					hoverButton->isHovering = TRUE;
 
 					// Force redraw of the button
-					GetClientRect(hoverButton->hButton, &rc);
-					InvalidateRect(hoverButton->hButton, &rc, FALSE);
+					invalidateButtonRect(hoverButton);
 				}
 			}
+			return FALSE;
 		} 
 		break;
 	case WM_MOUSELEAVE:
 		{
 			hoverButton = findButton(0, hWnd);
 			hoverButton->isHovering = FALSE;
-			GetClientRect(hoverButton->hButton, &rc);
-			InvalidateRect(hoverButton->hButton, &rc, FALSE);
+			invalidateButtonRect(hoverButton);
+			return FALSE;
 		}
 		break;
 
 	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
+		{
+			HFONT hFontOld;
 
-		hoverButton = findButton(NULL, hWnd);
-		if (hoverButton->isHovering)
-			setHoverButtonImage(hoverButton, hdc, hoverButton->onImage);
-		else
-			setHoverButtonImage(hoverButton, hdc, hoverButton->offImage);
-		TextOut(hdc, 5, 5, hoverButton->caption, (int)_tcslen(hoverButton->caption));
+			hdc = BeginPaint(hWnd, &ps);
 
-		EndPaint(hWnd, &ps);
+			hoverButton = findButton(0, hWnd);
+			if (hoverButton->isHovering)
+				setHoverButtonImage(hoverButton, hdc, hoverButton->onImage);
+			else
+				setHoverButtonImage(hoverButton, hdc, hoverButton->offImage);
+			SetBkMode(hdc, TRANSPARENT);
+			SetTextColor(hdc, hoverButton->color);
+			SetTextAlign(hdc, TA_CENTER | TA_BASELINE);
+			hFontOld = (HFONT)SelectObject(hdc, hoverButton->hFont);
+			TextOut(hdc, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
+				(hoverButton->buttonRect.bottom - hoverButton->buttonRect.top)/2,
+				hoverButton->caption, (int)_tcslen(hoverButton->caption));
+			SelectObject(hdc, hFontOld);
+
+			EndPaint(hWnd, &ps);
+
+			return FALSE;
+		}
 		break;
 	}
 	return CallWindowProc(wndDefHoverProc, hWnd, message, wParam, lParam);
@@ -163,4 +209,11 @@ HoverButton *findButton(int cId, HWND hWnd)
 	}
 
 	return NULL;
+}
+
+void invalidateButtonRect(HoverButton *hoverButton)
+{
+	RECT rc;
+	GetClientRect(hoverButton->hButton, &rc);
+	InvalidateRect(hoverButton->hButton, &rc, FALSE);
 }

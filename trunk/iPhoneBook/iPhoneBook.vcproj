@@ -180,7 +180,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HoverButton.cpp"
+				RelativePath=".\HoverButton.c"
 				>
 			</File>
 			<File
