@@ -1,13 +1,15 @@
 #pragma once
+#include "HoverButton.h"
+
+enum {	CID_MAIN_OFFSTE = 0, CID_TEXT_OFFSET	= 1, CID_OK_OFFSET = 2, CID_CANCEL_OFFSET = 3 } ;
 
 typedef struct _EditButton
 {
-	HWND hButton;
+	HoverButton *mainButton;
+	HoverButton *okButton;
+	HoverButton *cancelButton;
 	HWND hEdit;
-	HWND hOK;
-	HWND hCancel;
 	HINSTANCE hInstance;
-	RECT buttonRect;
 	RECT editRect;
 	int inTextMode;
 	int onImage;
@@ -15,9 +17,12 @@ typedef struct _EditButton
 
 }EditButton;
 
-EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height, int controlId);
-void setEditButtonImage(EditButton *editButton, HDC hDC, int imageId);
-void setEditButtonText(EditButton *editButton, HDC hDC, TCHAR *string);
+EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
+							   int width, int height, int controlId, int onImage, int offImage, TCHAR *caption);
+void setEditButtonText(EditButton *editButton, TCHAR *caption);
+void setEditButtonStateImages(EditButton *editButton, int onImage, int offImage);
 void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize);
+void setEditButtonTextColor(EditButton *editButton, COLORREF color);
 void showEditButtonEdit(EditButton *editButton, int show);
 void setDefaultEditButtonProc(WNDPROC wndProc);
+int getEditButtonControlId(int cId);

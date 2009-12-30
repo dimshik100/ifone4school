@@ -184,6 +184,8 @@ LRESULT CALLBACK BtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	return CallWindowProc(defBtnProc, hWnd, message, wParam, lParam);
 }
+
+EditButton *editBtn;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
@@ -342,13 +344,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
-		switch (wmId)
+		switch (getEditButtonControlId(wmId))
 		{
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			break;
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
+			break;
+		case 3:
+			if (!editBtn->inTextMode && (wmId % 10) == CID_MAIN_OFFSTE)
+				showEditButtonEdit(editBtn, TRUE);
+			else if ((wmId % 10) == CID_OK_OFFSET)
+				showEditButtonEdit(editBtn, FALSE);
+			else if ((wmId % 10) == CID_CANCEL_OFFSET)
+				showEditButtonEdit(editBtn, FALSE);
 			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
@@ -365,9 +375,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 		{
 			TCHAR lpBuffer[1000], num[10];
+			HoverButton *btn;
 
+			btn = createHoverButton(hWnd, hInst, 5, 155, 178, 178, 1, IDB_ON, IDB_OFF, "Test text");
+			setHoverButtonTextColor(btn, 255);
+			
+			setHoverButtonFont(createHoverButton(hWnd, hInst, 5+178, 155, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, "abcdefgh"),
+				TEXT("Fixedsys Excelsior 3.01"), 24);
 
-			createHoverButton(hWnd, hInst, 5, 155, 5 + 178, 155 + 178, 1, IDB_ON, IDB_OFF, "Test text");
+			
+			editBtn = createEditButton(hWnd, hInst, 5+178+178, 155, 178, 178, 3, IDB_ON, IDB_OFF, "Test text");
 
 
 
