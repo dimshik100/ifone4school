@@ -24,3 +24,5 @@ void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize)
 void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color);
 void lockHoverButtonImage(HoverButton *hoverButton, int enable);
 void setDefaultHoverButtonProc(WNDPROC wndProc);
+HWND getHoverButtonHwnd(HoverButton *hoverButton);
+void deleteHoverButtons();

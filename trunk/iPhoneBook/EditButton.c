@@ -27,15 +27,15 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 	newEditButton->hInstance = hInstance;
 	newEditButton->mainButton = createHoverButton(hWndParent, hInstance, x, y, width, height, controlId, onImage, offImage, caption);
 	newEditButton->okButton = createHoverButton(newEditButton->mainButton->hButton, hInstance, width - 25, 5, 20, 20,
-		controlId + CID_OK_OFFSET, IDB_CONTACT_WND_BUTTON_CALL_ON, IDB_CONTACT_WND_BUTTON_CALL_OFF, caption);
+		controlId + CID_OK_OFFSET, IDB_CONTACT_WND_BUTTON_CALL_ON, IDB_CONTACT_WND_BUTTON_CALL_OFF, NULL);
 	newEditButton->cancelButton = createHoverButton(newEditButton->mainButton->hButton, hInstance, width - 25, height - 25, 20, 20,
-		controlId + CID_CANCEL_OFFSET, IDB_CONTACT_WND_BUTTON_INFO_ON, IDB_CONTACT_WND_BUTTON_INFO_OFF, caption);
+		controlId + CID_CANCEL_OFFSET, IDB_CONTACT_WND_BUTTON_INFO_ON, IDB_CONTACT_WND_BUTTON_INFO_OFF, NULL);
 	newEditButton->hEdit = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 10, 5, width - 40, height - 10,
 		newEditButton->mainButton->hButton, (HMENU)(controlId + CID_TEXT_OFFSET), hInstance, NULL);
 	showEditButtonEdit(newEditButton, FALSE);
 
 	/// !!! Apply new window procedure to control !!! ///
-	wndDefEditProc = (WNDPROC)SetWindowLong(newEditButton->hEdit, GWL_WNDPROC, (LONG_PTR)EditBtnProc);
+	wndDefEditProc = (WNDPROC)SetWindowLong(getHoverButtonHwnd(newEditButton->mainButton), GWL_WNDPROC, (LONG_PTR)EditBtnProc);
 	//wndDefBtnProc = (WNDPROC)SetWindowLong(newEditButton->hButton, GWL_WNDPROC, (LONG_PTR)EditBtnProc);
 
 	return newEditButton;
@@ -71,8 +71,8 @@ void showEditButtonEdit(EditButton *editButton, int show)
 	ShowWindow(editButton->okButton->hButton, show);
 	ShowWindow(editButton->cancelButton->hButton, show);
 	ShowWindow(editButton->hEdit, show);
+	lockHoverButtonImage(editButton->mainButton, show);
 	editButton->inTextMode = show;
-	editButton->mainButton->isLocked = show;
 	if (show)
 		setHoverButtonStateImages(editButton->mainButton, editButton->onImage, editButton->onImage);
 	else
@@ -89,31 +89,12 @@ int getEditButtonControlId(int cId)
 
 LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	//PAINTSTRUCT ps;
-	//HDC hdc;
-
 	switch (message)
 	{
-	//case WM_PAINT:
-	//	{
-	//		RECT rc;
-
-	//		hdc = BeginPaint(hWnd, &ps);
-
-	//		GetClientRect(hWnd, &rc);
-	//		SetBkMode(hdc, TRANSPARENT);
-	//		FillRect(hdc, &rc, GetStockObject(HOLLOW_BRUSH));
-
-	//		EndPaint(hWnd, &ps);
-
-	//		return FALSE;
-	//	}
-	//	break;
-	//case WM_ERASEBKGND:
-	//		SetBkMode((HDC)wParam, TRANSPARENT);
-	//		SelectObject((HDC)wParam, GetStockObject(HOLLOW_BRUSH));
-	//		return (HBRUSH)GetStockObject(HOLLOW_BRUSH);
-	//	break;
+	case WM_COMMAND:
+		if (wndDefEditBtnProc)
+			CallWindowProc(wndDefEditBtnProc, hWnd, message, wParam, lParam);
+		break;
 	}
 
 	return CallWindowProc(wndDefEditProc, hWnd, message, wParam, lParam);
