@@ -1,7 +1,7 @@
 #pragma once
 #include "HoverButton.h"
 
-enum {	CID_MAIN_OFFSTE = 0, CID_TEXT_OFFSET	= 1, CID_OK_OFFSET = 2, CID_CANCEL_OFFSET = 3 } ;
+enum {	CID_MAIN_OFFSET = 0, CID_TEXT_OFFSET	= 1, CID_OK_OFFSET = 2, CID_CANCEL_OFFSET = 3 } ;
 
 typedef struct _EditButton
 {
@@ -9,6 +9,7 @@ typedef struct _EditButton
 	HoverButton *okButton;
 	HoverButton *cancelButton;
 	HWND hEdit;
+	HWND hParent;
 	HINSTANCE hInstance;
 	RECT editRect;
 	int inTextMode;

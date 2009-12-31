@@ -48,6 +48,25 @@ void setDefaultHoverButtonProc(WNDPROC wndProc)
 	wndDefHoverBtnProc = wndProc;
 }
 
+HWND getHoverButtonHwnd(HoverButton *hoverButton)
+{
+	return hoverButton->hButton;
+}
+
+void deleteHoverButtons()
+{
+	int i;
+	for (i = 0; i < hoverButtonCounter; i++)
+	{
+		if (hoverButtons[i]->hFont)
+			DeleteObject(hoverButtons[i]->hFont);
+		if (hoverButtons[i]->caption)
+			free(hoverButtons[i]->caption);
+		free(hoverButtons[i]);
+	}
+	hoverButtonCounter = 0;
+}
+
 void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage)
 {
 	hoverButton->onImage = onImage;

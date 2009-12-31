@@ -353,7 +353,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			DestroyWindow(hWnd);
 			break;
 		case 3:
-			if (!editBtn->inTextMode && (wmId % 10) == CID_MAIN_OFFSTE)
+			if (!editBtn->inTextMode && (wmId % 10) == CID_MAIN_OFFSET)
 				showEditButtonEdit(editBtn, TRUE);
 			else if ((wmId % 10) == CID_OK_OFFSET)
 				showEditButtonEdit(editBtn, FALSE);
@@ -370,6 +370,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
+		deleteHoverButtons();
 		PostQuitMessage(0);
 		break;
 	case WM_CREATE:
@@ -383,8 +384,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			setHoverButtonFont(createHoverButton(hWnd, hInst, 5+178, 155, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, "abcdefgh"),
 				TEXT("Fixedsys Excelsior 3.01"), 24);
 
-			
-			editBtn = createEditButton(hWnd, hInst, 5+178+178, 155, 178, 178, 3, IDB_ON, IDB_OFF, "Test text");
+			setDefaultEditButtonProc(WndProc);
+			editBtn = createEditButton(hWnd, hInst, 5, 155+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, "Test text");
 
 
 
