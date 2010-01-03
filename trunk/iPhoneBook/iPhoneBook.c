@@ -493,8 +493,8 @@ void CreateGUI(HWND hWnd, HINSTANCE hInstance)
 	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 273, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
 	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, 0, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
-
-	hwndContainerMain = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
+	setHoverButtonAsPushButton(hbExitButton, TRUE);
+	hwndContainerMain = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD/* | WS_VISIBLE*/, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
 
 	tempBtn = createHoverButton(hwndContainerMain, hInstance, 0, 0, 10, 92, 0, IDB_MAIN_WND_LOW_BAR_LEFT, IDB_MAIN_WND_LOW_BAR_LEFT, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);

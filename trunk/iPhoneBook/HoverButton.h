@@ -10,6 +10,7 @@ typedef struct _HoverButton
 	TCHAR *caption;
 	int isHovering;
 	int isLocked;
+	int isPushButton;
 	int onImage;
 	int offImage;
 	int cId;
@@ -23,6 +24,7 @@ void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offIma
 void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize);
 void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color);
 void lockHoverButtonImage(HoverButton *hoverButton, int enable);
+void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable);
 void setDefaultHoverButtonProc(WNDPROC wndProc);
 HWND getHoverButtonHwnd(HoverButton *hoverButton);
 void deleteHoverButtons();
