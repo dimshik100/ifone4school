@@ -275,6 +275,7 @@ BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam)
 				}
 				break;
 			}
+			free(skypeObject);
 		}
 		ret = TRUE;
 	}
