@@ -24,7 +24,8 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK	BtnProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
-void CreateGUI(HWND hWnd, HINSTANCE hInstance);
+void createGUI(HWND hWnd, HINSTANCE hInstance);
+void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId);
 
 HoverButton 
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton,
@@ -205,34 +206,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_NOTIFY:
-		if (lParam && ((LPNMHDR)lParam)->code == LVN_BEGINSCROLL)
-		{
-			//LPNMLVSCROLL pnmLVScroll = (LPNMLVSCROLL) lParam;
-			//scrolling = 0;
-	/*		dx = pnmLVScroll->dx;
-			dy = pnmLVScroll->dy;*/
-		}
-		if (lParam && ((LPNMHDR)lParam)->code == LVN_ENDSCROLL)
-		{
-			LPNMLVSCROLL pnmLVScroll = (LPNMLVSCROLL) lParam;
-			if (!scrolling && (pnmLVScroll->dy / 2) != 0)
-			{
-				TCHAR str[250];
-				int scrlDelay;
+	//	if (lParam && ((LPNMHDR)lParam)->code == LVN_BEGINSCROLL)
+	//	{
+	//		//LPNMLVSCROLL pnmLVScroll = (LPNMLVSCROLL) lParam;
+	//		//scrolling = 0;
+	///*		dx = pnmLVScroll->dx;
+	//		dy = pnmLVScroll->dy;*/
+	//	}
+	//	if (lParam && ((LPNMHDR)lParam)->code == LVN_ENDSCROLL)
+	//	{
+	//		LPNMLVSCROLL pnmLVScroll = (LPNMLVSCROLL) lParam;
+	//		if (!scrolling && (pnmLVScroll->dy / 2) != 0)
+	//		{
+	//			TCHAR str[250];
+	//			int scrlDelay;
 
-				scrolling = 1;
-				_stprintf_s(str, 250, TEXT("%d"), pnmLVScroll->dy);
-				SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) str); 
-				scrlDelay = min(150, 150 / abs(pnmLVScroll->dy/2));
-				for (i = 0; i < abs(pnmLVScroll->dy/2); i++)
-				{
-					Sleep(min(scrlDelay, 150));
-					ListView_Scroll(hLV, 0, pnmLVScroll->dy*19);
-					scrlDelay = (int)(scrlDelay * 1.25f);
-				}
-				scrolling = 0;
-			}
-		}
+	//			scrolling = 1;
+	//			_stprintf_s(str, 250, TEXT("%d"), pnmLVScroll->dy);
+	//			SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) str); 
+	//			scrlDelay = min(150, 150 / abs(pnmLVScroll->dy/2));
+	//			for (i = 0; i < abs(pnmLVScroll->dy/2); i++)
+	//			{
+	//				Sleep(min(scrlDelay, 150));
+	//				ListView_Scroll(hLV, 0, pnmLVScroll->dy*19);
+	//				scrlDelay = (int)(scrlDelay * 1.25f);
+	//			}
+	//			scrolling = 0;
+	//		}
+	//	}
 		if (lParam && ((LPNMHDR)lParam)->code == NM_CUSTOMDRAW)
 		{
 			LPNMLVCUSTOMDRAW lpNMCustomDraw = (LPNMLVCUSTOMDRAW) lParam;
@@ -260,36 +261,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					TCHAR str[1000];
 					RECT rc;
-					HBRUSH hbr;
 
 					// Get current item's rect.
 					ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &rc, LVIR_BOUNDS);
+					rc.right = 320;
+					setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
 					// Get current item's text
 					ListView_GetItemText(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, 0, str, 1000);
 					// If item is being hovered on, draw a differet colored rect around it.
 					// Else draw it with blue-ish background
 					if (lpNMCustomDraw->nmcd.uItemState & CDIS_HOT)
-					{
-						hbr = CreateSolidBrush(RGB(212, 238, 249));
-						FillRect(lpNMCustomDraw->nmcd.hdc, &rc, hbr);
-						DeleteObject(hbr);
-						hbr = CreateSolidBrush(RGB(228, 244, 254));
-						rc.bottom--; rc.left++; rc.right--; rc.top++;
-						ListView_Scroll(lpNMCustomDraw->nmcd.hdr.hwndFrom, 0, 1);
-					}
+						setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
 					else
-						hbr = CreateSolidBrush(RGB(223, 238, 244));
-					FillRect(lpNMCustomDraw->nmcd.hdc, &rc, hbr);
-					// Free sources.
-					DeleteObject(hbr);
+						setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
 					// Print text to item's DC.
 					TextOut(lpNMCustomDraw->nmcd.hdc, rc.left, rc.top, str, _tcslen(str));
 				}
 				break;
 			//case CDDS_ITEMPREERASE:
 			//	break;
+			case CDDS_ITEMPOSTERASE:
+				if (lpNMCustomDraw->dwItemType == LVCDI_ITEM)
+				{
+					RECT rc;
+					ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &rc, LVIR_BOUNDS);
+					setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
+				}
+				return CDRF_DODEFAULT;
+				break;
 			case CDDS_ITEMPREPAINT:
 				// Make sure CDDS_ITEMPOSTPAINT occurs.
+				lpNMCustomDraw->rcText.left = 0; 
+				lpNMCustomDraw->rcText.top = 0; 
+				lpNMCustomDraw->rcText.right = 320; 
+				lpNMCustomDraw->rcText.bottom = 44; 
 				return (CDRF_NOTIFYPOSTPAINT);
 				break;
 			//case CDDS_SUBITEM | CDDS_ITEMPREPAINT:
@@ -304,50 +309,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		
 		break;
-	case WM_MOUSEMOVE:
-		{
-			// If we were in the but now exited it's borders redraw it as "Inactive"
-			// Code description is the same as BtnProc function.
-			if (inButton)
-			{
-				DRAWITEMSTRUCT drawItem = {0};
-				inButton = 0;
-				drawItem.CtlType = ODT_BUTTON;
-				drawItem.CtlID = 0;
-				drawItem.itemID = 0;
-				drawItem.itemAction = ODA_FOCUS;
-				drawItem.hwndItem = hBtn;
-				drawItem.hDC = GetDC(hBtn);
-				GetClientRect(hBtn, &drawItem.rcItem);
-				SendMessage(hWnd, WM_DRAWITEM, 0, (LPARAM)(LPDRAWITEMSTRUCT)&drawItem);
-				ReleaseDC(hBtn, drawItem.hDC);
-			}
-
-		}
-		break;
-	case WM_DRAWITEM:
-		{
-			//LPDRAWITEMSTRUCT lpDrawItem = (LPDRAWITEMSTRUCT) lParam;
-
-			//// Make sure that our control is a button
-			//if (lpDrawItem->CtlType == ODT_BUTTON)
-			//{
-			//	// If the button has focus or is highlighted, draw load the "Active" image.
-			//	// Else load the "Inactive" image.
-			//	if (((lpDrawItem->itemState & ODS_FOCUS) || (lpDrawItem->itemState & ODS_HOTLIGHT)))
-			//	{
-			//		inButton = 1;
-			//		setEditButtonImage(NULL, lpDrawItem->hDC, IDB_ON);
-			//	}
-			//	else
-			//	{
-			//		inButton = 0;
-			//		setEditButtonImage(NULL, lpDrawItem->hDC, IDB_OFF);
-			//	}
-			//}
-
-			//return TRUE;
-		}
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
@@ -374,28 +335,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_PAINT:
 		{
-			HBITMAP hbmpOld, hbmpImage;
-			HDC hDCMem;
 			RECT rect;
-
 			hdc = BeginPaint(hWnd, &ps);
-
-			// Create a DC in memory, compatible with the button's original DC.
-			hDCMem = CreateCompatibleDC(hdc);
-			// Load the selected image from the resource file.
-			hbmpImage = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IFONE_BG));
-			// Select the image into the DC. Keep a reference to the old bitmap.
-			hbmpOld = (HBITMAP)SelectObject(hDCMem, hbmpImage);
 			// Gets the dimensions of the button
 			GetClientRect(hWnd, &rect);
-			// Copies the bitmap from the memory DC into the buttons DC 
-			BitBlt(hdc, 0, 0, rect.right, rect.bottom, hDCMem, 0, 0, SRCCOPY);
-			// Select the original memory DC's bitmap.
-			SelectObject(hDCMem, hbmpOld);
-			// Free resources.
-			DeleteDC(hDCMem);
-			DeleteObject(hbmpImage);
-
+			setImageToDC(hInst, &rect, hdc, IDB_IFONE_BG);
 			// TODO: Add any drawing code here...
 			EndPaint(hWnd, &ps);
 		}
@@ -409,7 +353,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			TCHAR lpBuffer[1000], num[10];
 			HoverButton *btn;
 
-			CreateGUI(hWnd, hInst);
+			createGUI(hWnd, hInst);
 			btn = createHoverButton(hWnd, hInst, 505, 165, 178, 178, 1, IDB_ON, IDB_OFF, "Test text");
 			setHoverButtonTextColor(btn, 255);
 			
@@ -481,7 +425,27 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-void CreateGUI(HWND hWnd, HINSTANCE hInstance)
+void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId)
+{
+	HBITMAP hbmpOld, hbmpImage;
+	HDC hDCMem;
+
+	// Create a DC in memory, compatible with the button's original DC.
+	hDCMem = CreateCompatibleDC(hDC);
+	// Load the selected image from the resource file.
+	hbmpImage = LoadBitmap(hInstance, MAKEINTRESOURCE(imageId));
+	// Select the image into the DC. Keep a reference to the old bitmap.
+	hbmpOld = (HBITMAP)SelectObject(hDCMem, hbmpImage);
+	// Copies the bitmap from the memory DC into the buttons DC 
+	BitBlt(hDC, lprc->left, lprc->top, lprc->right, lprc->bottom, hDCMem, 0, 0, SRCCOPY);
+	// Select the original memory DC's bitmap.
+	SelectObject(hDCMem, hbmpOld);
+	// Free resources.
+	DeleteDC(hDCMem);
+	DeleteObject(hbmpImage);
+}
+
+void createGUI(HWND hWnd, HINSTANCE hInstance)
 {
 	HoverButton *tempBtn;
 	int x, y, width, height;

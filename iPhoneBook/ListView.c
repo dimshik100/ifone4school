@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "ListView.h"
+#include "resource.h"
 #include <windows.h>
 #include <commctrl.h>
 
@@ -17,7 +18,7 @@ BOOL addListViewItem(HWND hWndListView, TCHAR *name, TCHAR *extra)
 {
 	LVITEM lvItem = {0};
 
-	lvItem.mask = LVIF_TEXT | LVIF_PARAM;
+	lvItem.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
 	lvItem.state = 0;
 	lvItem.stateMask = 0;
 
@@ -28,14 +29,14 @@ BOOL addListViewItem(HWND hWndListView, TCHAR *name, TCHAR *extra)
     if (ListView_InsertItem(hWndListView, &lvItem) == -1) 
 		return FALSE; 
 
-	if (extra)
-	{		
-		lvItem.iSubItem = 1;
-		lvItem.pszText = extra;
-		lvItem.lParam = (LPARAM)2;
-		if (ListView_SetItem(hWndListView, &lvItem) == -1) 
-			return FALSE; 
-	}
+	//if (extra)
+	//{		
+	//	lvItem.iSubItem = 1;
+	//	lvItem.pszText = extra;
+	//	lvItem.lParam = (LPARAM)2;
+	//	if (ListView_SetItem(hWndListView, &lvItem) == -1) 
+	//		return FALSE; 
+	//}
 
 	ListView_SortItems(hWndListView, sortListViewItems, Sort_Ascending);
 
@@ -64,22 +65,22 @@ BOOL initListViewColumns(HWND hWndListView)
 	//Main column
 	lvc.iSubItem = 0;
     lvc.pszText = szText;	
-    lvc.cx = 400;     // width of column in pixels
+    lvc.cx = 319;     // width of column in pixels
 
 	lvc.fmt = LVCFMT_LEFT;  // left-aligned column
 	//lvc.fmt = LVCFMT_RIGHT; // right-aligned column
     if (ListView_InsertColumn(hWndListView, 0, &lvc) == -1) 
 		return FALSE; 
 
-	//Second column
-	lvc.iSubItem = 0;
-    lvc.pszText = szText;	
-    lvc.cx = 50;     // width of column in pixels
+	////Second column
+	//lvc.iSubItem = 0;
+ //   lvc.pszText = szText;	
+ //   lvc.cx = 50;     // width of column in pixels
 
-	//lvc.fmt = LVCFMT_LEFT;  // left-aligned column
-	lvc.fmt = LVCFMT_RIGHT; // right-aligned column
-    if (ListView_InsertColumn(hWndListView, 1, &lvc) == -1) 
-		return FALSE; 
+	////lvc.fmt = LVCFMT_LEFT;  // left-aligned column
+	//lvc.fmt = LVCFMT_RIGHT; // right-aligned column
+ //   if (ListView_InsertColumn(hWndListView, 1, &lvc) == -1) 
+	//	return FALSE; 
 
     return TRUE; 
 } 
@@ -109,10 +110,13 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 HWND createListView(HWND hWndParent, HINSTANCE hInstance)
 {
 	HWND hListViewWnd;
+	HIMAGELIST imageList = ImageList_Create(1, 43, ILC_COLORDDB, 0, 0);
 	hListViewWnd = CreateWindowEx(0, WC_LISTVIEW, NULL, 
 		WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SINGLESEL | /*LVS_OWNERDRAWFIXED |*/ LVS_NOCOLUMNHEADER | LVS_AUTOARRANGE,
-		505, 5, 450, 150, hWndParent, NULL, hInstance, NULL);
+		505, 5, 320, 150, hWndParent, NULL, hInstance, NULL);
+	ShowScrollBar(hListViewWnd, SB_VERT, FALSE);
 	ListView_SetExtendedListViewStyle(hListViewWnd, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_UNDERLINEHOT);
+	ListView_SetImageList(hListViewWnd, imageList, LVSIL_SMALL);
 
 	return hListViewWnd;
 }

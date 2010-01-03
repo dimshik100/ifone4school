@@ -173,7 +173,10 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	case WM_MOUSEMOVE:
 		{
 			hoverButton = findButton(0, hWnd);
-			if (!hoverButton->isHovering && !hoverButton->isLocked && !hoverButton->isPushButton)
+			// If the hover button is not locked AND
+			// the hover button is not a push button AND is not hovering OR
+			// the hover button is a push button AND the left mouse is down
+			if (!hoverButton->isLocked && ((!hoverButton->isPushButton && !hoverButton->isHovering) || (hoverButton->isPushButton && (wParam & MK_LBUTTON))))
 			{
 				TRACKMOUSEEVENT tme;
 				
