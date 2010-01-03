@@ -122,6 +122,7 @@ BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObje
 			}
 			// Return true confirm we processed this message
 			ret = TRUE;
+			free(string);
 		}
 	}
 
