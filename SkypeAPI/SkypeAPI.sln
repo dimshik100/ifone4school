@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SkypeAPI", "SkypeAPI\SkypeAPI.vcproj", "{73D5A3C8-74C9-4623-8807-5094A28DDAFE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{73D5A3C8-74C9-4623-8807-5094A28DDAFE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{73D5A3C8-74C9-4623-8807-5094A28DDAFE}.Debug|Win32.Build.0 = Debug|Win32
+		{73D5A3C8-74C9-4623-8807-5094A28DDAFE}.Release|Win32.ActiveCfg = Release|Win32
+		{73D5A3C8-74C9-4623-8807-5094A28DDAFE}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
