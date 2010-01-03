@@ -24,6 +24,14 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK	BtnProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
+void CreateGUI(HWND hWnd, HINSTANCE hInstance);
+
+HoverButton 
+		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton,
+		*hbMainActionBtn[4], *hbMiscActionBtn[5];
+
+HWND hwndContainerMain, hwndContainerMisc;
+
 HWND hLV, hList, hBtn;
 RECT btn1;
 WNDPROC defBtnProc;
@@ -365,9 +373,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
-		// TODO: Add any drawing code here...
-		EndPaint(hWnd, &ps);
+		{
+			HBITMAP hbmpOld, hbmpImage;
+			HDC hDCMem;
+			RECT rect;
+
+			hdc = BeginPaint(hWnd, &ps);
+
+			// Create a DC in memory, compatible with the button's original DC.
+			hDCMem = CreateCompatibleDC(hdc);
+			// Load the selected image from the resource file.
+			hbmpImage = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_IFONE_BG));
+			// Select the image into the DC. Keep a reference to the old bitmap.
+			hbmpOld = (HBITMAP)SelectObject(hDCMem, hbmpImage);
+			// Gets the dimensions of the button
+			GetClientRect(hWnd, &rect);
+			// Copies the bitmap from the memory DC into the buttons DC 
+			BitBlt(hdc, 0, 0, rect.right, rect.bottom, hDCMem, 0, 0, SRCCOPY);
+			// Select the original memory DC's bitmap.
+			SelectObject(hDCMem, hbmpOld);
+			// Free resources.
+			DeleteDC(hDCMem);
+			DeleteObject(hbmpImage);
+
+			// TODO: Add any drawing code here...
+			EndPaint(hWnd, &ps);
+		}
 		break;
 	case WM_DESTROY:
 		deleteHoverButtons();
@@ -378,14 +409,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			TCHAR lpBuffer[1000], num[10];
 			HoverButton *btn;
 
-			btn = createHoverButton(hWnd, hInst, 5, 155, 178, 178, 1, IDB_ON, IDB_OFF, "Test text");
+			CreateGUI(hWnd, hInst);
+			btn = createHoverButton(hWnd, hInst, 505, 165, 178, 178, 1, IDB_ON, IDB_OFF, "Test text");
 			setHoverButtonTextColor(btn, 255);
 			
-			setHoverButtonFont(createHoverButton(hWnd, hInst, 5+178, 155, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, "abcdefgh"),
+			setHoverButtonFont(createHoverButton(hWnd, hInst, 505+178, 155, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, "abcdefgh"),
 				TEXT("Fixedsys Excelsior 3.01"), 24);
 
 			setDefaultEditButtonProc(WndProc);
-			editBtn = createEditButton(hWnd, hInst, 5, 155+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, "Test text");
+			editBtn = createEditButton(hWnd, hInst, 505, 165+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, "Test text");
 
 
 
@@ -393,7 +425,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			// Create an Custom-Drawn list view control - see ListView.cpp for details.
 			hLV = createListView(hWnd, hInst);
 			// Creates a list box - this keeps a list of scroll-sizes
-			hList = CreateWindowEx(0, TEXT("listbox"), NULL,WS_VSCROLL |  WS_CHILD | WS_VISIBLE | LBS_HASSTRINGS | LBS_DISABLENOSCROLL , 460, 0, 200, 550, hWnd, NULL, hInst, NULL);
+			hList = CreateWindowEx(0, TEXT("listbox"), NULL,WS_VSCROLL |  WS_CHILD | WS_VISIBLE | LBS_HASSTRINGS | LBS_DISABLENOSCROLL , 500+460, 0, 200, 550, hWnd, NULL, hInst, NULL);
 			initListViewColumns(hLV);
 
 			for (i = 0; i < 200; i++)
@@ -447,4 +479,53 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	return (INT_PTR)FALSE;
+}
+
+void CreateGUI(HWND hWnd, HINSTANCE hInstance)
+{
+	HoverButton *tempBtn;
+	int x, y, width, height;
+
+	hbTopBarSkype = createHoverButton(hWnd, hInstance, 67, 136, 320, 20, 0, IDB_TOP_BAR_SKYPE_OFF, IDB_TOP_BAR_SKYPE_OFF, NULL);
+	lockHoverButtonImage(hbTopBarSkype, TRUE);
+	hbMainUnderDateBg = createHoverButton(hWnd, hInstance, 67, 156, 320, 97, 0, IDB_MAIN_WND_UNDER_DATE_BG, IDB_MAIN_WND_UNDER_DATE_BG, NULL);
+	lockHoverButtonImage(hbMainUnderDateBg, TRUE);
+	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 273, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
+	lockHoverButtonImage(hbMainCenterPic, TRUE);
+	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, 0, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
+
+	hwndContainerMain = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
+
+	tempBtn = createHoverButton(hwndContainerMain, hInstance, 0, 0, 10, 92, 0, IDB_MAIN_WND_LOW_BAR_LEFT, IDB_MAIN_WND_LOW_BAR_LEFT, NULL);
+	lockHoverButtonImage(tempBtn, TRUE);
+	tempBtn = createHoverButton(hwndContainerMain, hInstance, 311, 0, 9, 92, 0, IDB_MAIN_WND_LOW_BAR_RIGHT, IDB_MAIN_WND_LOW_BAR_RIGHT, NULL);
+	lockHoverButtonImage(tempBtn, TRUE);
+	x = 10;
+	y = 0;
+	width = 75;
+	height = 92;
+
+	hbMainActionBtn[0] = createHoverButton(hwndContainerMain, hInstance, x, y, width, height, 0, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, NULL);
+	x += width;
+	hbMainActionBtn[1] = createHoverButton(hwndContainerMain, hInstance, x, y, width, height, 0, IDB_MAIN_WND_CONTACT_ON, IDB_MAIN_WND_CONTACT_OFF, NULL);
+	x += width;
+	hbMainActionBtn[2] = createHoverButton(hwndContainerMain, hInstance, x, y, width+1, height, 0, IDB_MAIN_WND_INFO_ON, IDB_MAIN_WND_INFO_OFF, NULL);
+	x += width+1;
+	hbMainActionBtn[3] = createHoverButton(hwndContainerMain, hInstance, x, y, width, height, 0, IDB_MAIN_WND_BIN_EMPTY_ON, IDB_MAIN_WND_BIN_EMPTY_OFF, NULL);
+
+	tempBtn = createHoverButton(hWnd, hInstance, 67, 550, 320, 66, 0, IDB_CONTACT_WND_BUTTON_BG, IDB_CONTACT_WND_BUTTON_BG, NULL);
+	lockHoverButtonImage(tempBtn, TRUE);
+	hwndContainerMisc = tempBtn->hButton;
+	x = 5;
+	y = 0;
+	width = 70;
+	height = 66;
+
+	hbMainActionBtn[0] = createHoverButton(hwndContainerMisc, hInstance, x, y, width, height, 0, IDB_CONTACT_WND_BUTTON_CALL_ON, IDB_CONTACT_WND_BUTTON_CALL_OFF, NULL);
+	x += width+10;
+	hbMainActionBtn[1] = createHoverButton(hwndContainerMisc, hInstance, x, y, width, height, 0, IDB_CONTACT_WND_BUTTON_INFO_ON, IDB_CONTACT_WND_BUTTON_INFO_OFF, NULL);
+	x += width+10;
+	hbMainActionBtn[2] = createHoverButton(hwndContainerMisc, hInstance, x, y, width, height, 0, IDB_CONTACT_WND_BUTTON_EDIT_ON, IDB_CONTACT_WND_BUTTON_EDIT_OFF, NULL);
+	x += width+10;
+	hbMainActionBtn[3] = createHoverButton(hwndContainerMisc, hInstance, x, y, width, height, 0, IDB_CONTACT_WND_BUTTON_DEL_ON, IDB_CONTACT_WND_BUTTON_DEL_OFF, NULL);
 }
