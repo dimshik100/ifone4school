@@ -111,7 +111,7 @@ HWND createListView(HWND hWndParent, HINSTANCE hInstance)
 	HWND hListViewWnd;
 	hListViewWnd = CreateWindowEx(0, WC_LISTVIEW, NULL, 
 		WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SINGLESEL | /*LVS_OWNERDRAWFIXED |*/ LVS_NOCOLUMNHEADER | LVS_AUTOARRANGE,
-		5, 5, 450, 150, hWndParent, NULL, hInstance, NULL);
+		505, 5, 450, 150, hWndParent, NULL, hInstance, NULL);
 	ListView_SetExtendedListViewStyle(hListViewWnd, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_UNDERLINEHOT);
 
 	return hListViewWnd;

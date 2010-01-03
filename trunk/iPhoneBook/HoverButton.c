@@ -188,14 +188,19 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 				setHoverButtonImage(hoverButton, hdc, hoverButton->onImage);
 			else
 				setHoverButtonImage(hoverButton, hdc, hoverButton->offImage);
-			SetBkMode(hdc, TRANSPARENT);
-			SetTextColor(hdc, hoverButton->color);
-			SetTextAlign(hdc, TA_CENTER | TA_BASELINE);
-			hFontOld = (HFONT)SelectObject(hdc, hoverButton->hFont);
-			TextOut(hdc, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
-				(hoverButton->buttonRect.bottom - hoverButton->buttonRect.top)/2,
-				hoverButton->caption, (int)_tcslen(hoverButton->caption));
-			SelectObject(hdc, hFontOld);
+			if (hoverButton->caption)
+			{
+				TEXTMETRIC tm;
+				SetBkMode(hdc, TRANSPARENT);
+				SetTextColor(hdc, hoverButton->color);
+				SetTextAlign(hdc, TA_CENTER);
+				GetTextMetrics(hdc, &tm);
+				hFontOld = (HFONT)SelectObject(hdc, hoverButton->hFont);
+				TextOut(hdc, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
+					(hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - tm.tmHeight)/2,
+					hoverButton->caption, (int)_tcslen(hoverButton->caption));
+				SelectObject(hdc, hFontOld);
+			}
 
 			EndPaint(hWnd, &ps);
 

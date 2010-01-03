@@ -17,8 +17,8 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 	EditButton *newEditButton = (EditButton*)calloc(1, sizeof(EditButton));
 	controlId = EDIT_BUTTON_CTL_ID + (controlId * 10);
 
-	newEditButton->editRect.left = x + 10;
-	newEditButton->editRect.right = (x + width) - 40; //20 = 10 from left, 10 from right, another 20 is for the ok/cancel buttons
+	newEditButton->editRect.left = x + 5;
+	newEditButton->editRect.right = (x + width) - 35; //15 = 5 from left, 10 from right, another 20 is for the ok/cancel buttons
 	newEditButton->editRect.top = y + 5;
 	newEditButton->editRect.bottom = (y + height) - 10; //10 = 5 from top and 5 from bottom
 	newEditButton->onImage = onImage;
@@ -30,7 +30,7 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 		controlId + CID_OK_OFFSET, IDB_CONTACT_WND_BUTTON_CALL_ON, IDB_CONTACT_WND_BUTTON_CALL_OFF, NULL);
 	newEditButton->cancelButton = createHoverButton(newEditButton->mainButton->hButton, hInstance, width - 25, height - 25, 20, 20,
 		controlId + CID_CANCEL_OFFSET, IDB_CONTACT_WND_BUTTON_INFO_ON, IDB_CONTACT_WND_BUTTON_INFO_OFF, NULL);
-	newEditButton->hEdit = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 10, 5, width - 40, height - 10,
+	newEditButton->hEdit = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 5, 5, width - 35, height - 10,
 		newEditButton->mainButton->hButton, (HMENU)(controlId + CID_TEXT_OFFSET), hInstance, NULL);
 	showEditButtonEdit(newEditButton, FALSE);
 
