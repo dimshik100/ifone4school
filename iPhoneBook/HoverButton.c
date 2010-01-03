@@ -116,6 +116,11 @@ void lockHoverButtonImage(HoverButton *hoverButton, int enable)
 	hoverButton->isLocked = enable;
 }
 
+void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable)
+{
+	hoverButton->isPushButton = enable;
+}
+
 void setHoverButtonImage(HoverButton *hoverButton, HDC hDC, int imageId)
 {
 	HBITMAP hbmpOld, hbmpImage;
@@ -146,11 +151,29 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	HDC hdc;
 
 	switch (message)
-	{		
+	{
+	case WM_LBUTTONDOWN:
+		hoverButton = findButton(0, hWnd);
+		if (!hoverButton->isLocked && hoverButton->isPushButton)
+		{
+			hoverButton->isHovering = TRUE;
+			invalidateButtonRect(hoverButton);
+			return FALSE;
+		}
+		break;
+	case WM_LBUTTONUP:
+		hoverButton = findButton(0, hWnd);
+		if (!hoverButton->isLocked && hoverButton->isPushButton)
+		{
+			hoverButton->isHovering = FALSE;
+			invalidateButtonRect(hoverButton);
+			return FALSE;
+		}
+		break;
 	case WM_MOUSEMOVE:
 		{
 			hoverButton = findButton(0, hWnd);
-			if (!hoverButton->isHovering && !hoverButton->isLocked)
+			if (!hoverButton->isHovering && !hoverButton->isLocked && !hoverButton->isPushButton)
 			{
 				TRACKMOUSEEVENT tme;
 				
