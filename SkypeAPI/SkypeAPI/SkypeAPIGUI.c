@@ -171,10 +171,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			//DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			{
 				COPYDATASTRUCT copyData = {0};
+				LRESULT l;
 				copyData.dwData = 0;
 				copyData.lpData = "CALL echo123";
-				copyData.cbData = strlen("CALL echo123") + 1;
-				SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
+				copyData.cbData = strlen("CALL echo123");
+				l = SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
+				l = l;
 			}
 			break;
 		case IDM_EXIT:
