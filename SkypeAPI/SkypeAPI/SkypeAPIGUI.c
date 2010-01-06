@@ -22,7 +22,7 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam);
-void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject);
+void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject, int counter);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -116,7 +116,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // Store instance handle in our global variable
 
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+      100, 100, 640, 480, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
    {
@@ -152,8 +152,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		SendMessage(hWnd, WM_SETFONT, (WPARAM)GetStockObject(ANSI_VAR_FONT), TRUE);
 		hList = CreateWindowEx(0, TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL, 0, 0, 600, 480, hWnd, NULL, hInst, NULL);
 		SendMessage(hList, WM_SETFONT, (WPARAM)GetStockObject(ANSI_VAR_FONT), TRUE);
-		hList2 = CreateWindowEx(0, TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL, 602, 0, 600, 480, hWnd, NULL, hInst, NULL);
-		SendMessage(hList, WM_SETFONT, (WPARAM)GetStockObject(ANSI_VAR_FONT), TRUE);
 		connectSkype(hInst);
 		setSkypeApiCallback(skypeCallbackFunction);
 		break;
@@ -167,17 +165,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Parse the menu selections:
 		switch (wmId)
 		{
+		case ID_HELP_HANGUP:
+			hangup();
+			break;
 		case IDM_ABOUT:
-			//DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			{
-				COPYDATASTRUCT copyData = {0};
-				LRESULT l;
-				copyData.dwData = 0;
-				copyData.lpData = "CALL echo123";
-				copyData.cbData = strlen("CALL echo123");
-				l = SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
-				l = l;
-			}
+			call();
+			////DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			//{
+			//	COPYDATASTRUCT copyData = {0};
+			//	LRESULT l;
+			//	copyData.dwData = 0;
+			//	copyData.lpData = "CALL echo123";
+			//	copyData.cbData = strlen("CALL echo123");
+			//	l = SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
+			//	l = l;
+			//}
 			break;
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
@@ -298,8 +300,24 @@ BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam)
 	return ret;
 }
 
-void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject)
+void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject, int counter)
 {
 	if (skypeObject)
-		skypeObject->object = OBJECT_APPLICATION;
+	{
+		switch (skypeObject->object)
+		{
+		case OBJECT_CALL:
+			{
+				TCHAR str[256] = {0};
+				SkypeCallObject *callObject = (SkypeCallObject*)skypeObject;
+				if (callObject->type == CALLTYPE_INCOMING_P2P || callObject->type == CALLTYPE_INCOMING_PSTN)
+					_stprintf_s(str, 256, TEXT("Incoming call..."));
+				else if (callObject->type == CALLTYPE_OUTGOING_P2P || callObject->type == CALLTYPE_OUTGOING_PSTN)
+					_stprintf_s(str, 256, TEXT("Outgoing call..."));
+				_stprintf_s(str, 256, TEXT("%s ID: %d, duration: %d #%d"), str, callObject->callId, callObject->duration, counter);
+				SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
+			}
+			break;
+		}
+	}
 }
