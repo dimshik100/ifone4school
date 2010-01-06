@@ -271,7 +271,18 @@ BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam)
 			case OBJECT_CALL:
 				{
 					SkypeCallObject *callObject = (SkypeCallObject*)skypeObject;
-					callObject->callId = callObject->callId;
+					TCHAR str[1000];
+					_stprintf_s(str, 1000, TEXT("Call id: %d;"), callObject->callId);
+					switch(callObject->property)
+					{
+					case CALLPROPERTY_DURATION:
+						_stprintf_s(str, 1000, TEXT("%s duration %02dh:%02dm:%02ds"), str, callObject->duration / 3600, (callObject->duration % 3600) / 60, (callObject->duration % 60));
+						break;
+					case CALLPROPERTY_STATUS:
+						_stprintf_s(str, 1000, TEXT("%s status index %d"), str, callObject->status);
+						break;
+					}
+					SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
 				}
 				break;
 			}

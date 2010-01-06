@@ -84,7 +84,7 @@ BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObje
 			token = _tcstok_s(string, seps, &next_token);
 			if (!_tcscmp(token, TEXT("CALL")))
 			{
-				SkypeCallObject *callObject = (SkypeCallObject*)malloc(sizeof(SkypeCallObject));
+				SkypeCallObject *callObject = (SkypeCallObject*)calloc(1, sizeof(SkypeCallObject));
 				callObject->object = OBJECT_CALL;
 				token = _tcstok_s(NULL, seps, &next_token);
 
@@ -93,6 +93,7 @@ BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObje
 
 				if (!_tcscmp(token, TEXT("STATUS")))
 				{
+					callObject->property = CALLPROPERTY_STATUS;
 					token = _tcstok_s(NULL, seps, &next_token);
 					if (!_tcscmp(token, TEXT("UNPLACED")))
 						callObject->status = CALLSTATUS_UNPLACED;
@@ -104,16 +105,47 @@ BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObje
 						callObject->status = CALLSTATUS_ON_HOLD;
 					else if (!_tcscmp(token, TEXT("FINISHED")))
 						callObject->status = CALLSTATUS_FINISHED;
-					else if (!_tcscmp(token, TEXT("SEEN")))
-						callObject->status = CALLSTATUS_SEEN;
-					else if (!_tcscmp(token, TEXT("DTMF")))
-						callObject->status = CALLSTATUS_DTMF;
-					else if (!_tcscmp(token, TEXT("JOIN_CONFERENCE")))
-						callObject->status = CALLSTATUS_JOIN_CONFERENCE;
+					else if (!_tcscmp(token, TEXT("EARLYMEDIA")))
+						callObject->status = CALLSTATUS_EARLY_MEDIA;
+					else if (!_tcscmp(token, TEXT("FAILED")))
+						callObject->status = CALLSTATUS_FAILED;
+					else if (!_tcscmp(token, TEXT("RINGING")))
+						callObject->status = CALLSTATUS_RINGING;
+					else if (!_tcscmp(token, TEXT("MISSED")))
+						callObject->status = CALLSTATUS_MISSED;
+					else if (!_tcscmp(token, TEXT("REFUSED")))
+						callObject->status = CALLSTATUS_REFUSED;
+					else if (!_tcscmp(token, TEXT("BUSY")))
+						callObject->status = CALLSTATUS_BUSY;
+					else if (!_tcscmp(token, TEXT("CANCELLED")))
+						callObject->status = CALLSTATUS_CANCELLED;
+					else if (!_tcscmp(token, TEXT("TRANSFERRING")))
+						callObject->status = CALLSTATUS_TRANSFERRING;
+					else if (!_tcscmp(token, TEXT("TRANSFERRED")))
+						callObject->status = CALLSTATUS_TRANSFERRED;
+					else if (!_tcscmp(token, TEXT("WAITING_REDIAL_COMMAND")))
+						callObject->status = CALLSTATUS_WAITING_REDIAL_COMMAND;
+					else if (!_tcscmp(token, TEXT("REDIAL_PENDING")))
+						callObject->status = CALLSTATUS_REDIAL_PENDING;
+					else if (!_tcscmp(token, TEXT("VM_BUFFERING_GREETING")))
+						callObject->status = CALLSTATUS_VM_BUFFERING_GREETING;
+					else if (!_tcscmp(token, TEXT("VM_PLAYING_GREETING")))
+						callObject->status = CALLSTATUS_VM_PLAYING_GREETING;
+					else if (!_tcscmp(token, TEXT("VM_UPLOADING")))
+						callObject->status = CALLSTATUS_VM_UPLOADING;
+					else if (!_tcscmp(token, TEXT("VM_SENT")))
+						callObject->status = CALLSTATUS_VM_SENT;
+					else if (!_tcscmp(token, TEXT("VM_FAILED")))
+						callObject->status = CALLSTATUS_VM_FAILED;
+					else if (!_tcscmp(token, TEXT("VM_CANCELLED")))
+						callObject->status = CALLSTATUS_VM_CANCELLED;
+					else if (!_tcscmp(token, TEXT("VM_RECORDING")))
+						callObject->status = CALLSTATUS_VM_RECORDING;
+
 				}
 				else if (!_tcscmp(token, TEXT("DURATION")))
 				{
-					callObject->status = CALLSTATUS_DURATION;
+					callObject->property = CALLPROPERTY_DURATION;
 					token = _tcstok_s(NULL, seps, &next_token);
 					callObject->duration = _tstoi(token);
 				}
