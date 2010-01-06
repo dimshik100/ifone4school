@@ -2,23 +2,34 @@
 #include "stdafx.h"
 #include "SkypeAPI.h"
 
+#define CLASS_WND_NAME TEXT("iFoneBookSkypeApiWindow")
 UINT msgIdApiAttach = 0; //RegisterWindowMessage(TEXT("SkypeControlAPIAttach"));
 UINT msgIdApiDiscover = 0; //RegisterWindowMessage(TEXT("SkypeControlAPIDiscover"));
-HWND skypeApiWindowHandle = NULL;
+HWND skypeApiWindowHandle = NULL, hiddenWindowHandle = NULL;
+SkypeCallbackFunction skypeCallbackFunction;
 
 LPTSTR getStringFromMessage(PCOPYDATASTRUCT copyData);
+ATOM registerSkypeApiWindowClass(HINSTANCE hInstance);
+//HWND createHiddenWindow(HINSTANCE hInstance);
+LRESULT CALLBACK	SkypeApiWndProc(HWND, UINT, WPARAM, LPARAM);
 
-void registerSkypeApi()
+
+BOOL registerSkypeApi(HINSTANCE hInstance)
 {
 	msgIdApiAttach = RegisterWindowMessage(TEXT("SkypeControlAPIAttach"));
 	msgIdApiDiscover = RegisterWindowMessage(TEXT("SkypeControlAPIDiscover"));
+	registerSkypeApiWindowClass(hInstance);
+	hiddenWindowHandle = CreateWindowEx(0, CLASS_WND_NAME, NULL, WS_SYSMENU | WS_MINIMIZEBOX,
+		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, 0, hInstance, 0);
+	return (hiddenWindowHandle) ? TRUE : FALSE;
 }
 
-LRESULT connectSkype(HWND hWndTarget)
+LRESULT connectSkype(HINSTANCE hInstance)
 {
-	if (!msgIdApiAttach || !msgIdApiDiscover)
-		registerSkypeApi();
-	return SendMessage(HWND_BROADCAST, msgIdApiDiscover, (WPARAM)hWndTarget, 0);
+	if (!msgIdApiAttach || !msgIdApiDiscover || !hiddenWindowHandle)
+		if (!registerSkypeApi(hInstance))
+			return FALSE;
+	return SendMessage(HWND_BROADCAST, msgIdApiDiscover, (WPARAM)hiddenWindowHandle, 0);
 }
 
 BOOL processAttachmentMessage(UINT message, WPARAM wParam, LPARAM lParam)
@@ -66,6 +77,11 @@ UINT getMsgIdApiDiscover()
 HWND getSkypeApiWindowHandle()
 {
 	return skypeApiWindowHandle;
+}
+
+void setSkypeApiCallback(SkypeCallbackFunction newSkypeCallbackFunction)
+{
+	skypeCallbackFunction = newSkypeCallbackFunction;
 }
 
 BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObject)
@@ -174,4 +190,68 @@ LPTSTR getStringFromMessage(PCOPYDATASTRUCT copyData)
 #endif
 	
 	return string;
+}
+
+ATOM registerSkypeApiWindowClass(HINSTANCE hInstance)
+{
+	WNDCLASSEX wcex;
+
+	wcex.cbSize = sizeof(WNDCLASSEX);
+
+	wcex.style			= CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc	= SkypeApiWndProc;
+	wcex.cbClsExtra		= 0;
+	wcex.cbWndExtra		= 0;
+	wcex.hInstance		= hInstance;
+	wcex.hIcon			= NULL;
+	wcex.hCursor		= NULL;
+	wcex.hbrBackground	= NULL;
+	wcex.lpszMenuName	= NULL;
+	wcex.lpszClassName	= CLASS_WND_NAME;
+	wcex.hIconSm		= NULL;
+
+	return RegisterClassEx(&wcex);
+}
+
+//HWND createHiddenWindow(HINSTANCE hInstance)
+//{
+//	HWND hWnd;
+//	hWnd = CreateWindowEx(0, CLASS_WND_NAME, NULL, WS_SYSMENU | WS_MINIMIZEBOX,
+//		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, 0, hInstance, 0);
+//
+//}
+
+SkypeObject *mainSkypeObject = NULL;
+LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if (message == WM_COPYDATA)
+	{
+		static int objectGetting = 0;
+		SkypeObject *skypeObject;
+		if (translateSkypeMessage(wParam, lParam, &skypeObject))
+		{			
+			if (skypeObject)
+			{
+				if (!mainSkypeObject)
+				{
+					COPYDATASTRUCT copyData = {0};
+					char a[256];
+					sprintf(a, "GET CALL %d TYPE", ((SkypeCallObject)skypeObject)->callId);
+					
+					copyData.dwData = 0;
+					copyData.lpData = a;
+					copyData.cbData = strlen(a) + 1;
+					SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
+				}
+				if (!objectGetting)
+					skypeCallbackFunction(skypeObject);
+				free(skypeObject);
+			}
+			return TRUE;
+		}
+	}
+	else if (processAttachmentMessage(message, wParam, lParam))
+		return TRUE;
+
+	return DefWindowProc(hWnd, message, wParam, lParam);
 }

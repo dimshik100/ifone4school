@@ -22,6 +22,7 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam);
+void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -153,7 +154,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		SendMessage(hList, WM_SETFONT, (WPARAM)GetStockObject(ANSI_VAR_FONT), TRUE);
 		hList2 = CreateWindowEx(0, TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL, 602, 0, 600, 480, hWnd, NULL, hInst, NULL);
 		SendMessage(hList, WM_SETFONT, (WPARAM)GetStockObject(ANSI_VAR_FONT), TRUE);
-		connectSkype(hWnd);
+		connectSkype(hInst);
+		setSkypeApiCallback(skypeCallbackFunction);
 		break;
 	case WM_COPYDATA:
 		if (processSkypeMessage(wParam, lParam))
@@ -292,4 +294,10 @@ BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam)
 	}
 
 	return ret;
+}
+
+void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject)
+{
+	if (skypeObject)
+		skypeObject->object = OBJECT_APPLICATION;
 }
