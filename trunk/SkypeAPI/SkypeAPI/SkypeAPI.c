@@ -170,13 +170,13 @@ BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObje
 					callObject->property = CALLPROPERTY_TYPE;
 					token = _tcstok_s(NULL, seps, &next_token);
 					if (!_tcscmp(token, TEXT("INCOMING_PSTN")))
-						callObject->status = CALLTYPE_INCOMING_PSTN;
+						callObject->type = CALLTYPE_INCOMING_PSTN;
 					else if (!_tcscmp(token, TEXT("INCOMING_P2P")))
-						callObject->status = CALLTYPE_INCOMING_P2P;
+						callObject->type = CALLTYPE_INCOMING_P2P;
 					else if (!_tcscmp(token, TEXT("OUTGOING_PSTN")))
-						callObject->status = CALLTYPE_OUTGOING_PSTN;
+						callObject->type = CALLTYPE_OUTGOING_PSTN;
 					else if (!_tcscmp(token, TEXT("OUTGOING_P2P")))
-						callObject->status = CALLTYPE_OUTGOING_P2P;
+						callObject->type = CALLTYPE_OUTGOING_P2P;
 				}
 
 				*skypeObject = (SkypeObject*)callObject;
@@ -239,7 +239,7 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 {
 	if (message == WM_COPYDATA)
 	{
-		static int objectGetting = 0;
+		static int objectGetting = 0, counter = 0;
 		SkypeObject *skypeObject;
 		if (translateSkypeMessage(wParam, lParam, &skypeObject))
 		{			
@@ -250,27 +250,31 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 				case OBJECT_CALL:
 					{
 						SkypeCallObject *callObject = (SkypeCallObject*)skypeObject;
-						callObject->object = OBJECT_CALL;
+						counter++;
 						if (!mainSkypeObject)
 						{
 							COPYDATASTRUCT copyData = {0};
-							char a[256];
-							LRESULT b;
+							char str[256];
 
+							objectGetting = 1;
 							mainSkypeObject = (SkypeObject*)calloc(1, sizeof(SkypeCallObject));
-							b = SendMessage(hWnd, message, wParam, lParam);
-							b = b;
-
-							sprintf(a, "GET CALL %d TYPE", ((SkypeCallObject*)skypeObject)->callId);
-							
+							*(SkypeCallObject*)mainSkypeObject = *(SkypeCallObject*)skypeObject;
+							SendMessage(hWnd, message, wParam, lParam);
+					
 							copyData.dwData = 0;
-							copyData.lpData = a;
-							copyData.cbData = strlen(a);
-							b = SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
-							b = b;
+							copyData.lpData = str;
+							copyData.cbData = strlen(str)+1;
+							sprintf_s(str, 256, "GET CALL %d DURATION", ((SkypeCallObject*)skypeObject)->callId);		
+							SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
+							sprintf_s(str, 256, "GET CALL %d STATUS", ((SkypeCallObject*)skypeObject)->callId);		
+							SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
+							sprintf_s(str, 256, "GET CALL %d TYPE", ((SkypeCallObject*)skypeObject)->callId);		
+							SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
+							objectGetting = 0;
 						}
 						else
 						{
+							((SkypeCallObject*)mainSkypeObject)->callId = ((SkypeCallObject*)skypeObject)->callId;
 							((SkypeCallObject*)mainSkypeObject)->property = callObject->property;
 							switch(callObject->property)
 							{
@@ -286,7 +290,7 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 							}
 						}
 						if (!objectGetting)
-							skypeCallbackFunction(mainSkypeObject);
+							skypeCallbackFunction(mainSkypeObject, counter);
 					}
 					break;
 				}
@@ -299,4 +303,26 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 		return TRUE;
 
 	return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+void call()
+			{
+				COPYDATASTRUCT copyData = {0};
+				LRESULT l;
+				copyData.dwData = 0;
+				copyData.lpData = "CALL echo123";
+				copyData.cbData = strlen("CALL echo123") + 1;
+				l = SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
+				l = l;
+			}
+
+void hangup()
+{
+	char str[256];
+	COPYDATASTRUCT copyData = {0};
+	sprintf_s(str, 256, "SET CALL %d STATUS FINISHED", ((SkypeCallObject*)mainSkypeObject)->callId);
+	copyData.dwData = 0;
+	copyData.lpData = str;
+	copyData.cbData = strlen(str) + 1;
+	SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
 }

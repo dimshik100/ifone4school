@@ -57,7 +57,7 @@ typedef struct _SkypeCallObject
 	int						duration;
 }SkypeCallObject;
 
-typedef void (CALLBACK* SkypeCallbackFunction)(SkypeObject *skypeObject);
+typedef void (CALLBACK* SkypeCallbackFunction)(SkypeObject *skypeObject, int counter);
 
 BOOL registerSkypeApi(HINSTANCE hInstance);
 LRESULT connectSkype(HINSTANCE hInstance);
@@ -68,3 +68,5 @@ UINT getMsgIdApiAttach();
 UINT getMsgIdApiDiscover();
 HWND getSkypeApiWindowHandle();
 void setSkypeApiCallback(SkypeCallbackFunction skypeCallbackFunction);
+void call();
+void hangup();
