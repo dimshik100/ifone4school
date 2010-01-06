@@ -1,6 +1,6 @@
-
 #include "stdafx.h"
 #include "SkypeAPI.h"
+#include <stdio.h>
 
 #define CLASS_WND_NAME TEXT("iFoneBookSkypeApiWindow")
 UINT msgIdApiAttach = 0; //RegisterWindowMessage(TEXT("SkypeControlAPIAttach"));
@@ -165,6 +165,19 @@ BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObje
 					token = _tcstok_s(NULL, seps, &next_token);
 					callObject->duration = _tstoi(token);
 				}
+				else if (!_tcscmp(token, TEXT("TYPE")))
+				{
+					callObject->property = CALLPROPERTY_TYPE;
+					token = _tcstok_s(NULL, seps, &next_token);
+					if (!_tcscmp(token, TEXT("INCOMING_PSTN")))
+						callObject->status = CALLTYPE_INCOMING_PSTN;
+					else if (!_tcscmp(token, TEXT("INCOMING_P2P")))
+						callObject->status = CALLTYPE_INCOMING_P2P;
+					else if (!_tcscmp(token, TEXT("OUTGOING_PSTN")))
+						callObject->status = CALLTYPE_OUTGOING_PSTN;
+					else if (!_tcscmp(token, TEXT("OUTGOING_P2P")))
+						callObject->status = CALLTYPE_OUTGOING_P2P;
+				}
 
 				*skypeObject = (SkypeObject*)callObject;
 			}
@@ -232,19 +245,51 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 		{			
 			if (skypeObject)
 			{
-				if (!mainSkypeObject)
+				switch (skypeObject->object)
 				{
-					COPYDATASTRUCT copyData = {0};
-					char a[256];
-					sprintf(a, "GET CALL %d TYPE", ((SkypeCallObject)skypeObject)->callId);
-					
-					copyData.dwData = 0;
-					copyData.lpData = a;
-					copyData.cbData = strlen(a) + 1;
-					SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
+				case OBJECT_CALL:
+					{
+						SkypeCallObject *callObject = (SkypeCallObject*)skypeObject;
+						callObject->object = OBJECT_CALL;
+						if (!mainSkypeObject)
+						{
+							COPYDATASTRUCT copyData = {0};
+							char a[256];
+							LRESULT b;
+
+							mainSkypeObject = (SkypeObject*)calloc(1, sizeof(SkypeCallObject));
+							b = SendMessage(hWnd, message, wParam, lParam);
+							b = b;
+
+							sprintf(a, "GET CALL %d TYPE", ((SkypeCallObject*)skypeObject)->callId);
+							
+							copyData.dwData = 0;
+							copyData.lpData = a;
+							copyData.cbData = strlen(a);
+							b = SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
+							b = b;
+						}
+						else
+						{
+							((SkypeCallObject*)mainSkypeObject)->property = callObject->property;
+							switch(callObject->property)
+							{
+							case CALLPROPERTY_TYPE:
+								((SkypeCallObject*)mainSkypeObject)->type = callObject->type;
+								break;
+							case CALLPROPERTY_DURATION:
+								((SkypeCallObject*)mainSkypeObject)->duration = callObject->duration;
+								break;
+							case CALLPROPERTY_STATUS:
+								((SkypeCallObject*)mainSkypeObject)->status = callObject->status;
+								break;
+							}
+						}
+						if (!objectGetting)
+							skypeCallbackFunction(mainSkypeObject);
+					}
+					break;
 				}
-				if (!objectGetting)
-					skypeCallbackFunction(skypeObject);
 				free(skypeObject);
 			}
 			return TRUE;
