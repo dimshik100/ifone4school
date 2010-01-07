@@ -220,8 +220,8 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 				SetBkMode(hdc, TRANSPARENT);
 				SetTextColor(hdc, hoverButton->color);
 				SetTextAlign(hdc, TA_CENTER);
-				GetTextMetrics(hdc, &tm);
 				hFontOld = (HFONT)SelectObject(hdc, hoverButton->hFont);
+				GetTextMetrics(hdc, &tm);
 				TextOut(hdc, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
 					(hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - tm.tmHeight)/2,
 					hoverButton->caption, (int)_tcslen(hoverButton->caption));
