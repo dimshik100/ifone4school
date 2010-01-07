@@ -74,7 +74,10 @@ void showEditButtonEdit(EditButton *editButton, int show)
 	lockHoverButtonImage(editButton->mainButton, show);
 	editButton->inTextMode = show;
 	if (show)
+	{
 		setHoverButtonStateImages(editButton->mainButton, editButton->onImage, editButton->onImage);
+		SetFocus(editButton->hEdit);
+	}
 	else
 		setHoverButtonStateImages(editButton->mainButton, editButton->onImage, editButton->offImage);
 }

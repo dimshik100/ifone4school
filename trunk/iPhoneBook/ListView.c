@@ -4,6 +4,11 @@
 #include <windows.h>
 #include <commctrl.h>
 
+WNDPROC wndDefListViewProc = NULL;
+HINSTANCE hInst = NULL;
+
+LRESULT CALLBACK	ListViewProc(HWND, UINT, WPARAM, LPARAM);
+
 enum SORT { Sort_Ascending, Sort_Descending };
 int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 
@@ -14,7 +19,7 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 // name - String containing contact name
 // extra - String containing additional information about the item, can be NULL
 
-BOOL addListViewItem(HWND hWndListView, TCHAR *name, TCHAR *extra)
+BOOL addListViewItem(HWND hWndListView, TCHAR *name)
 {
 	LVITEM lvItem = {0};
 
@@ -27,16 +32,7 @@ BOOL addListViewItem(HWND hWndListView, TCHAR *name, TCHAR *extra)
 	lvItem.pszText = name;
 	lvItem.lParam = (LPARAM)1;
     if (ListView_InsertItem(hWndListView, &lvItem) == -1) 
-		return FALSE; 
-
-	//if (extra)
-	//{		
-	//	lvItem.iSubItem = 1;
-	//	lvItem.pszText = extra;
-	//	lvItem.lParam = (LPARAM)2;
-	//	if (ListView_SetItem(hWndListView, &lvItem) == -1) 
-	//		return FALSE; 
-	//}
+		return FALSE;
 
 	ListView_SortItems(hWndListView, sortListViewItems, Sort_Ascending);
 
@@ -107,16 +103,105 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 	return 0;
 }
 
-HWND createListView(HWND hWndParent, HINSTANCE hInstance)
+HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height)
 {
 	HWND hListViewWnd;
 	HIMAGELIST imageList = ImageList_Create(1, 43, ILC_COLORDDB, 0, 0);
 	hListViewWnd = CreateWindowEx(0, WC_LISTVIEW, NULL, 
 		WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SINGLESEL | /*LVS_OWNERDRAWFIXED |*/ LVS_NOCOLUMNHEADER | LVS_AUTOARRANGE,
-		505, 5, 320, 150, hWndParent, NULL, hInstance, NULL);
+		x, y, width, height, hWndParent, NULL, hInstance, NULL);
+	wndDefListViewProc = (WNDPROC)SetWindowLong(hListViewWnd, GWL_WNDPROC, (LONG_PTR)ListViewProc);
 	ShowScrollBar(hListViewWnd, SB_VERT, FALSE);
 	ListView_SetExtendedListViewStyle(hListViewWnd, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_UNDERLINEHOT);
 	ListView_SetImageList(hListViewWnd, imageList, LVSIL_SMALL);
+	hInst = hInstance;
 
 	return hListViewWnd;
+}
+
+LRESULT CALLBACK	ListViewProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_NOTIFY:
+		if (lParam && ((LPNMHDR)lParam)->code == NM_CUSTOMDRAW)
+		{
+			LPNMLVCUSTOMDRAW lpNMCustomDraw = (LPNMLVCUSTOMDRAW) lParam;
+			switch (lpNMCustomDraw->nmcd.dwDrawStage)
+			{
+			//case CDDS_POSTERASE:
+			//	break;
+			//case CDDS_POSTPAINT:
+			//	break;
+			//case CDDS_PREERASE:
+			//	break;
+			case CDDS_PREPAINT:
+				// This event happens when the control has to be redrawn, 
+				// to redraw all the subitems, we need to return the following:
+				return (CDRF_NOTIFYPOSTPAINT | CDRF_NOTIFYITEMDRAW);
+				break;
+			//case CDDS_ITEM:
+			//	break;
+			//case CDDS_ITEMPOSTERASE:
+			//	break;
+			case CDDS_ITEMPOSTPAINT:
+				// This event happens after Windows is done repainting the control.
+				// If this is an item, go into the "IF"
+				if (lpNMCustomDraw->dwItemType == LVCDI_ITEM)
+				{
+					TCHAR str[1000];
+					RECT rc;
+
+					// Get current item's rect.
+					ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &rc, LVIR_BOUNDS);
+					rc.right = 320;
+					setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
+					// Get current item's text
+					ListView_GetItemText(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, 0, str, 1000);
+					// If item is being hovered on, draw a differet colored rect around it.
+					// Else draw it with blue-ish background
+					if (lpNMCustomDraw->nmcd.uItemState & CDIS_HOT)
+						setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
+					else
+						setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
+					// Print text to item's DC.
+					TextOut(lpNMCustomDraw->nmcd.hdc, rc.left, rc.top, str, _tcslen(str));
+				}
+				break;
+			//case CDDS_ITEMPREERASE:
+			//	break;
+			case CDDS_ITEMPOSTERASE:
+				if (lpNMCustomDraw->dwItemType == LVCDI_ITEM)
+				{
+					RECT rc;
+					ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &rc, LVIR_BOUNDS);
+					setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
+				}
+				return CDRF_DODEFAULT;
+				break;
+			case CDDS_ITEMPREPAINT:
+				// Make sure CDDS_ITEMPOSTPAINT occurs.
+				lpNMCustomDraw->rcText.left = 0; 
+				lpNMCustomDraw->rcText.top = 0; 
+				lpNMCustomDraw->rcText.right = 320; 
+				lpNMCustomDraw->rcText.bottom = 44; 
+				return (CDRF_NOTIFYPOSTPAINT);
+				break;
+			//case CDDS_SUBITEM | CDDS_ITEMPREPAINT:
+			//	//return (CDRF_NOTIFYPOSTPAINT);
+			//	break;
+			//case CDDS_SUBITEM | CDDS_ITEMPOSTPAINT:
+			//	break;
+			//default:
+			//	return CDRF_DODEFAULT;
+			//	break;
+			}
+		}
+		
+		break;
+	default:
+		break;
+	}
+
+	return CallWindowProc(wndDefListViewProc, hWnd, message, wParam, lParam);
 }

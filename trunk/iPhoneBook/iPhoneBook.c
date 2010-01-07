@@ -11,6 +11,19 @@
 #include <commctrl.h>
 
 #define MAX_LOADSTRING 100
+#define TIMER_ID 10000
+#define CLOCKTIMER_ID TIMER_ID + 1
+
+#define BUTTON_ID 20
+#define BUTTON_ID_CLOCK (BUTTON_ID + 1)
+#define BUTTON_ID_CONTACT (BUTTON_ID + 2)
+#define BUTTON_ID_INFO (BUTTON_ID + 3)
+#define BUTTON_ID_BIN (BUTTON_ID + 4)
+
+#define BUTTON_ID_MISC1 (BUTTON_ID + 5)
+#define BUTTON_ID_MISC2 (BUTTON_ID + 6)
+#define BUTTON_ID_MISC3 (BUTTON_ID + 7)
+#define BUTTON_ID_MISC4 (BUTTON_ID + 8)
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
@@ -21,7 +34,8 @@ TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK	BtnProc(HWND, UINT, WPARAM, LPARAM);
+VOID CALLBACK		ClockTimerProc(HWND, UINT, UINT_PTR, DWORD);
+LRESULT CALLBACK	ContainerProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 void createGUI(HWND hWnd, HINSTANCE hInstance);
@@ -29,13 +43,13 @@ void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId);
 
 HoverButton 
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton,
-		*hbMainActionBtn[4], *hbMiscActionBtn[5];
+		*hbMainActionBtn[4], *hbMiscActionBtn[4];
 
-HWND hwndContainerMain, hwndContainerMisc;
+HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts;
+HWND hwndSearchBox;
 
-HWND hLV, hList, hBtn;
-RECT btn1;
-WNDPROC defBtnProc;
+HWND hLV, hList;
+WNDPROC defContainerProc;
 static int inButton;
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
@@ -159,31 +173,21 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 //
 
-LRESULT CALLBACK BtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
-	case WM_MOUSEMOVE:
+	case WM_COMMAND:
 		{
-			// If we're not currently inside the button, redraw it as "Active"
-			if (!inButton)
-			{
-				DRAWITEMSTRUCT drawItem = {0};
-				inButton = 1;
-				drawItem.CtlType = ODT_BUTTON;
-				drawItem.CtlID = 0;
-				drawItem.itemID = 0;
-				drawItem.itemAction = ODA_FOCUS;
-				drawItem.hwndItem = hWnd;
-				// Get's parent's DC, don't forget to free resources later.
-				drawItem.hDC = GetDC(hWnd);
-				GetClientRect(hBtn, &drawItem.rcItem);
-				drawItem.itemState = ODS_HOTLIGHT;
-				// Sends a message to the button's parent window (the iPhoneBook program's
-				// window) and it processes it as defined in WndProc.
-				SendMessage(GetParent(hWnd), WM_DRAWITEM, 0, (LPARAM)(LPDRAWITEMSTRUCT)&drawItem);
-				// !!! VERY IMPORTANT !!! Free systems resources after use.
-				ReleaseDC(hBtn, drawItem.hDC);
+			int wmId    = LOWORD(wParam);
+			int wmEvent = HIWORD(wParam);
+			if (wmId == BUTTON_ID_CONTACT)
+			{				
+				ShowWindow(getHoverButtonHwnd(hbMainCenterPic), FALSE);
+				ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), FALSE);
+				ShowWindow(hwndContainerMainButtons, FALSE);
+				ShowWindow(hwndContainerMiscButtons, TRUE);
+				ShowWindow(hwndContainerContacts, TRUE);
 			}
 		}
 		break;
@@ -191,7 +195,7 @@ LRESULT CALLBACK BtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 
-	return CallWindowProc(defBtnProc, hWnd, message, wParam, lParam);
+	return CallWindowProc(defContainerProc, hWnd, message, wParam, lParam);
 }
 
 EditButton *editBtn;
@@ -205,110 +209,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
-	case WM_NOTIFY:
-	//	if (lParam && ((LPNMHDR)lParam)->code == LVN_BEGINSCROLL)
-	//	{
-	//		//LPNMLVSCROLL pnmLVScroll = (LPNMLVSCROLL) lParam;
-	//		//scrolling = 0;
-	///*		dx = pnmLVScroll->dx;
-	//		dy = pnmLVScroll->dy;*/
-	//	}
-	//	if (lParam && ((LPNMHDR)lParam)->code == LVN_ENDSCROLL)
-	//	{
-	//		LPNMLVSCROLL pnmLVScroll = (LPNMLVSCROLL) lParam;
-	//		if (!scrolling && (pnmLVScroll->dy / 2) != 0)
-	//		{
-	//			TCHAR str[250];
-	//			int scrlDelay;
-
-	//			scrolling = 1;
-	//			_stprintf_s(str, 250, TEXT("%d"), pnmLVScroll->dy);
-	//			SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) str); 
-	//			scrlDelay = min(150, 150 / abs(pnmLVScroll->dy/2));
-	//			for (i = 0; i < abs(pnmLVScroll->dy/2); i++)
-	//			{
-	//				Sleep(min(scrlDelay, 150));
-	//				ListView_Scroll(hLV, 0, pnmLVScroll->dy*19);
-	//				scrlDelay = (int)(scrlDelay * 1.25f);
-	//			}
-	//			scrolling = 0;
-	//		}
-	//	}
-		if (lParam && ((LPNMHDR)lParam)->code == NM_CUSTOMDRAW)
-		{
-			LPNMLVCUSTOMDRAW lpNMCustomDraw = (LPNMLVCUSTOMDRAW) lParam;
-			switch (lpNMCustomDraw->nmcd.dwDrawStage)
-			{
-			//case CDDS_POSTERASE:
-			//	break;
-			//case CDDS_POSTPAINT:
-			//	break;
-			//case CDDS_PREERASE:
-			//	break;
-			case CDDS_PREPAINT:
-				// This event happens when the control has to be redrawn, 
-				// to redraw all the subitems, we need to return the following:
-				return (CDRF_NOTIFYPOSTPAINT | CDRF_NOTIFYITEMDRAW);
-				break;
-			//case CDDS_ITEM:
-			//	break;
-			//case CDDS_ITEMPOSTERASE:
-			//	break;
-			case CDDS_ITEMPOSTPAINT:
-				// This event happens after Windows is done repainting the control.
-				// If this is an item, go into the "IF"
-				if (lpNMCustomDraw->dwItemType == LVCDI_ITEM)
-				{
-					TCHAR str[1000];
-					RECT rc;
-
-					// Get current item's rect.
-					ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &rc, LVIR_BOUNDS);
-					rc.right = 320;
-					setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
-					// Get current item's text
-					ListView_GetItemText(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, 0, str, 1000);
-					// If item is being hovered on, draw a differet colored rect around it.
-					// Else draw it with blue-ish background
-					if (lpNMCustomDraw->nmcd.uItemState & CDIS_HOT)
-						setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
-					else
-						setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
-					// Print text to item's DC.
-					TextOut(lpNMCustomDraw->nmcd.hdc, rc.left, rc.top, str, _tcslen(str));
-				}
-				break;
-			//case CDDS_ITEMPREERASE:
-			//	break;
-			case CDDS_ITEMPOSTERASE:
-				if (lpNMCustomDraw->dwItemType == LVCDI_ITEM)
-				{
-					RECT rc;
-					ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &rc, LVIR_BOUNDS);
-					setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
-				}
-				return CDRF_DODEFAULT;
-				break;
-			case CDDS_ITEMPREPAINT:
-				// Make sure CDDS_ITEMPOSTPAINT occurs.
-				lpNMCustomDraw->rcText.left = 0; 
-				lpNMCustomDraw->rcText.top = 0; 
-				lpNMCustomDraw->rcText.right = 320; 
-				lpNMCustomDraw->rcText.bottom = 44; 
-				return (CDRF_NOTIFYPOSTPAINT);
-				break;
-			//case CDDS_SUBITEM | CDDS_ITEMPREPAINT:
-			//	//return (CDRF_NOTIFYPOSTPAINT);
-			//	break;
-			//case CDDS_SUBITEM | CDDS_ITEMPOSTPAINT:
-			//	break;
-			//default:
-			//	return CDRF_DODEFAULT;
-			//	break;
-			}
-		}
-		
-		break;
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
@@ -354,6 +254,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			HoverButton *btn;
 
 			createGUI(hWnd, hInst);
+			SetTimer(hWnd, CLOCKTIMER_ID, 500, (TIMERPROC)ClockTimerProc);
 			btn = createHoverButton(hWnd, hInst, 505, 165, 178, 178, 1, IDB_ON, IDB_OFF, "Test text");
 			setHoverButtonTextColor(btn, 255);
 			
@@ -366,8 +267,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 
-			// Create an Custom-Drawn list view control - see ListView.cpp for details.
-			hLV = createListView(hWnd, hInst);
 			// Creates a list box - this keeps a list of scroll-sizes
 			hList = CreateWindowEx(0, TEXT("listbox"), NULL,WS_VSCROLL |  WS_CHILD | WS_VISIBLE | LBS_HASSTRINGS | LBS_DISABLENOSCROLL , 500+460, 0, 200, 550, hWnd, NULL, hInst, NULL);
 			initListViewColumns(hLV);
@@ -379,10 +278,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, i, 0, lpBuffer, 1000, NULL);
 				_stprintf_s(num, 10, TEXT("%03d"), i);
 				// Adds an item into the list view - see ListView.cpp for details.
-				addListViewItem(hLV, lpBuffer, num);
+				addListViewItem(hLV, lpBuffer);
 			}
-			addListViewItem(hLV, TEXT("הצילו, המוח שלי נפטר!!"), TEXT("G"));
-			addListViewItem(hLV, TEXT("A"), TEXT("G"));
+			addListViewItem(hLV, TEXT("הצילו, המוח שלי נפטר!!"));
+			addListViewItem(hLV, TEXT("A"));
 
 			//// Define button size - not needed anymore...
 			//btn1.left = 5; btn1.right = btn1.left + 178; btn1.top = 155; btn1.bottom = btn1.top + 177;
@@ -390,13 +289,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			//hBtn = CreateWindowEx(0, TEXT("button"), TEXT("Test Button"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_OWNERDRAW | BS_NOTIFY, 
 			//	btn1.left, btn1.top, btn1.right - btn1.left, btn1.bottom - btn1.top, hWnd, NULL, hInst, NULL);
 			//// Keep a reference to the original Window Procedure of the button control.
-			//defBtnProc = (WNDPROC)GetWindowLong(hBtn, GWL_WNDPROC);
+			//defContainerProc = (WNDPROC)GetWindowLong(hBtn, GWL_WNDPROC);
 			//// Set our own custom Window Procedure to handle the button events.
-			//SetWindowLong(hBtn, GWL_WNDPROC, (LONG_PTR)BtnProc);
+			//SetWindowLong(hBtn, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 
 			// Creates a standard windows type button
-			CreateWindowEx(0, TEXT("button"), TEXT("Test Button"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON| BS_NOTIFY, 
-				btn1.left, btn1.top + btn1.bottom - btn1.top + 10, btn1.right - btn1.left, btn1.bottom - btn1.top, hWnd, NULL, hInst, NULL);
 		}
 		break;
 	default:
@@ -445,10 +342,19 @@ void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId)
 	DeleteObject(hbmpImage);
 }
 
+VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dwTime)
+{
+	UNREFERENCED_PARAMETER(hWnd), UNREFERENCED_PARAMETER(message), UNREFERENCED_PARAMETER(idEvent), UNREFERENCED_PARAMETER(dwTime);
+	setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
+	setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
+	setHoverButtonText(hbMainUnderDateBg, TEXT("Testing"));
+}
+
 void createGUI(HWND hWnd, HINSTANCE hInstance)
 {
 	HoverButton *tempBtn;
 	int x, y, width, height;
+	HBITMAP hBmp;
 
 	hbTopBarSkype = createHoverButton(hWnd, hInstance, 67, 136, 320, 20, 0, IDB_TOP_BAR_SKYPE_OFF, IDB_TOP_BAR_SKYPE_OFF, NULL);
 	lockHoverButtonImage(hbTopBarSkype, TRUE);
@@ -458,38 +364,51 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
 	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, 0, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
 	setHoverButtonAsPushButton(hbExitButton, TRUE);
-	hwndContainerMain = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD/* | WS_VISIBLE*/, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
+	hwndContainerMainButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
+	defContainerProc = (WNDPROC)SetWindowLong(hwndContainerMainButtons, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 
-	tempBtn = createHoverButton(hwndContainerMain, hInstance, 0, 0, 10, 92, 0, IDB_MAIN_WND_LOW_BAR_LEFT, IDB_MAIN_WND_LOW_BAR_LEFT, NULL);
+	tempBtn = createHoverButton(hwndContainerMainButtons, hInstance, 0, 0, 10, 92, 0, IDB_MAIN_WND_LOW_BAR_LEFT, IDB_MAIN_WND_LOW_BAR_LEFT, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
-	tempBtn = createHoverButton(hwndContainerMain, hInstance, 311, 0, 9, 92, 0, IDB_MAIN_WND_LOW_BAR_RIGHT, IDB_MAIN_WND_LOW_BAR_RIGHT, NULL);
+	tempBtn = createHoverButton(hwndContainerMainButtons, hInstance, 311, 0, 9, 92, 0, IDB_MAIN_WND_LOW_BAR_RIGHT, IDB_MAIN_WND_LOW_BAR_RIGHT, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
 	x = 10;
 	y = 0;
 	width = 75;
 	height = 92;
 
-	hbMainActionBtn[0] = createHoverButton(hwndContainerMain, hInstance, x, y, width, height, 0, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, NULL);
+	hbMainActionBtn[0] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_CLOCK, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, NULL);
 	x += width;
-	hbMainActionBtn[1] = createHoverButton(hwndContainerMain, hInstance, x, y, width, height, 0, IDB_MAIN_WND_CONTACT_ON, IDB_MAIN_WND_CONTACT_OFF, NULL);
+	hbMainActionBtn[1] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_CONTACT, IDB_MAIN_WND_CONTACT_ON, IDB_MAIN_WND_CONTACT_OFF, NULL);
 	x += width;
-	hbMainActionBtn[2] = createHoverButton(hwndContainerMain, hInstance, x, y, width+1, height, 0, IDB_MAIN_WND_INFO_ON, IDB_MAIN_WND_INFO_OFF, NULL);
+	hbMainActionBtn[2] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width+1, height, BUTTON_ID_INFO, IDB_MAIN_WND_INFO_ON, IDB_MAIN_WND_INFO_OFF, NULL);
 	x += width+1;
-	hbMainActionBtn[3] = createHoverButton(hwndContainerMain, hInstance, x, y, width, height, 0, IDB_MAIN_WND_BIN_EMPTY_ON, IDB_MAIN_WND_BIN_EMPTY_OFF, NULL);
-
-	tempBtn = createHoverButton(hWnd, hInstance, 67, 550, 320, 66, 0, IDB_CONTACT_WND_BUTTON_BG, IDB_CONTACT_WND_BUTTON_BG, NULL);
-	lockHoverButtonImage(tempBtn, TRUE);
-	hwndContainerMisc = tempBtn->hButton;
+	hbMainActionBtn[3] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_BIN, IDB_MAIN_WND_BIN_EMPTY_ON, IDB_MAIN_WND_BIN_EMPTY_OFF, NULL);
+	
+	hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_CONTACT_WND_BUTTON_BG));
+	hwndContainerMiscButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD/* | WS_VISIBLE*/ | SS_BITMAP, 67, 550, 320, 66, hWnd, NULL, hInstance, NULL);
+	SendMessage(hwndContainerMiscButtons, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
+	SetWindowLong(hwndContainerMiscButtons, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 	x = 5;
 	y = 0;
 	width = 70;
 	height = 66;
 
-	hbMainActionBtn[0] = createHoverButton(hwndContainerMisc, hInstance, x, y, width, height, 0, IDB_CONTACT_WND_BUTTON_CALL_ON, IDB_CONTACT_WND_BUTTON_CALL_OFF, NULL);
+	hbMiscActionBtn[0] = createHoverButton(hwndContainerMiscButtons, hInstance, x, y, width, height, BUTTON_ID_MISC1, IDB_CONTACT_WND_BUTTON_CALL_ON, IDB_CONTACT_WND_BUTTON_CALL_OFF, NULL);
 	x += width+10;
-	hbMainActionBtn[1] = createHoverButton(hwndContainerMisc, hInstance, x, y, width, height, 0, IDB_CONTACT_WND_BUTTON_INFO_ON, IDB_CONTACT_WND_BUTTON_INFO_OFF, NULL);
+	hbMiscActionBtn[1] = createHoverButton(hwndContainerMiscButtons, hInstance, x, y, width, height, BUTTON_ID_MISC2, IDB_CONTACT_WND_BUTTON_INFO_ON, IDB_CONTACT_WND_BUTTON_INFO_OFF, NULL);
 	x += width+10;
-	hbMainActionBtn[2] = createHoverButton(hwndContainerMisc, hInstance, x, y, width, height, 0, IDB_CONTACT_WND_BUTTON_EDIT_ON, IDB_CONTACT_WND_BUTTON_EDIT_OFF, NULL);
+	hbMiscActionBtn[2] = createHoverButton(hwndContainerMiscButtons, hInstance, x, y, width, height, BUTTON_ID_MISC3, IDB_CONTACT_WND_BUTTON_EDIT_ON, IDB_CONTACT_WND_BUTTON_EDIT_OFF, NULL);
 	x += width+10;
-	hbMainActionBtn[3] = createHoverButton(hwndContainerMisc, hInstance, x, y, width, height, 0, IDB_CONTACT_WND_BUTTON_DEL_ON, IDB_CONTACT_WND_BUTTON_DEL_OFF, NULL);
+	hbMiscActionBtn[3] = createHoverButton(hwndContainerMiscButtons, hInstance, x, y, width, height, BUTTON_ID_MISC4, IDB_CONTACT_WND_BUTTON_DEL_ON, IDB_CONTACT_WND_BUTTON_DEL_OFF, NULL);
+
+	hwndContainerContacts = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD/* | WS_VISIBLE*/, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
+	SetWindowLong(hwndContainerMainButtons, GWL_WNDPROC, (LONG_PTR)ContainerProc);
+	// Create an Custom-Drawn list view control - see ListView.cpp for details.
+	hLV = createListView(hwndContainerContacts, hInst, 0, 88, 320, 306);
+	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 0, 320, 44, 0, IDB_CONTACT_WND_APP_NAME, IDB_CONTACT_WND_APP_NAME, NULL);
+	lockHoverButtonImage(tempBtn, TRUE);
+	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 44, 320, 44, 0, IDB_CONTACT_WND_SEARCH, IDB_CONTACT_WND_SEARCH, NULL);
+	lockHoverButtonImage(tempBtn, TRUE);
+	EnableWindow(tempBtn->hButton, FALSE);
+	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 30, 55, 270, 25, hwndContainerContacts, NULL, hInstance, NULL);
 }
