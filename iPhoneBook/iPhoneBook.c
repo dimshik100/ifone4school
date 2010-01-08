@@ -191,6 +191,13 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			}
 		}
 		break;
+	case WM_NOTIFY:
+		{
+			LRESULT ret = ListViewProc(hWnd, wParam, lParam);
+			if (ret)
+				return ret;
+		}
+		break;
 	default:
 		break;
 	}
@@ -402,7 +409,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hbMiscActionBtn[3] = createHoverButton(hwndContainerMiscButtons, hInstance, x, y, width, height, BUTTON_ID_MISC4, IDB_CONTACT_WND_BUTTON_DEL_ON, IDB_CONTACT_WND_BUTTON_DEL_OFF, NULL);
 
 	hwndContainerContacts = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD/* | WS_VISIBLE*/, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
-	SetWindowLong(hwndContainerMainButtons, GWL_WNDPROC, (LONG_PTR)ContainerProc);
+	SetWindowLong(hwndContainerContacts, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 	// Create an Custom-Drawn list view control - see ListView.cpp for details.
 	hLV = createListView(hwndContainerContacts, hInst, 0, 88, 320, 306);
 	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 0, 320, 44, 0, IDB_CONTACT_WND_APP_NAME, IDB_CONTACT_WND_APP_NAME, NULL);
@@ -410,5 +417,5 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 44, 320, 44, 0, IDB_CONTACT_WND_SEARCH, IDB_CONTACT_WND_SEARCH, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
 	EnableWindow(tempBtn->hButton, FALSE);
-	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 30, 55, 270, 25, hwndContainerContacts, NULL, hInstance, NULL);
+	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 35, 56, 265, 23, hwndContainerContacts, NULL, hInstance, NULL);
 }

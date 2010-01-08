@@ -1,8 +1,10 @@
 #include "stdafx.h"
 #include "SkypeAPI.h"
+#include "DynamicListC.h"
 #include <stdio.h>
 
 #define CLASS_WND_NAME TEXT("iFoneBookSkypeApiWindow")
+#define CALL_OBJECT_MUTEX TEXT("SkypeCallObjectMutex")
 UINT msgIdApiAttach = 0; //RegisterWindowMessage(TEXT("SkypeControlAPIAttach"));
 UINT msgIdApiDiscover = 0; //RegisterWindowMessage(TEXT("SkypeControlAPIDiscover"));
 HWND skypeApiWindowHandle = NULL, hiddenWindowHandle = NULL;
@@ -12,7 +14,10 @@ LPTSTR getStringFromMessage(PCOPYDATASTRUCT copyData);
 ATOM registerSkypeApiWindowClass(HINSTANCE hInstance);
 //HWND createHiddenWindow(HINSTANCE hInstance);
 LRESULT CALLBACK	SkypeApiWndProc(HWND, UINT, WPARAM, LPARAM);
+DWORD WINAPI SkypeCallGetterThreadProc(__in  LPVOID lpParameter);
 
+DynamicListC callObjectList;
+HANDLE hMutex;
 
 BOOL registerSkypeApi(HINSTANCE hInstance)
 {
@@ -29,6 +34,9 @@ LRESULT connectSkype(HINSTANCE hInstance)
 	if (!msgIdApiAttach || !msgIdApiDiscover || !hiddenWindowHandle)
 		if (!registerSkypeApi(hInstance))
 			return FALSE;
+	listInit(&callObjectList);
+	hMutex = CreateMutex(NULL, FALSE, CALL_OBJECT_MUTEX);
+	ReleaseMutex(hMutex);
 	return SendMessage(HWND_BROADCAST, msgIdApiDiscover, (WPARAM)hiddenWindowHandle, 0);
 }
 
@@ -98,6 +106,8 @@ BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObje
 			LPTSTR token, next_token;
 
 			token = _tcstok_s(string, seps, &next_token);
+			if (token && token[0] == TEXT('#'))
+				token = _tcstok_s(NULL, seps, &next_token);
 			if (!_tcscmp(token, TEXT("CALL")))
 			{
 				SkypeCallObject *callObject = (SkypeCallObject*)calloc(1, sizeof(SkypeCallObject));
@@ -234,12 +244,12 @@ ATOM registerSkypeApiWindowClass(HINSTANCE hInstance)
 //
 //}
 
-SkypeObject *mainSkypeObject = NULL;
+SkypeCallObject *mainSkypeCallObject = NULL;
 LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (message == WM_COPYDATA)
 	{
-		static int objectGetting = 0, counter = 0;
+		static int objectGetting = 0;
 		SkypeObject *skypeObject;
 		if (translateSkypeMessage(wParam, lParam, &skypeObject))
 		{			
@@ -250,51 +260,37 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 				case OBJECT_CALL:
 					{
 						SkypeCallObject *callObject = (SkypeCallObject*)skypeObject;
-						counter++;
-						if (!mainSkypeObject)
+						if (!mainSkypeCallObject)
 						{
-							COPYDATASTRUCT copyData = {0};
-							char str[256];
-
-							objectGetting = 1;
-							mainSkypeObject = (SkypeObject*)calloc(1, sizeof(SkypeCallObject));
-							*(SkypeCallObject*)mainSkypeObject = *(SkypeCallObject*)skypeObject;
-							SendMessage(hWnd, message, wParam, lParam);
-					
-							copyData.dwData = 0;
-							copyData.lpData = str;
-							copyData.cbData = strlen(str)+1;
-							sprintf_s(str, 256, "GET CALL %d DURATION", ((SkypeCallObject*)skypeObject)->callId);		
-							SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
-							sprintf_s(str, 256, "GET CALL %d STATUS", ((SkypeCallObject*)skypeObject)->callId);		
-							SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
-							sprintf_s(str, 256, "GET CALL %d TYPE", ((SkypeCallObject*)skypeObject)->callId);		
-							SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
-							objectGetting = 0;
+							CloseHandle(CreateThread(NULL, 0, SkypeCallGetterThreadProc, callObject, 0, NULL));
 						}
 						else
 						{
-							((SkypeCallObject*)mainSkypeObject)->callId = ((SkypeCallObject*)skypeObject)->callId;
-							((SkypeCallObject*)mainSkypeObject)->property = callObject->property;
-							switch(callObject->property)
+							if (!WaitForSingleObject(hMutex, 100))
 							{
-							case CALLPROPERTY_TYPE:
-								((SkypeCallObject*)mainSkypeObject)->type = callObject->type;
-								break;
-							case CALLPROPERTY_DURATION:
-								((SkypeCallObject*)mainSkypeObject)->duration = callObject->duration;
-								break;
-							case CALLPROPERTY_STATUS:
-								((SkypeCallObject*)mainSkypeObject)->status = callObject->status;
-								break;
+								mainSkypeCallObject->callId = callObject->callId;
+								switch(callObject->property)
+								{
+								case CALLPROPERTY_TYPE:
+									mainSkypeCallObject->type = callObject->type;
+									break;
+								case CALLPROPERTY_DURATION:
+									mainSkypeCallObject->duration = callObject->duration;
+									break;
+								case CALLPROPERTY_STATUS:
+									mainSkypeCallObject->status = callObject->status;
+									break;
+								}
+								ReleaseMutex(hMutex);
 							}
+							ReleaseMutex(hMutex);
+							free(skypeObject);
 						}
-						if (!objectGetting)
-							skypeCallbackFunction(mainSkypeObject, counter);
+						//if (!objectGetting)
+						//	skypeCallbackFunction(mainSkypeCallObject, counter);
 					}
 					break;
 				}
-				free(skypeObject);
 			}
 			return TRUE;
 		}
@@ -306,23 +302,81 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 }
 
 void call()
-			{
-				COPYDATASTRUCT copyData = {0};
-				LRESULT l;
-				copyData.dwData = 0;
-				copyData.lpData = "CALL echo123";
-				copyData.cbData = strlen("CALL echo123") + 1;
-				l = SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
-				l = l;
-			}
+{
+	COPYDATASTRUCT copyData = {0};
+	LRESULT l;
+	copyData.dwData = 0;
+	copyData.lpData = "CALL echo123";
+	copyData.cbData = strlen("CALL echo123") + 1;
+	l = SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
+	l = l;
+}
 
 void hangup()
 {
 	char str[256];
 	COPYDATASTRUCT copyData = {0};
-	sprintf_s(str, 256, "SET CALL %d STATUS FINISHED", ((SkypeCallObject*)mainSkypeObject)->callId);
+	sprintf_s(str, 256, "SET CALL %d STATUS FINISHED", ((SkypeCallObject*)mainSkypeCallObject)->callId);
 	copyData.dwData = 0;
 	copyData.lpData = str;
 	copyData.cbData = strlen(str) + 1;
 	SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
+}
+
+DWORD WINAPI SkypeCallGetterThreadProc(__in  LPVOID lpParameter)
+{
+	COPYDATASTRUCT copyData = {0};
+	int timerCnt = 0;
+	static int command_id = 1;
+	char str[256];
+	DWORD dw;
+
+	SkypeCallObject *callObject = (SkypeCallObject*)lpParameter;
+	dw = WaitForSingleObject(hMutex, 100);
+	if (!dw)
+	{
+		mainSkypeCallObject = (SkypeCallObject*)calloc(1, sizeof(SkypeCallObject));
+		mainSkypeCallObject->object = OBJECT_CALL;
+		mainSkypeCallObject->property = callObject->property;
+		ReleaseMutex(hMutex);
+		copyData.dwData = 0;
+		copyData.lpData = str;
+		copyData.cbData = strlen(str)+1;
+		sprintf_s(str, 256, "#%d GET CALL %d TYPE", command_id, callObject->callId);		
+		SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
+		command_id++;
+		sprintf_s(str, 256, "#%d GET CALL %d DURATION", command_id, callObject->callId);		
+		SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
+		command_id++;
+		sprintf_s(str, 256, "#%d GET CALL %d STATUS", command_id, callObject->callId);		
+		SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
+		command_id++;
+		free(callObject);
+
+		while (TRUE)
+		{
+			if (!WaitForSingleObject(hMutex, 100))
+			{
+				if (mainSkypeCallObject && (mainSkypeCallObject->type != CALLTYPE_UNKNOWN && 
+					mainSkypeCallObject->status != CALLSTATUS_UNKNOWN)/* ||
+					timerCnt >= 3000*/)
+				{
+					ReleaseMutex(hMutex);
+					break;
+				}
+				ReleaseMutex(hMutex);
+			}
+			Sleep(50);
+			timerCnt += 50;
+		}
+	
+		if (!WaitForSingleObject(hMutex, 100))
+		{
+			skypeCallbackFunction((SkypeObject *)mainSkypeCallObject);
+			free(mainSkypeCallObject);
+			mainSkypeCallObject = NULL;
+			ReleaseMutex(hMutex);
+		}
+	}
+	return 0;
 }
