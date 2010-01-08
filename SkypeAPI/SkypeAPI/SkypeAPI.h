@@ -53,6 +53,7 @@ typedef struct _SkypeCallObject
 	SkypeApiCallProperty	property;
 	SkypeApiCallType		type;
 	SkypeApiCallStatus		status;
+	LPTSTR					partnerHandle;
 	int						callId;
 	int						duration;
 }SkypeCallObject;
