@@ -188,6 +188,12 @@ BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObje
 					else if (!_tcscmp(token, TEXT("OUTGOING_P2P")))
 						callObject->type = CALLTYPE_OUTGOING_P2P;
 				}
+				else if (!_tcscmp(token, TEXT("PARTNER_HANDLE")))
+				{
+					callObject->property = CALLPROPERTY_PARTNER_HANDLE;
+					token = _tcstok_s(NULL, seps, &next_token);
+					//callObject->partnerHandle = _tcsdup(token);
+				}
 
 				*skypeObject = (SkypeObject*)callObject;
 			}
@@ -204,7 +210,7 @@ LPTSTR getStringFromMessage(PCOPYDATASTRUCT copyData)
 {
 	LPTSTR string;
 
-	string = (LPTSTR)malloc((sizeof(TCHAR)*copyData->cbData) + 1);
+	string = (LPTSTR)malloc((sizeof(TCHAR)*(copyData->cbData + 1)));
 // Depending on project settings, copy (or convert if in Unicode) the command string to the temporary string.
 #ifdef _UNICODE
 	MultiByteToWideChar(CP_ACP, 0, (LPCSTR)copyData->lpData, (int)copyData->cbData, string, (int)copyData->cbData);
@@ -214,6 +220,22 @@ LPTSTR getStringFromMessage(PCOPYDATASTRUCT copyData)
 	
 	return string;
 }
+
+//LPTSTR getStringFromNameHandle(char *origName)
+//{
+//	LPTSTR string;
+//	int strLen = (int)strlen(origName);
+//
+//	string = (LPTSTR)malloc((sizeof(TCHAR)*(strLen + 1));
+//// Depending on project settings, copy (or convert if in Unicode) the command string to the temporary string.
+//#ifdef _UNICODE
+//	MultiByteToWideChar(CP_ACP, 0, (LPCSTR)copyData->lpData, strLen, string, (int)copyData->cbData);
+//#else
+//	_tcscpy_s(string, strlen(origName), origName);
+//#endif
+//	
+//	return string;
+//}
 
 ATOM registerSkypeApiWindowClass(HINSTANCE hInstance)
 {
@@ -280,6 +302,14 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 								case CALLPROPERTY_STATUS:
 									mainSkypeCallObject->status = callObject->status;
 									break;
+								//case CALLPROPERTY_PARTNER_HANDLE:
+								//	__try{
+								//	//mainSkypeCallObject->partnerHandle = _tcsdup(callObject->partnerHandle);
+								//	}
+								//	__except(1)
+								//	{
+								//	}
+								//	break;
 								}
 								ReleaseMutex(hMutex);
 							}
@@ -351,6 +381,9 @@ DWORD WINAPI SkypeCallGetterThreadProc(__in  LPVOID lpParameter)
 		sprintf_s(str, 256, "#%d GET CALL %d STATUS", command_id, callObject->callId);		
 		SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
 		command_id++;
+		sprintf_s(str, 256, "#%d GET CALL %d PARTNER_HANDLE", command_id, callObject->callId);		
+		SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
+		command_id++;
 		free(callObject);
 
 		while (TRUE)
@@ -358,8 +391,8 @@ DWORD WINAPI SkypeCallGetterThreadProc(__in  LPVOID lpParameter)
 			if (!WaitForSingleObject(hMutex, 100))
 			{
 				if (mainSkypeCallObject && (mainSkypeCallObject->type != CALLTYPE_UNKNOWN && 
-					mainSkypeCallObject->status != CALLSTATUS_UNKNOWN)/* ||
-					timerCnt >= 3000*/)
+					mainSkypeCallObject->status != CALLSTATUS_UNKNOWN) ||
+					timerCnt >= 3000)
 				{
 					ReleaseMutex(hMutex);
 					break;
@@ -373,6 +406,11 @@ DWORD WINAPI SkypeCallGetterThreadProc(__in  LPVOID lpParameter)
 		if (!WaitForSingleObject(hMutex, 100))
 		{
 			skypeCallbackFunction((SkypeObject *)mainSkypeCallObject);
+			if (mainSkypeCallObject->partnerHandle)
+			{
+				free(mainSkypeCallObject->partnerHandle);
+				mainSkypeCallObject->partnerHandle = NULL;
+			}
 			free(mainSkypeCallObject);
 			mainSkypeCallObject = NULL;
 			ReleaseMutex(hMutex);

@@ -319,15 +319,17 @@ void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject)
 				switch (callObject->property)
 				{
 				case CALLPROPERTY_DURATION:
-					_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, duration: %02dh:%02dm:%02ds"), callObject->callId, callObject->duration / 3600, (callObject->duration % 3600) / 60, (callObject->duration % 60));
+					strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, duration: %02dh:%02dm:%02ds"), callObject->callId, callObject->duration / 3600, (callObject->duration % 3600) / 60, (callObject->duration % 60));
 					break;
 				case CALLPROPERTY_STATUS:
-					_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, status: %d"), callObject->callId, callObject->status);
+					strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, status: %d"), callObject->callId, callObject->status);
 					break;
 				default:
-					_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, property: %d"), callObject->callId, callObject->property);
+					strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, property: %d"), callObject->callId, callObject->property);
 					break;
 				}
+				if (callObject->partnerHandle)
+					strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT(" partner: %s"), callObject->partnerHandle);
 				SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
 			}
 			break;
