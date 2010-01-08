@@ -206,27 +206,47 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	case WM_PAINT:
 		{
 			HFONT hFontOld;
+			HBITMAP hbmpOld, hbmpImage;
+			HDC hDCMem;
+			RECT rect;
+
 
 			hdc = BeginPaint(hWnd, &ps);
 
+			// Gets the dimensions of the button
+			GetClientRect(hWnd, &rect);
+			// Create a DC in memory, compatible with the button's original DC.
+			hDCMem = CreateCompatibleDC(hdc);
+			// Load the selected image from the resource file.
+			hbmpImage = CreateCompatibleBitmap(hdc, rect.right, rect.bottom);
+			// Select the image into the DC. Keep a reference to the old bitmap.
+			hbmpOld = (HBITMAP)SelectObject(hDCMem, hbmpImage);
+
 			hoverButton = findButton(0, hWnd);
 			if (hoverButton->isHovering)
-				setHoverButtonImage(hoverButton, hdc, hoverButton->onImage);
+				setHoverButtonImage(hoverButton, hDCMem, hoverButton->onImage);
 			else
-				setHoverButtonImage(hoverButton, hdc, hoverButton->offImage);
+				setHoverButtonImage(hoverButton, hDCMem, hoverButton->offImage);
 			if (hoverButton->caption)
 			{
 				TEXTMETRIC tm;
-				SetBkMode(hdc, TRANSPARENT);
-				SetTextColor(hdc, hoverButton->color);
-				SetTextAlign(hdc, TA_CENTER);
-				hFontOld = (HFONT)SelectObject(hdc, hoverButton->hFont);
-				GetTextMetrics(hdc, &tm);
-				TextOut(hdc, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
+				SetBkMode(hDCMem, TRANSPARENT);
+				SetTextColor(hDCMem, hoverButton->color);
+				SetTextAlign(hDCMem, TA_CENTER);
+				hFontOld = (HFONT)SelectObject(hDCMem, hoverButton->hFont);
+				GetTextMetrics(hDCMem, &tm);
+				TextOut(hDCMem, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
 					(hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - tm.tmHeight)/2,
 					hoverButton->caption, (int)_tcslen(hoverButton->caption));
-				SelectObject(hdc, hFontOld);
+				SelectObject(hDCMem, hFontOld);
 			}
+			// Copies the bitmap from the memory DC into the buttons DC 
+			BitBlt(hdc, 0, 0, rect.right, rect.bottom, hDCMem, 0, 0, SRCCOPY);
+			// Select the original memory DC's bitmap.
+			SelectObject(hDCMem, hbmpOld);
+			// Free resources.
+			DeleteDC(hDCMem);
+			DeleteObject(hbmpImage);
 
 			EndPaint(hWnd, &ps);
 

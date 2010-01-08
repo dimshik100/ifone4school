@@ -15,6 +15,8 @@
 #define CLOCKTIMER_ID TIMER_ID + 1
 
 #define BUTTON_ID 20
+#define BUTTON_ID_PWR (BUTTON_ID + 0)
+
 #define BUTTON_ID_CLOCK (BUTTON_ID + 1)
 #define BUTTON_ID_CONTACT (BUTTON_ID + 2)
 #define BUTTON_ID_INFO (BUTTON_ID + 3)
@@ -180,14 +182,18 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	case WM_COMMAND:
 		{
 			int wmId    = LOWORD(wParam);
-			int wmEvent = HIWORD(wParam);
-			if (wmId == BUTTON_ID_CONTACT)
-			{				
+			//int wmEvent = HIWORD(wParam);
+			switch(wmId)
+			{
+			case BUTTON_ID_CONTACT:
 				ShowWindow(getHoverButtonHwnd(hbMainCenterPic), FALSE);
 				ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), FALSE);
 				ShowWindow(hwndContainerMainButtons, FALSE);
 				ShowWindow(hwndContainerMiscButtons, TRUE);
 				ShowWindow(hwndContainerContacts, TRUE);
+				break;
+			default:
+				break;
 			}
 		}
 		break;
@@ -222,6 +228,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Parse the menu selections:
 		switch (getEditButtonControlId(wmId))
 		{
+		case BUTTON_ID_PWR:
+			ShowWindow(hwndContainerMiscButtons, FALSE);
+			ShowWindow(hwndContainerContacts, FALSE);
+			ShowWindow(getHoverButtonHwnd(hbMainCenterPic), TRUE);
+			ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), TRUE);
+			ShowWindow(hwndContainerMainButtons, TRUE);
+			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			break;
@@ -351,10 +364,24 @@ void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId)
 
 VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dwTime)
 {
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
+	TCHAR str[1000];
+	time_t ltime;
+	struct tm today;
 	UNREFERENCED_PARAMETER(hWnd), UNREFERENCED_PARAMETER(message), UNREFERENCED_PARAMETER(idEvent), UNREFERENCED_PARAMETER(dwTime);
-	setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
-	setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
-	setHoverButtonText(hbMainUnderDateBg, TEXT("Testing"));
+
+	time(&ltime);
+	if (localtime_s(&today, &ltime) == ERROR_SUCCESS)
+	{
+		setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
+		setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
+		//setHoverButtonText(hbMainUnderDateBg, TEXT("Testing"));
+		_tcsftime(str, 1000, TEXT("%H:%M"), &today);
+		setHoverButtonText(hbMainUnderDateBg,str);
+	}
 }
 
 void createGUI(HWND hWnd, HINSTANCE hInstance)
@@ -369,7 +396,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	lockHoverButtonImage(hbMainUnderDateBg, TRUE);
 	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 273, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
-	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, 0, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
+	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, BUTTON_ID_PWR, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
 	setHoverButtonAsPushButton(hbExitButton, TRUE);
 	hwndContainerMainButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
 	defContainerProc = (WNDPROC)SetWindowLong(hwndContainerMainButtons, GWL_WNDPROC, (LONG_PTR)ContainerProc);

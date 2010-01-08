@@ -4,6 +4,7 @@
 #pragma comment (lib, "comctl32.lib")
 
 #include "stdafx.h"
+#include <time.h>
 #include "SkypeAPIGUI.h"
 #include "SkypeAPI.h"
 #include <commctrl.h>
