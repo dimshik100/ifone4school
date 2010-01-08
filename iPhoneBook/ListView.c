@@ -118,6 +118,7 @@ HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int widt
 
 LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
+	UNREFERENCED_PARAMETER(hWnd), UNREFERENCED_PARAMETER(wParam);
 	if (lParam && ((LPNMHDR)lParam)->hwndFrom == hwndListView && ((LPNMHDR)lParam)->code == NM_CUSTOMDRAW)
 	{
 		LPNMLVCUSTOMDRAW lpNMCustomDraw = (LPNMLVCUSTOMDRAW) lParam;

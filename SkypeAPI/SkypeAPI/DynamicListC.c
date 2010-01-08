@@ -14,7 +14,7 @@ void listInitListParams(DynamicListC pList, ListNode pNode);
 // Initialize the linked list
 bool listInit(DynamicListC *pList)
 {
-	*pList = calloc(1, sizeof(struct _DynamicListC));
+	*pList = (DynamicListC)calloc(1, sizeof(struct _DynamicListC));
 	return (pList != NULL);
 }
 
@@ -114,7 +114,7 @@ bool listGetValue(DynamicListC pList, ListNode pNode, ListType *value)
 bool listInsertAfter(DynamicListC pList, const ListType *value, ListNode pNode)
 {
 	ListNode pCur;
-	ListNode pNew = calloc(1, sizeof(*pNew));
+	ListNode pNew = (ListNode)calloc(1, sizeof(*pNew));
 
 	// Decide wether to use the provided node or the currently selected one.
 	pCur = (pNode) ? pNode : listSelectCurrent(pList);
@@ -146,7 +146,7 @@ bool listInsertAfter(DynamicListC pList, const ListType *value, ListNode pNode)
 bool listInsertBefore(DynamicListC pList, const ListType *value, ListNode pNode)
 {
 	ListNode pCur;
-	ListNode pNew = calloc(1, sizeof(*pNew));
+	ListNode pNew = (ListNode)calloc(1, sizeof(*pNew));
 
 	// Decide wether to use the provided node or the currently selected one.
 	pCur = (pNode) ? pNode : listSelectCurrent(pList);
