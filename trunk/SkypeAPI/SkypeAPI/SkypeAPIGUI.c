@@ -22,7 +22,7 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam);
-void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject, int counter);
+void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -300,7 +300,7 @@ BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam)
 	return ret;
 }
 
-void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject, int counter)
+void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject)
 {
 	if (skypeObject)
 	{
@@ -309,12 +309,24 @@ void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject, int counter)
 		case OBJECT_CALL:
 			{
 				TCHAR str[256] = {0};
+				int strPos = 0;
 				SkypeCallObject *callObject = (SkypeCallObject*)skypeObject;
 				if (callObject->type == CALLTYPE_INCOMING_P2P || callObject->type == CALLTYPE_INCOMING_PSTN)
-					_stprintf_s(str, 256, TEXT("Incoming call..."));
+					strPos = _stprintf_s(str, 256, TEXT("Incoming call... "));
 				else if (callObject->type == CALLTYPE_OUTGOING_P2P || callObject->type == CALLTYPE_OUTGOING_PSTN)
-					_stprintf_s(str, 256, TEXT("Outgoing call..."));
-				_stprintf_s(str, 256, TEXT("%s ID: %d, duration: %d #%d"), str, callObject->callId, callObject->duration, counter);
+					strPos = _stprintf_s(str, 256, TEXT("Outgoing call... "));
+				switch (callObject->property)
+				{
+				case CALLPROPERTY_DURATION:
+					_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, duration: %02dh:%02dm:%02ds"), callObject->callId, callObject->duration / 3600, (callObject->duration % 3600) / 60, (callObject->duration % 60));
+					break;
+				case CALLPROPERTY_STATUS:
+					_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, status: %d"), callObject->callId, callObject->status);
+					break;
+				default:
+					_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, property: %d"), callObject->callId, callObject->property);
+					break;
+				}
 				SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
 			}
 			break;
