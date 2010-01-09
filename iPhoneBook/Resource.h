@@ -65,7 +65,10 @@
 #define IDB_CONTACT_DTL_WWW_ON			252
 #define IDB_CONTACT_DTL_SKYPE_OFF		253
 #define IDB_CONTACT_DTL_SKYPE_ON		254
-
+#define IDB_CONTACT_INFO_WND_APP_NAME	255
+#define IDB_CONTACT_INFO_ALL_CONTACTS	256
+#define IDB_CONTACT_INFO_EDIT_CONTACT	257
+	
 
 #endif
 // Next default values for new objects

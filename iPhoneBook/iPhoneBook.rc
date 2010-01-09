@@ -193,6 +193,9 @@ IDB_EDIT_BTN_OK_BTN_OFF			BITMAP					"imgs\\okButton_off.bmp"
 IDB_EDIT_BTN_OK_BTN_ON			BITMAP					"imgs\\okButton_on.bmp"
 
 //////////////////////////CONTACT DETAILS WINDOW//////////////////////////////////
+IDB_CONTACT_INFO_WND_APP_NAME	BITMAP					"imgs\\contact_info_wnd_app_name_bg.bmp"
+IDB_CONTACT_INFO_ALL_CONTACTS	BITMAP					"imgs\\all_contacts_button.bmp"
+IDB_CONTACT_INFO_EDIT_CONTACT	BITMAP					"imgs\\edit_contact_button.bmp"
 
 IDB_CONTACT_DTL_EMAIL_OFF		BITMAP					"imgs\\email_off.bmp"
 IDB_CONTACT_DTL_EMAIL_ON		BITMAP					"imgs\\email_on.bmp"
