@@ -26,10 +26,10 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 
 	newEditButton->hInstance = hInstance;
 	newEditButton->mainButton = createHoverButton(hWndParent, hInstance, x, y, width, height, controlId, onImage, offImage, caption);
-	newEditButton->okButton = createHoverButton(newEditButton->mainButton->hButton, hInstance, width - 25, 5, 20, 20,
-		controlId + CID_OK_OFFSET, IDB_CONTACT_WND_BUTTON_CALL_ON, IDB_CONTACT_WND_BUTTON_CALL_OFF, NULL);
-	newEditButton->cancelButton = createHoverButton(newEditButton->mainButton->hButton, hInstance, width - 25, height - 25, 20, 20,
-		controlId + CID_CANCEL_OFFSET, IDB_CONTACT_WND_BUTTON_INFO_ON, IDB_CONTACT_WND_BUTTON_INFO_OFF, NULL);
+	newEditButton->okButton = createHoverButton(newEditButton->mainButton->hButton, hInstance, width - 25, 5, 19, 17,
+		controlId + CID_OK_OFFSET, IDB_EDIT_BTN_OK_BTN_ON, IDB_EDIT_BTN_OK_BTN_OFF, NULL);
+	newEditButton->cancelButton = createHoverButton(newEditButton->mainButton->hButton, hInstance, width - 25, 22, 19, 17,
+		controlId + CID_CANCEL_OFFSET, IDB_EDIT_BTN_CANCEL_BTN_ON, IDB_EDIT_BTN_CANCEL_BTN_OFF, NULL);
 	newEditButton->hEdit = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 5, 5, width - 35, height - 10,
 		newEditButton->mainButton->hButton, (HMENU)(controlId + CID_TEXT_OFFSET), hInstance, NULL);
 	showEditButtonEdit(newEditButton, FALSE);
