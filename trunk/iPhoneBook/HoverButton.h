@@ -1,5 +1,8 @@
 #pragma once
 
+#define HOVER_BUTTON_DOWN	1
+#define HOVER_BUTTON_UP		2
+
 typedef struct _HoverButton
 {
 	HWND hButton;
@@ -23,6 +26,7 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption);
 void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage);
 void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize);
+HFONT getHoverButtonFont(HoverButton *hoverButton);
 void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color);
 void lockHoverButtonImage(HoverButton *hoverButton, int enable);
 void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable);

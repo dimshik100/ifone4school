@@ -145,21 +145,26 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 			if (lpNMCustomDraw->dwItemType == LVCDI_ITEM)
 			{
 				TCHAR str[1000];
-				RECT rc;
+				TEXTMETRIC tm;
+				int textTop;
 
 				// Get current item's rect.
-				ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &rc, LVIR_BOUNDS);
-				rc.right = 320;
+				ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &lpNMCustomDraw->nmcd.rc, LVIR_BOUNDS);
+				lpNMCustomDraw->nmcd.uItemState = ListView_GetItemState(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, LVIS_SELECTED);
+				lpNMCustomDraw->nmcd.rc.right++;
 				// Get current item's text
 				ListView_GetItemText(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, 0, str, 1000);
 				// If item is being hovered on, draw a differet colored rect around it.
 				// Else draw it with blue-ish background
-				if (lpNMCustomDraw->nmcd.uItemState & CDIS_FOCUS)
+				if (lpNMCustomDraw->nmcd.uItemState & LVIS_SELECTED)
 					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
 				else
 					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
 				// Print text to item's DC.
-				TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left, lpNMCustomDraw->nmcd.rc.top, str, _tcslen(str));
+				GetTextMetrics(lpNMCustomDraw->nmcd.hdc, &tm);
+				textTop = lpNMCustomDraw->nmcd.rc.top + (lpNMCustomDraw->nmcd.rc.bottom - lpNMCustomDraw->nmcd.rc.top - tm.tmHeight) / 2;
+
+				TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + 5, textTop, str, _tcslen(str));
 			}
 			break;
 		//case CDDS_ITEMPREERASE:

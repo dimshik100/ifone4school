@@ -54,6 +54,12 @@ void setEditButtonStateImages(EditButton *editButton, int onImage, int offImage)
 void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize)
 {
 	setHoverButtonFont(editButton->mainButton, fontName, fontSize);
+	SendMessage(editButton->hEdit, WM_SETFONT, (WPARAM)getHoverButtonFont(editButton->mainButton), (LPARAM)TRUE);
+}
+
+HFONT getEditButtonFont(EditButton *editButton)
+{
+	return getHoverButtonFont(editButton->mainButton);
 }
 
 void setEditButtonTextColor(EditButton *editButton, COLORREF color)

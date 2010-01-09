@@ -3,13 +3,14 @@
 #include "resource.h"
 
 typedef enum _SkypeApiInitStatus {	ATTACH_SUCCESS = 0, ATTACH_PENDING = 1, ATTACH_REFUSED = 2,
-									ATTACH_NOT_AVAILABLE = 3, ATTACH_AVAILABLE = 0x8001 }
+									ATTACH_NOT_AVAILABLE = 3, ATTACH_AVAILABLE = 0x8001, ATTACH_ACTIVE = 0x9001, 
+									ATTACH_CONNECTION_LOST = 0x9002 }
 SkypeApiInitStatus;
 
 typedef enum _SkypeApiObjectTypes {	OBJECT_UNKNOWN = 0, 
 									OBJECT_USER, OBJECT_PROFILE, OBJECT_CALL, OBJECT_MESSAGE, OBJECT_CHAT,
 									OBJECT_CHAT_MEMBER, OBJECT_CHAT_MESSAGE, OBJECT_VOICEMAIL, OBJECT_SMS,
-									OBJECT_APPLICATION, OBJECT_GROUP, OBJECT_FILETRANSFER }
+									OBJECT_APPLICATION, OBJECT_GROUP, OBJECT_FILETRANSFER, OBJECT_PONG }
 SkypeApiObjectType;
 
 typedef enum _SkypeApiCallProperties {	CALLPROPERTY_UNKNOWN = 0,
@@ -44,30 +45,35 @@ SkypeApiCallStatus;
 
 typedef struct _SkypeObject
 {
-	SkypeApiObjectType object;
+	SkypeApiObjectType	object;
+	int					commandId;
 }SkypeObject;
 
 typedef struct _SkypeCallObject
 {
 	SkypeApiObjectType		object;
+	int						commandId;
 	SkypeApiCallProperty	property;
 	SkypeApiCallType		type;
 	SkypeApiCallStatus		status;
 	LPTSTR					partnerHandle;
+	LPTSTR					partnerDisplayName;
 	int						callId;
 	int						duration;
 }SkypeCallObject;
 
-typedef void (CALLBACK* SkypeCallbackFunction)(SkypeObject *skypeObject);
+typedef void (CALLBACK* SkypeCallStatusCallback)(SkypeCallObject *skypeCallObject);
+typedef void (CALLBACK* SkypeConnectionStatusCallback)(SkypeApiInitStatus skypeApiInitStatus);
 
 BOOL registerSkypeApi(HINSTANCE hInstance);
 LRESULT connectSkype(HINSTANCE hInstance);
 BOOL processAttachmentMessage(UINT message, WPARAM wParam, LPARAM lParam);
 BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObject);
-void disconnectSkype();
+void disconnectSkype(HINSTANCE hInstance);
 UINT getMsgIdApiAttach();
 UINT getMsgIdApiDiscover();
 HWND getSkypeApiWindowHandle();
-void setSkypeApiCallback(SkypeCallbackFunction skypeCallbackFunction);
-void call();
-void hangup();
+void setSkypeCallStatusCallback(SkypeCallStatusCallback skypeCallStatusCallback);
+void setSkypeConnectionStatusCallback(SkypeConnectionStatusCallback skypeConnectionStatusCallback);
+void call(LPTSTR name);
+void hangup(int callId);

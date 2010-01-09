@@ -12,7 +12,8 @@
 
 #define MAX_LOADSTRING 100
 #define TIMER_ID 10000
-#define CLOCKTIMER_ID TIMER_ID + 1
+#define CLOCK_TIMER_ID TIMER_ID + 1
+#define	PWRBTN_TIMER_ID TIMER_ID + 2
 
 #define BUTTON_ID 20
 #define BUTTON_ID_PWR (BUTTON_ID + 0)
@@ -229,11 +230,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (getEditButtonControlId(wmId))
 		{
 		case BUTTON_ID_PWR:
-			ShowWindow(hwndContainerMiscButtons, FALSE);
-			ShowWindow(hwndContainerContacts, FALSE);
-			ShowWindow(getHoverButtonHwnd(hbMainCenterPic), TRUE);
-			ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), TRUE);
-			ShowWindow(hwndContainerMainButtons, TRUE);
+			if (wmEvent == HOVER_BUTTON_UP)
+			{
+				ShowWindow(hwndContainerMiscButtons, FALSE);
+				ShowWindow(hwndContainerContacts, FALSE);
+				ShowWindow(getHoverButtonHwnd(hbMainCenterPic), TRUE);
+				ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), TRUE);
+				ShowWindow(hwndContainerMainButtons, TRUE);
+				KillTimer(hWnd, PWRBTN_TIMER_ID);
+			}
+			else if (wmEvent == HOVER_BUTTON_DOWN)
+				SetTimer(hWnd, PWRBTN_TIMER_ID, 3000, NULL);
 			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
@@ -253,13 +260,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		break;
+	case WM_TIMER:
+		if (wParam == PWRBTN_TIMER_ID)
+		{
+			DestroyWindow(hWnd);
+			return FALSE;
+		}
+		break;
 	case WM_PAINT:
 		{
-			RECT rect;
 			hdc = BeginPaint(hWnd, &ps);
-			// Gets the dimensions of the button
-			GetClientRect(hWnd, &rect);
-			setImageToDC(hInst, &rect, hdc, IDB_IFONE_BG);
+			setImageToDC(hInst, &ps.rcPaint, hdc, IDB_IFONE_BG);
 			// TODO: Add any drawing code here...
 			EndPaint(hWnd, &ps);
 		}
@@ -274,7 +285,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			HoverButton *btn;
 
 			createGUI(hWnd, hInst);
-			SetTimer(hWnd, CLOCKTIMER_ID, 500, (TIMERPROC)ClockTimerProc);
+			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);
 			btn = createHoverButton(hWnd, hInst, 505, 165, 178, 178, 1, IDB_ON, IDB_OFF, "Test text");
 			setHoverButtonTextColor(btn, 255);
 			
@@ -283,6 +294,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			setDefaultEditButtonProc(WndProc);
 			editBtn = createEditButton(hWnd, hInst, 505, 165+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, "Test text");
+			setEditButtonFont(editBtn, TEXT("Arial"), 16);
 
 
 
@@ -364,10 +376,6 @@ void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId)
 
 VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dwTime)
 {
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-
 	TCHAR str[1000];
 	time_t ltime;
 	struct tm today;
