@@ -1,0 +1,13 @@
+Updates:
+- Finally make skype api app work fully.
+
+Changes:
+- Make power button exit app when pressed for 3 seconds.
+- Return to main window when power button is pressed once.
+- Setting edit button font also changes the text box font.
+- List view text is now centered.
+- Selected items are now drawn with selected background.
+
+Additions:
+- getHoverButtonFont function returns the currently applied font to the hover button.
+- getEditButtonFont function returns the currently applied font to the edit button.

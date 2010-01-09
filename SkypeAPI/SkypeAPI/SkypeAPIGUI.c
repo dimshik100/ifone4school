@@ -22,8 +22,8 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
-BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam);
-void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject);
+void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject);
+void CALLBACK skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -153,12 +153,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		SendMessage(hWnd, WM_SETFONT, (WPARAM)GetStockObject(ANSI_VAR_FONT), TRUE);
 		hList = CreateWindowEx(0, TEXT("listbox"), NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL, 0, 0, 600, 480, hWnd, NULL, hInst, NULL);
 		SendMessage(hList, WM_SETFONT, (WPARAM)GetStockObject(ANSI_VAR_FONT), TRUE);
+		setSkypeCallStatusCallback(skypeCallStatusCallback);
+		setSkypeConnectionStatusCallback(skypeConnectionStatusCallback);
 		connectSkype(hInst);
-		setSkypeApiCallback(skypeCallbackFunction);
-		break;
-	case WM_COPYDATA:
-		if (processSkypeMessage(wParam, lParam))
-			return TRUE;
 		break;
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
@@ -167,20 +164,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wmId)
 		{
 		case ID_HELP_HANGUP:
-			hangup();
 			break;
 		case IDM_ABOUT:
-			call();
-			////DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			//{
-			//	COPYDATASTRUCT copyData = {0};
-			//	LRESULT l;
-			//	copyData.dwData = 0;
-			//	copyData.lpData = "CALL echo123";
-			//	copyData.cbData = strlen("CALL echo123");
-			//	l = SendMessage(getSkypeApiWindowHandle(), WM_COPYDATA, (WPARAM)hWnd, (LPARAM)&copyData);
-			//	l = l;
-			//}
+			call(TEXT("echo123"));
 			break;
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
@@ -195,54 +181,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
+		disconnectSkype(hInst);
 		PostQuitMessage(0);
 		break;
 	default:
-		if (processAttachmentMessage(message, wParam, lParam))
-		{
-			TCHAR str[200];
-			switch(lParam)
-			{
-			case ATTACH_SUCCESS:
-				_tcscpy_s(str, 200, TEXT("Successfully connected with Skype"));
-				break;
-			case ATTACH_PENDING:
-				_tcscpy_s(str, 200, TEXT("Pending authorization from Skype"));
-				break;
-			case ATTACH_REFUSED:
-				_tcscpy_s(str, 200, TEXT("Connection refused"));
-				break;
-			case ATTACH_NOT_AVAILABLE:
-				_tcscpy_s(str, 200, TEXT("Connection is unavailable"));
-				break;
-			case ATTACH_AVAILABLE:
-				_tcscpy_s(str, 200, TEXT("Connection is now available"));
-				break;
-			}
-			SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
-			return TRUE;
-		}
-		else
-			return DefWindowProc(hWnd, message, wParam, lParam);
+		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;
 }
-
-				//COPYDATASTRUCT oCopyData;
-
-				//// send command to skype
-				//oCopyData.dwData=0;
-				//oCopyData.lpData=acInputRow;
-				//oCopyData.cbData=strlen(acInputRow)+1;
-				//if( oCopyData.cbData!=1 )
-				//	{
-				//	if( SendMessage( hGlobal_SkypeAPIWindowHandle, WM_COPYDATA, (WPARAM)hInit_MainWindowHandle, (LPARAM)&oCopyData)==FALSE )
-				//		{
-				//		hGlobal_SkypeAPIWindowHandle=NULL;
-				//		printf("!!! Disconnected\n");
-				//		}
-				//	}
-				//}
 
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -264,75 +210,61 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-BOOL processSkypeMessage(WPARAM wParam, LPARAM lParam)
+void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 {
-	BOOL ret = FALSE;
-	SkypeObject *skypeObject = NULL;
-
-	if (translateSkypeMessage(wParam, lParam, &skypeObject))
+	if (skypeCallObject && skypeCallObject->object == OBJECT_CALL)
 	{
-		if (skypeObject)
+		TCHAR str[256] = {0};
+		int strPos = 0;
+		if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
+			strPos = _stprintf_s(str, 256, TEXT("Incoming call... "));
+		else if (skypeCallObject->type == CALLTYPE_OUTGOING_P2P || skypeCallObject->type == CALLTYPE_OUTGOING_PSTN)
+			strPos = _stprintf_s(str, 256, TEXT("Outgoing call... "));
+		switch (skypeCallObject->property)
 		{
-			switch (skypeObject->object)
-			{
-			case OBJECT_CALL:
-				{
-					SkypeCallObject *callObject = (SkypeCallObject*)skypeObject;
-					TCHAR str[1000];
-					_stprintf_s(str, 1000, TEXT("Call id: %d;"), callObject->callId);
-					switch(callObject->property)
-					{
-					case CALLPROPERTY_DURATION:
-						_stprintf_s(str, 1000, TEXT("%s duration %02dh:%02dm:%02ds"), str, callObject->duration / 3600, (callObject->duration % 3600) / 60, (callObject->duration % 60));
-						break;
-					case CALLPROPERTY_STATUS:
-						_stprintf_s(str, 1000, TEXT("%s status index %d"), str, callObject->status);
-						break;
-					}
-					SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
-				}
-				break;
-			}
-			free(skypeObject);
-		}
-		ret = TRUE;
-	}
-
-	return ret;
-}
-
-void CALLBACK skypeCallbackFunction(SkypeObject *skypeObject)
-{
-	if (skypeObject)
-	{
-		switch (skypeObject->object)
-		{
-		case OBJECT_CALL:
-			{
-				TCHAR str[256] = {0};
-				int strPos = 0;
-				SkypeCallObject *callObject = (SkypeCallObject*)skypeObject;
-				if (callObject->type == CALLTYPE_INCOMING_P2P || callObject->type == CALLTYPE_INCOMING_PSTN)
-					strPos = _stprintf_s(str, 256, TEXT("Incoming call... "));
-				else if (callObject->type == CALLTYPE_OUTGOING_P2P || callObject->type == CALLTYPE_OUTGOING_PSTN)
-					strPos = _stprintf_s(str, 256, TEXT("Outgoing call... "));
-				switch (callObject->property)
-				{
-				case CALLPROPERTY_DURATION:
-					strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, duration: %02dh:%02dm:%02ds"), callObject->callId, callObject->duration / 3600, (callObject->duration % 3600) / 60, (callObject->duration % 60));
-					break;
-				case CALLPROPERTY_STATUS:
-					strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, status: %d"), callObject->callId, callObject->status);
-					break;
-				default:
-					strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, property: %d"), callObject->callId, callObject->property);
-					break;
-				}
-				if (callObject->partnerHandle)
-					strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT(" partner: %s"), callObject->partnerHandle);
-				SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
-			}
+		case CALLPROPERTY_DURATION:
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, duration: %02dh:%02dm:%02ds"), skypeCallObject->callId, skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
+			break;
+		case CALLPROPERTY_STATUS:
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, status: %d"), skypeCallObject->callId, skypeCallObject->status);
+			break;
+		default:
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, property: %d"), skypeCallObject->callId, skypeCallObject->property);
 			break;
 		}
+		if (skypeCallObject->partnerHandle)
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT(" partner H: %s"), skypeCallObject->partnerHandle);
+		if (skypeCallObject->partnerDisplayName)
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT(" partner N: %s"), skypeCallObject->partnerDisplayName);
+		SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
+	}
+}
+
+void CALLBACK skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus)
+{
+	switch (skypeApiInitStatus)
+	{
+	// User defined constants
+	case ATTACH_ACTIVE:
+		break;
+	case ATTACH_CONNECTION_LOST:
+		SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)TEXT("Connection with Skype was lost!"));
+		break;
+	// Skype defined constants
+	case ATTACH_AVAILABLE:
+		SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)TEXT("Connection with Skype is now available"));
+		break;
+	case ATTACH_NOT_AVAILABLE:
+		SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)TEXT("Connection with Skype is unavailable"));
+		break;
+	case ATTACH_PENDING:
+		SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)TEXT("Connection with Skype is pending"));
+		break;
+	case ATTACH_REFUSED:
+		SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)TEXT("Connection with Skype was refused"));
+		break;
+	case ATTACH_SUCCESS:
+		SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)TEXT("Successfully connected with Skype!"));
+		break;
 	}
 }

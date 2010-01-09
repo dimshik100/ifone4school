@@ -12,6 +12,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND, UINT, WPARAM, LPARAM);
 HoverButton *findButton(int cId, HWND hWnd);
 void invalidateButtonRect(HoverButton *hoverButton);
 void setHoverButtonImage(HoverButton *hoverButton, HDC hDC, int imageId);
+BOOL setTrackMouse(HoverButton *hoverButton);
 
 HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height, int controlId, int onImage, int offImage, TCHAR *caption)
 {
@@ -22,6 +23,7 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 		newHoverButton = (HoverButton*)calloc(1, sizeof(HoverButton));
 		newHoverButton->onImage = onImage;
 		newHoverButton->offImage = offImage;
+		newHoverButton->cId = controlId;
 		newHoverButton->hInstance = hInstance;
 		newHoverButton->buttonRect.left = x;
 		newHoverButton->buttonRect.right = x + width;
@@ -104,6 +106,11 @@ void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize)
 	invalidateButtonRect(hoverButton);
 }
 
+HFONT getHoverButtonFont(HoverButton *hoverButton)
+{
+	return hoverButton->hFont;
+}
+
 void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color)
 {
 	hoverButton->color = color;	
@@ -119,6 +126,16 @@ void lockHoverButtonImage(HoverButton *hoverButton, int enable)
 void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable)
 {
 	hoverButton->isPushButton = enable;
+}
+
+BOOL setTrackMouse(HoverButton *hoverButton)
+{
+	TRACKMOUSEEVENT tme;
+	
+	tme.cbSize = sizeof(TRACKMOUSEEVENT);
+	tme.dwFlags = TME_LEAVE;
+	tme.hwndTrack = hoverButton->hButton;
+	return TrackMouseEvent(&tme);
 }
 
 void setHoverButtonImage(HoverButton *hoverButton, HDC hDC, int imageId)
@@ -158,6 +175,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		{
 			hoverButton->isHovering = TRUE;
 			invalidateButtonRect(hoverButton);
+			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_DOWN), (LPARAM)hWnd);
 			return FALSE;
 		}
 		break;
@@ -167,6 +185,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		{
 			hoverButton->isHovering = FALSE;
 			invalidateButtonRect(hoverButton);
+			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_UP), (LPARAM)hWnd);
 			return FALSE;
 		}
 		break;
@@ -178,12 +197,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			// the hover button is a push button AND the left mouse is down
 			if (!hoverButton->isLocked && ((!hoverButton->isPushButton && !hoverButton->isHovering) || (hoverButton->isPushButton && (wParam & MK_LBUTTON))))
 			{
-				TRACKMOUSEEVENT tme;
-				
-				tme.cbSize = sizeof(TRACKMOUSEEVENT);
-				tme.dwFlags = TME_LEAVE;
-				tme.hwndTrack = hoverButton->hButton;
-				if (TrackMouseEvent(&tme))
+				if (setTrackMouse(hoverButton))
 				{
 					hoverButton->isHovering = TRUE;
 

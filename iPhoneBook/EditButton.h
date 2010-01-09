@@ -23,6 +23,7 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 void setEditButtonText(EditButton *editButton, TCHAR *caption);
 void setEditButtonStateImages(EditButton *editButton, int onImage, int offImage);
 void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize);
+HFONT getEditButtonFont(EditButton *editButton);
 void setEditButtonTextColor(EditButton *editButton, COLORREF color);
 void showEditButtonEdit(EditButton *editButton, int show);
 void setDefaultEditButtonProc(WNDPROC wndProc);
