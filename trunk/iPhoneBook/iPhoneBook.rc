@@ -183,6 +183,29 @@ IDB_CONTACT_WND_LET_SEP			BITMAP					"imgs\\contact_wnd_letter_seperator_bg.bmp"
 
 IDB_CONTACT_WND_NAME_BG_OFF		BITMAP					"imgs\\contact_wnd_name_bg_off.bmp"
 IDB_CONTACT_WND_NAME_BG_ON		BITMAP					"imgs\\contact_wnd_name_bg_on.bmp"
+
+////////////////////////////////EDIT BUTTON//////////////////////////////////
+
+IDB_EDIT_BTN_CANCEL_BTN_OFF		BITMAP					"imgs\\cancelButton_off.bmp"
+IDB_EDIT_BTN_CANCEL_BTN_ON		BITMAP					"imgs\\cancelButton_on.bmp"
+
+IDB_EDIT_BTN_OK_BTN_OFF			BITMAP					"imgs\\okButton_off.bmp"
+IDB_EDIT_BTN_OK_BTN_ON			BITMAP					"imgs\\okButton_on.bmp"
+
+//////////////////////////CONTACT DETAILS WINDOW//////////////////////////////////
+
+IDB_CONTACT_DTL_EMAIL_OFF		BITMAP					"imgs\\email_off.bmp"
+IDB_CONTACT_DTL_EMAIL_ON		BITMAP					"imgs\\email_on.bmp"
+
+IDB_CONTACT_DTL_MAP_OFF			BITMAP					"imgs\\map_off.bmp"
+IDB_CONTACT_DTL_MAP_ON			BITMAP					"imgs\\map_on.bmp"
+
+IDB_CONTACT_DTL_WWW_OFF			BITMAP					"imgs\\www_off.bmp"
+IDB_CONTACT_DTL_WWW_ON			BITMAP					"imgs\\www_on.bmp"
+
+IDB_CONTACT_DTL_SKYPE_OFF		BITMAP					"imgs\\skype_off.bmp"
+IDB_CONTACT_DTL_SKYPE_ON		BITMAP					"imgs\\skype_on.bmp"
+
 //////////////////////////CONTACT WINDOW BUTTONS MENU//////////////////////////////////
 IDB_CONTACT_WND_BUTTON_BG		BITMAP					"imgs\\contact_wnd_button_bg.bmp"
 
