@@ -202,6 +202,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				ShowWindow(hwndContainerContacts, TRUE);
 				screenMode = SCREEN_CONTACTS;
 				fillListView(getContactList(), NULL);
+				SetFocus(hwndSearchBox);
 				break;
 			case EDIT_ID_SEARCH:
 				if (HIWORD(wParam) == EN_CHANGE)

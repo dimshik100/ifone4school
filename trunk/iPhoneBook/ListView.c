@@ -10,6 +10,7 @@ HWND hwndListView = NULL;
 
 enum SORT { Sort_Ascending, Sort_Descending };
 int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+int compareNames(Contact *target, LPTSTR name);
 
 void fillListView(DynamicListC pList, LPTSTR string)
 {
@@ -21,10 +22,11 @@ void fillListView(DynamicListC pList, LPTSTR string)
 	ListView_DeleteAllItems(hwndListView);
 	if (string && _tcslen(string) > 0)
 	{
+		_tcslwr_s(string, _tcslen(string) + 1);
 		for (listSelectFirst(pList); listSelectCurrent(pList); listSelectNext(pList, NULL))
 		{
 			listGetValue(pList, NULL, &contact);
-			if (_tcsstr(contact->lastName, string) || _tcsstr(contact->firstName, string))
+			if (compareNames(contact, string))
 				addListViewItem(hwndListView, contact);
 		}
 	}
@@ -114,22 +116,22 @@ BOOL initListViewColumns(HWND hWndListView)
 // Depending on the selected order of sorting, it returns the correct information to the listview.
 int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
+	Contact *contact1, *contact2;
+	int sortType = 0;
+
+	if (!lParam1)
+		return -1;
+	else if (!lParam2)
+		return 1;
+
+	contact1 = (Contact*)lParam1;
+	contact2 = (Contact*)lParam2;
 	if (lParamSort == Sort_Ascending)
-	{
-		if (lParam1 < lParam2)
-			return -1;
-		else if (lParam1 > lParam2)
-			return 1;
-	}
+		sortType = 1;
 	else if (lParamSort == Sort_Descending)
-	{
-		if (lParam1 > lParam2)
-			return -1;
-		else if (lParam1 < lParam2)
-			return 1;
-	}
-	
-	return 0;
+		sortType = -1;
+
+	return sortType*(_tcsicmp(contact1->lastName, contact2->lastName));
 }
 
 HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height)
@@ -144,6 +146,40 @@ HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int widt
 	hInst = hInstance;
 
 	return hwndListView;
+}
+
+int compareNames(Contact *target, LPTSTR name)
+{
+	TCHAR origName[200], lastName[100], firstName[100], fullName1[200], fullName2[200], *tempStr;
+
+	_tcscpy_s(origName, 200, name);
+	_tcslwr_s(origName, _tcslen(origName) + 1);
+
+	_tcscpy_s(lastName, 100, target->lastName);
+	_tcslwr_s(lastName, _tcslen(lastName) + 1);
+
+	_tcscpy_s(firstName, 100, target->firstName);
+	_tcslwr_s(firstName, _tcslen(firstName) + 1);
+
+	_stprintf_s(fullName1, 200, TEXT("%s %s"), lastName, firstName);
+	_tcslwr_s(fullName1, _tcslen(fullName1) + 1);
+
+	_stprintf_s(fullName2, 200, TEXT("%s %s"), firstName, lastName);
+	_tcslwr_s(fullName2, _tcslen(fullName2) + 1);
+
+	tempStr = _tcsstr(lastName, origName);
+	if (tempStr && tempStr == lastName)
+		return TRUE;
+	tempStr = _tcsstr(firstName, origName);
+	if (tempStr && tempStr == lastName)
+		return TRUE;
+	tempStr = _tcsstr(fullName1, origName);
+	if (tempStr && tempStr == fullName1)
+		return TRUE;
+	tempStr = _tcsstr(fullName2, origName);
+	if (tempStr && tempStr == fullName2)
+		return TRUE;
+	return FALSE;
 }
 
 LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
