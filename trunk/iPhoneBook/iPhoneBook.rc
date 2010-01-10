@@ -229,6 +229,14 @@ IDB_EXIT_BUTTON_OFF				BITMAP					"imgs\\exit_button_off.bmp"
 IDB_EXIT_BUTTON_ON				BITMAP					"imgs\\exit_button_on.bmp"
 /////////////////////////////////////////////////////////////////////////////
 
+IDB_CONFIRM_WND					BITMAP					"imgs\\alert_bg.bmp"
+IDB_CONFIRM_YES_ON				BITMAP					"imgs\\alert_yes_on.bmp"
+IDB_CONFIRM_YES_OFF				BITMAP					"imgs\\alert_yes_off.bmp"
+IDB_CONFIRM_NO_ON				BITMAP					"imgs\\alert_no_on.bmp"
+IDB_CONFIRM_NO_OFF				BITMAP					"imgs\\alert_no_off.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+
 #ifndef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
