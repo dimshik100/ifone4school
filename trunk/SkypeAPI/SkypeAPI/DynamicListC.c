@@ -218,6 +218,8 @@ void listDeleteNode(DynamicListC pList, ListNode pNode)
 		}
 		
 		pList->itemCount--;
+		if (pNode->type)
+			free(pNode->type);
 		free(pNode);
 	}
 }

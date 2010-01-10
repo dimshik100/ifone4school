@@ -8,6 +8,7 @@
 #include "ListView.h"
 #include "EditButton.h"
 #include "HoverButton.h"
+#include "PhoneBook.h"
 #include <commctrl.h>
 
 #define MAX_LOADSTRING 100
@@ -15,18 +16,23 @@
 #define CLOCK_TIMER_ID TIMER_ID + 1
 #define	PWRBTN_TIMER_ID TIMER_ID + 2
 
-#define BUTTON_ID 20
-#define BUTTON_ID_PWR (BUTTON_ID + 0)
+#define CONTROL_ID 20
+#define BUTTON_ID_PWR (CONTROL_ID + 0)
+#define BUTTON_ID_CLOCK (CONTROL_ID + 1)
+#define BUTTON_ID_CONTACT (CONTROL_ID + 2)
+#define BUTTON_ID_INFO (CONTROL_ID + 3)
+#define BUTTON_ID_BIN (CONTROL_ID + 4)
+#define BUTTON_ID_MISC1 (CONTROL_ID + 5)
+#define BUTTON_ID_MISC2 (CONTROL_ID + 6)
+#define BUTTON_ID_MISC3 (CONTROL_ID + 7)
+#define BUTTON_ID_MISC4 (CONTROL_ID + 8)
 
-#define BUTTON_ID_CLOCK (BUTTON_ID + 1)
-#define BUTTON_ID_CONTACT (BUTTON_ID + 2)
-#define BUTTON_ID_INFO (BUTTON_ID + 3)
-#define BUTTON_ID_BIN (BUTTON_ID + 4)
+#define EDIT_ID_SEARCH (CONTROL_ID + 9)
 
-#define BUTTON_ID_MISC1 (BUTTON_ID + 5)
-#define BUTTON_ID_MISC2 (BUTTON_ID + 6)
-#define BUTTON_ID_MISC3 (BUTTON_ID + 7)
-#define BUTTON_ID_MISC4 (BUTTON_ID + 8)
+
+typedef enum {	SCREEN_MAIN, SCREEN_CONTACTS, SCREEN_MEM_INFO, SCREEN_TRASH, 
+				SCREEN_CONTACT_INFO, SCREEN_CONTACT_EDIT, SCREEN_CLOCK, SCREEN_CALL_MODE }
+ScreenMode;
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
@@ -43,6 +49,8 @@ INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 void createGUI(HWND hWnd, HINSTANCE hInstance);
 void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId);
+
+ScreenMode screenMode;
 
 HoverButton 
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton,
@@ -152,7 +160,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // Store instance handle in our global variable
 
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+      25, 25, 1200, 800, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
    {
@@ -192,10 +200,20 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				ShowWindow(hwndContainerMainButtons, FALSE);
 				ShowWindow(hwndContainerMiscButtons, TRUE);
 				ShowWindow(hwndContainerContacts, TRUE);
+				screenMode = SCREEN_CONTACTS;
+				fillListView(getContactList(), NULL);
 				break;
+			case EDIT_ID_SEARCH:
+				if (HIWORD(wParam) == EN_CHANGE)
+				{
+					TCHAR str[256];
+					GetWindowText((HWND)lParam, str, 256);
+					fillListView(getContactList(), str);
+				}
 			default:
 				break;
 			}
+			ClockTimerProc(NULL, 0, 0, 0);
 		}
 		break;
 	case WM_NOTIFY:
@@ -216,7 +234,6 @@ EditButton *editBtn;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
-	int i;
 	PAINTSTRUCT ps;
 	HDC hdc;
 	static int scrolling;
@@ -238,9 +255,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), TRUE);
 				ShowWindow(hwndContainerMainButtons, TRUE);
 				KillTimer(hWnd, PWRBTN_TIMER_ID);
+				screenMode = SCREEN_MAIN;
 			}
 			else if (wmEvent == HOVER_BUTTON_DOWN)
 				SetTimer(hWnd, PWRBTN_TIMER_ID, 3000, NULL);
+			ClockTimerProc(NULL, 0, 0, 0);
 			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
@@ -281,19 +300,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_CREATE:
 		{
-			TCHAR lpBuffer[1000], num[10];
 			HoverButton *btn;
 
 			createGUI(hWnd, hInst);
 			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);
-			btn = createHoverButton(hWnd, hInst, 505, 165, 178, 178, 1, IDB_ON, IDB_OFF, "Test text");
+			btn = createHoverButton(hWnd, hInst, 505, 165, 178, 178, 1, IDB_ON, IDB_OFF, TEXT("Test text"));
 			setHoverButtonTextColor(btn, 255);
 			
-			setHoverButtonFont(createHoverButton(hWnd, hInst, 505+178, 155, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, "abcdefgh"),
+			setHoverButtonFont(createHoverButton(hWnd, hInst, 505+178, 155, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, TEXT("abcdefgh")),
 				TEXT("Fixedsys Excelsior 3.01"), 24);
 
 			setDefaultEditButtonProc(WndProc);
-			editBtn = createEditButton(hWnd, hInst, 505, 165+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, "Test text");
+			editBtn = createEditButton(hWnd, hInst, 505, 165+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Test text"));
 			setEditButtonFont(editBtn, TEXT("Arial"), 16);
 
 
@@ -302,18 +320,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			// Creates a list box - this keeps a list of scroll-sizes
 			hList = CreateWindowEx(0, TEXT("listbox"), NULL,WS_VSCROLL |  WS_CHILD | WS_VISIBLE | LBS_HASSTRINGS | LBS_DISABLENOSCROLL , 500+460, 0, 200, 550, hWnd, NULL, hInst, NULL);
 			initListViewColumns(hLV);
-
-			for (i = 0; i < 200; i++)
-			{
-				// Windows API which takes a "System Error Code" (i) and converts it to an actual system error string..
-				// This function is here for simple filling of the ListView
-				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, i, 0, lpBuffer, 1000, NULL);
-				_stprintf_s(num, 10, TEXT("%03d"), i);
-				// Adds an item into the list view - see ListView.cpp for details.
-				addListViewItem(hLV, lpBuffer);
-			}
-			addListViewItem(hLV, TEXT("הצילו, המוח שלי נפטר!!"));
-			addListViewItem(hLV, TEXT("A"));
 
 			//// Define button size - not needed anymore...
 			//btn1.left = 5; btn1.right = btn1.left + 178; btn1.top = 155; btn1.bottom = btn1.top + 177;
@@ -384,11 +390,14 @@ VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD d
 	time(&ltime);
 	if (localtime_s(&today, &ltime) == ERROR_SUCCESS)
 	{
-		setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
-		setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
-		//setHoverButtonText(hbMainUnderDateBg, TEXT("Testing"));
 		_tcsftime(str, 1000, TEXT("%H:%M"), &today);
-		setHoverButtonText(hbMainUnderDateBg,str);
+		if (screenMode == SCREEN_MAIN)
+		{
+			setHoverButtonText(hbMainUnderDateBg, str);
+			setHoverButtonText(hbTopBarSkype, NULL);
+		}
+		else
+			setHoverButtonText(hbTopBarSkype, str);
 	}
 }
 
@@ -398,10 +407,14 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	int x, y, width, height;
 	HBITMAP hBmp;
 
+	screenMode = SCREEN_MAIN;
 	hbTopBarSkype = createHoverButton(hWnd, hInstance, 67, 136, 320, 20, 0, IDB_TOP_BAR_SKYPE_OFF, IDB_TOP_BAR_SKYPE_OFF, NULL);
 	lockHoverButtonImage(hbTopBarSkype, TRUE);
+	setHoverButtonTextColor(hbTopBarSkype, RGB(0, 0, 0));
 	hbMainUnderDateBg = createHoverButton(hWnd, hInstance, 67, 156, 320, 97, 0, IDB_MAIN_WND_UNDER_DATE_BG, IDB_MAIN_WND_UNDER_DATE_BG, NULL);
 	lockHoverButtonImage(hbMainUnderDateBg, TRUE);
+	setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
+	setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
 	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 273, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
 	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, BUTTON_ID_PWR, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
@@ -452,5 +465,5 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 44, 320, 44, 0, IDB_CONTACT_WND_SEARCH, IDB_CONTACT_WND_SEARCH, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
 	EnableWindow(tempBtn->hButton, FALSE);
-	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 35, 56, 265, 23, hwndContainerContacts, NULL, hInstance, NULL);
+	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 35, 56, 265, 23, hwndContainerContacts, (HMENU)EDIT_ID_SEARCH, hInstance, NULL);
 }

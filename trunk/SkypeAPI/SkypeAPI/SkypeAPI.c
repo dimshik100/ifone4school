@@ -93,20 +93,11 @@ void disconnectSkype(HINSTANCE hInstance)
 				free(skypeCallObject->partnerDisplayName);
 			if (skypeCallObject->partnerHandle)
 				free(skypeCallObject->partnerHandle);
-			free(skypeCallObject);
 		}
 		listFree(&callObjectList);
 	}
 	if (!callObjectQueue)
-	{
-		SkypeObject *skypeObject;
-		for (listSelectFirst(callObjectQueue); listSelectCurrent(callObjectQueue); listSelectNext(callObjectQueue, NULL))
-		{
-			listGetValue(callObjectQueue, NULL, &skypeObject);
-			free(skypeObject);
-		}
 		listFree(&callObjectQueue);
-	}
 }
 
 BOOL processAttachmentMessage(UINT message, WPARAM wParam, LPARAM lParam)
@@ -547,8 +538,6 @@ DWORD WINAPI SkypeQueueManagerThreadProc(__in  LPVOID lpParameter)
 						timerCnt += 50;
 						Sleep(50);
 					}
-					if (callObject)
-						free(callObject);
 					listDeleteNode(callObjectQueue, listSelectFirst(callObjectQueue));
 				}
 				break;
