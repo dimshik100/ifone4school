@@ -1,13 +1,11 @@
-Updates:
-- Finally make skype api app work fully.
+Fix:
+List View now filters names properly.
+The main window redraw problem.
 
 Changes:
-- Make power button exit app when pressed for 3 seconds.
-- Return to main window when power button is pressed once.
-- Setting edit button font also changes the text box font.
-- List view text is now centered.
-- Selected items are now drawn with selected background.
+EditButton now shows the "button" text in the edit control selected when clicked
+Clicking on "OK" will copy the text from the edit control into the button label.
 
 Additions:
-- getHoverButtonFont function returns the currently applied font to the hover button.
-- getEditButtonFont function returns the currently applied font to the edit button.
+List view now sorts by last, then first names.
+- getHoverButtonText 

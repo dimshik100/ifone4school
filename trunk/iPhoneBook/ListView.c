@@ -9,6 +9,7 @@ HINSTANCE hInst = NULL;
 HWND hwndListView = NULL;
 
 enum SORT { Sort_Ascending, Sort_Descending };
+extern void setImageToDC(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hDC, int imageId);
 int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 int compareNames(Contact *target, LPTSTR name);
 
@@ -117,7 +118,7 @@ BOOL initListViewColumns(HWND hWndListView)
 int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 {
 	Contact *contact1, *contact2;
-	int sortType = 0;
+	int sortType = 0, ret;
 
 	if (!lParam1)
 		return -1;
@@ -131,7 +132,11 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 	else if (lParamSort == Sort_Descending)
 		sortType = -1;
 
-	return sortType*(_tcsicmp(contact1->lastName, contact2->lastName));
+	ret = sortType*(_tcsicmp(contact1->lastName, contact2->lastName));
+	if (!ret)
+		ret = sortType*(_tcsicmp(contact1->firstName, contact2->firstName));
+
+	return ret;
 }
 
 HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height)
@@ -210,6 +215,7 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 			// If this is an item, go into the "IF"
 			if (lpNMCustomDraw->dwItemType == LVCDI_ITEM)
 			{
+				RECT rcOffset = {0};
 				TCHAR str[1000];
 				TEXTMETRIC tm;
 				int textTop;
@@ -223,9 +229,9 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 				// If item is being hovered on, draw a differet colored rect around it.
 				// Else draw it with blue-ish background
 				if (lpNMCustomDraw->nmcd.uItemState & LVIS_SELECTED)
-					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
+					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
 				else
-					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
+					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
 				// Print text to item's DC.
 				GetTextMetrics(lpNMCustomDraw->nmcd.hdc, &tm);
 				textTop = lpNMCustomDraw->nmcd.rc.top + (lpNMCustomDraw->nmcd.rc.bottom - lpNMCustomDraw->nmcd.rc.top - tm.tmHeight) / 2;
@@ -238,9 +244,9 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		case CDDS_ITEMPOSTERASE:
 			if (lpNMCustomDraw->dwItemType == LVCDI_ITEM)
 			{
-				RECT rc;
+				RECT rc, rcOffset = {0};
 				ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &rc, LVIR_BOUNDS);
-				setImageToDC(hInst, &rc, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
+				setImageToDC(hInst, &rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
 			}
 			return CDRF_DODEFAULT;
 			break;

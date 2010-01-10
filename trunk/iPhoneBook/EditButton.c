@@ -10,6 +10,7 @@ WNDPROC wndDefBtnProc = NULL;
 WNDPROC wndDefEditProc = NULL;
 
 LRESULT CALLBACK	EditBtnProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK		FindEditInEditButtonProc(HWND hwnd, LPARAM lParam);
 
 EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 							   int width, int height, int controlId, int onImage, int offImage, TCHAR *caption)
@@ -103,8 +104,53 @@ LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 	case WM_COMMAND:
 		if (wndDefEditBtnProc)
 			CallWindowProc(wndDefEditBtnProc, hWnd, message, wParam, lParam);
+		if ((LOWORD(wParam) % 10) == CID_OK_OFFSET)
+		{
+			HoverButton *hoverButton = findButton(0, (HWND)lParam);
+			if (hoverButton)
+			{
+				TCHAR string[256];
+				HWND hwndEdit = NULL;
+				EnumChildWindows(hWnd, FindEditInEditButtonProc, (LPARAM)&hwndEdit);
+				hoverButton = findButton(0, hWnd);
+				if (hwndEdit && hoverButton)
+				{
+					GetWindowText(hwndEdit, string, 256);
+					setHoverButtonText(hoverButton, string);
+				}
+			}
+		}
+		break;
+	case WM_LBUTTONUP:
+		{
+			HoverButton *hoverButton = findButton(0, hWnd);
+			if (hoverButton && !hoverButton->isLocked)
+			{
+				HWND hwndEdit = NULL;
+				EnumChildWindows(hWnd, FindEditInEditButtonProc, (LPARAM)&hwndEdit);
+				if (hwndEdit)
+				{
+					TCHAR string[256];
+					getHoverButtonText(hoverButton, string, 256);
+					SetWindowText(hwndEdit, string);
+					SendMessage(hwndEdit, EM_SETSEL, (WPARAM)0, (LPARAM)_tcslen(string));
+				}
+			}
+		}
 		break;
 	}
 
 	return CallWindowProc(wndDefEditProc, hWnd, message, wParam, lParam);
+}
+
+BOOL CALLBACK FindEditInEditButtonProc(HWND hWnd, LPARAM lParam)
+{
+	TCHAR string[256];
+	GetClassName(hWnd, string, 256);
+	if (!_tcsicmp(TEXT("edit"), string))
+	{
+		*(HWND*)lParam = hWnd;
+		return FALSE;
+	}
+	return TRUE;
 }

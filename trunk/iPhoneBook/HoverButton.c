@@ -9,7 +9,6 @@ WNDPROC wndDefHoverBtnProc = NULL;
 WNDPROC wndDefHoverProc = NULL;
 
 LRESULT CALLBACK	HoverBtnProc(HWND, UINT, WPARAM, LPARAM);
-HoverButton *findButton(int cId, HWND hWnd);
 void invalidateButtonRect(HoverButton *hoverButton);
 void setHoverButtonImage(HoverButton *hoverButton, HDC hDC, int imageId);
 BOOL setTrackMouse(HoverButton *hoverButton);
@@ -87,6 +86,14 @@ void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption)
 		hoverButton->caption = NULL;
 	// Force redraw of the button
 	invalidateButtonRect(hoverButton);
+}
+
+void getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t length)
+{
+	if (hoverButton->caption)
+		_tcscpy_s(destination, length, hoverButton->caption);
+	else
+		_tcscpy_s(destination, length, TEXT(""));
 }
 
 void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize)
