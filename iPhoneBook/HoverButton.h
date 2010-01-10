@@ -24,6 +24,7 @@ typedef struct _HoverButton
 HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 							   int width, int height, int controlId, int onImage, int offImage, TCHAR *caption);
 void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption);
+void getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t length);
 void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage);
 void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize);
 HFONT getHoverButtonFont(HoverButton *hoverButton);
@@ -33,3 +34,4 @@ void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable);
 void setDefaultHoverButtonProc(WNDPROC wndProc);
 HWND getHoverButtonHwnd(HoverButton *hoverButton);
 void deleteHoverButtons();
+HoverButton *findButton(int cId, HWND hWnd);

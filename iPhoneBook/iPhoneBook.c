@@ -48,7 +48,7 @@ LRESULT CALLBACK	ContainerProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 void createGUI(HWND hWnd, HINSTANCE hInstance);
-void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId);
+void setImageToDC(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hDC, int imageId);
 
 ScreenMode screenMode;
 
@@ -58,8 +58,7 @@ HoverButton
 
 HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts;
 HWND hwndSearchBox;
-
-HWND hLV, hList;
+HWND hLV;
 WNDPROC defContainerProc;
 static int inButton;
 
@@ -159,8 +158,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    hInst = hInstance; // Store instance handle in our global variable
 
-   hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      25, 25, 1200, 800, NULL, NULL, hInstance, NULL);
+   hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW - WS_MAXIMIZEBOX,
+      25, 25, 830, 820, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
    {
@@ -191,7 +190,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	case WM_COMMAND:
 		{
 			int wmId    = LOWORD(wParam);
-			//int wmEvent = HIWORD(wParam);
+			int wmEvent = HIWORD(wParam);
 			switch(wmId)
 			{
 			case BUTTON_ID_CONTACT:
@@ -205,7 +204,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				SetFocus(hwndSearchBox);
 				break;
 			case EDIT_ID_SEARCH:
-				if (HIWORD(wParam) == EN_CHANGE)
+				if (wmEvent == EN_CHANGE)
 				{
 					TCHAR str[256];
 					GetWindowText((HWND)lParam, str, 256);
@@ -287,11 +286,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return FALSE;
 		}
 		break;
+	case WM_NCHITTEST:
+		{
+			LRESULT uHitTest;
+			// Gets the part of the window the mouse pointer is now over
+			uHitTest = DefWindowProc(hWnd, WM_NCHITTEST, wParam, lParam);
+			// If we're over the client area, return TitleBar area (caption area) 
+			// so that we can move the window by dragging on the client area
+			// Else return whatever the part we're on.
+			if(uHitTest == HTCLIENT)
+				return HTCAPTION;
+			else
+				return uHitTest;
+		}
+		break;
 	case WM_PAINT:
 		{
 			hdc = BeginPaint(hWnd, &ps);
-			setImageToDC(hInst, &ps.rcPaint, hdc, IDB_IFONE_BG);
-			// TODO: Add any drawing code here...
+			setImageToDC(hInst, &ps.rcPaint, &ps.rcPaint, hdc, IDB_IFONE_BG);
 			EndPaint(hWnd, &ps);
 		}
 		break;
@@ -305,34 +317,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			createGUI(hWnd, hInst);
 			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);
-			btn = createHoverButton(hWnd, hInst, 505, 165, 178, 178, 1, IDB_ON, IDB_OFF, TEXT("Test text"));
+			btn = createHoverButton(hWnd, hInst, 450, 165, 178, 178, 1, IDB_ON, IDB_OFF, TEXT("Test text"));
 			setHoverButtonTextColor(btn, 255);
 			
-			setHoverButtonFont(createHoverButton(hWnd, hInst, 505+178, 155, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, TEXT("abcdefgh")),
+			setHoverButtonFont(createHoverButton(hWnd, hInst, 450+178, 155, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, TEXT("abcdefgh")),
 				TEXT("Fixedsys Excelsior 3.01"), 24);
 
 			setDefaultEditButtonProc(WndProc);
-			editBtn = createEditButton(hWnd, hInst, 505, 165+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Test text"));
+			editBtn = createEditButton(hWnd, hInst, 450, 165+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Test text"));
 			setEditButtonFont(editBtn, TEXT("Arial"), 16);
 
-
-
-
-			// Creates a list box - this keeps a list of scroll-sizes
-			hList = CreateWindowEx(0, TEXT("listbox"), NULL,WS_VSCROLL |  WS_CHILD | WS_VISIBLE | LBS_HASSTRINGS | LBS_DISABLENOSCROLL , 500+460, 0, 200, 550, hWnd, NULL, hInst, NULL);
 			initListViewColumns(hLV);
-
-			//// Define button size - not needed anymore...
-			//btn1.left = 5; btn1.right = btn1.left + 178; btn1.top = 155; btn1.bottom = btn1.top + 177;
-			//// Create an Owner-Drawn button and save it's handle.
-			//hBtn = CreateWindowEx(0, TEXT("button"), TEXT("Test Button"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_OWNERDRAW | BS_NOTIFY, 
-			//	btn1.left, btn1.top, btn1.right - btn1.left, btn1.bottom - btn1.top, hWnd, NULL, hInst, NULL);
-			//// Keep a reference to the original Window Procedure of the button control.
-			//defContainerProc = (WNDPROC)GetWindowLong(hBtn, GWL_WNDPROC);
-			//// Set our own custom Window Procedure to handle the button events.
-			//SetWindowLong(hBtn, GWL_WNDPROC, (LONG_PTR)ContainerProc);
-
-			// Creates a standard windows type button
 		}
 		break;
 	default:
@@ -361,7 +356,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId)
+void setImageToDC(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hDC, int imageId)
 {
 	HBITMAP hbmpOld, hbmpImage;
 	HDC hDCMem;
@@ -373,7 +368,7 @@ void setImageToDC(HINSTANCE hInstance, RECT *lprc, HDC hDC, int imageId)
 	// Select the image into the DC. Keep a reference to the old bitmap.
 	hbmpOld = (HBITMAP)SelectObject(hDCMem, hbmpImage);
 	// Copies the bitmap from the memory DC into the buttons DC 
-	BitBlt(hDC, lprc->left, lprc->top, lprc->right, lprc->bottom, hDCMem, 0, 0, SRCCOPY);
+	BitBlt(hDC, lprc->left, lprc->top, lprc->right, lprc->bottom, hDCMem, lprcOffset->left, lprcOffset->top, SRCCOPY);
 	// Select the original memory DC's bitmap.
 	SelectObject(hDCMem, hbmpOld);
 	// Free resources.
