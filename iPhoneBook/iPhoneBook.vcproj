@@ -21,7 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="0"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -176,19 +176,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\EditButton.c"
-				>
-			</File>
-			<File
-				RelativePath=".\HoverButton.c"
-				>
-			</File>
-			<File
 				RelativePath=".\iPhoneBook.c"
-				>
-			</File>
-			<File
-				RelativePath=".\ListView.c"
 				>
 			</File>
 			<File
@@ -218,19 +206,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\EditButton.h"
-				>
-			</File>
-			<File
-				RelativePath=".\HoverButton.h"
-				>
-			</File>
-			<File
 				RelativePath=".\iPhoneBook.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ListView.h"
 				>
 			</File>
 			<File
@@ -261,6 +237,58 @@
 			</File>
 			<File
 				RelativePath=".\small.ico"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Core"
+			>
+			<File
+				RelativePath=".\DynamicListC.c"
+				>
+			</File>
+			<File
+				RelativePath=".\DynamicListC.h"
+				>
+			</File>
+			<File
+				RelativePath=".\PhoneBook.c"
+				>
+			</File>
+			<File
+				RelativePath=".\PhoneBook.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Types.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="GUI"
+			>
+			<File
+				RelativePath=".\EditButton.c"
+				>
+			</File>
+			<File
+				RelativePath=".\EditButton.h"
+				>
+			</File>
+			<File
+				RelativePath=".\HoverButton.c"
+				>
+			</File>
+			<File
+				RelativePath=".\HoverButton.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ListView.c"
+				>
+			</File>
+			<File
+				RelativePath=".\ListView.h"
 				>
 			</File>
 		</Filter>

@@ -11,6 +11,33 @@ HWND hwndListView = NULL;
 enum SORT { Sort_Ascending, Sort_Descending };
 int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 
+void fillListView(DynamicListC pList, LPTSTR string)
+{
+	Contact *contact;
+
+	if (!pList)
+		return;
+
+	ListView_DeleteAllItems(hwndListView);
+	if (string && _tcslen(string) > 0)
+	{
+		for (listSelectFirst(pList); listSelectCurrent(pList); listSelectNext(pList, NULL))
+		{
+			listGetValue(pList, NULL, &contact);
+			if (_tcsstr(contact->lastName, string) || _tcsstr(contact->firstName, string))
+				addListViewItem(hwndListView, contact);
+		}
+	}
+	else
+	{
+		for (listSelectFirst(pList); listSelectCurrent(pList); listSelectNext(pList, NULL))
+		{
+			listGetValue(pList, NULL, &contact);
+			addListViewItem(hwndListView, contact);
+		}
+	}
+}
+
 // addListViewItem - adds columns to a list-view control.
 
 // Returns TRUE if successful, or FALSE otherwise. 
@@ -18,18 +45,21 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 // name - String containing contact name
 // extra - String containing additional information about the item, can be NULL
 
-BOOL addListViewItem(HWND hWndListView, TCHAR *name)
+BOOL addListViewItem(HWND hWndListView, Contact *contact)
 {
 	LVITEM lvItem = {0};
+	TCHAR string[256];
 
 	lvItem.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
 	lvItem.state = 0;
 	lvItem.stateMask = 0;
 
+	_stprintf_s(string, 256, TEXT("%s %s"), contact->lastName, contact->firstName);
+
 	lvItem.iItem = 0;	
 	lvItem.iSubItem = 0;
-	lvItem.pszText = name;
-	lvItem.lParam = (LPARAM)1;
+	lvItem.pszText = string;
+	lvItem.lParam = (LPARAM)contact;
     if (ListView_InsertItem(hWndListView, &lvItem) == -1) 
 		return FALSE;
 
