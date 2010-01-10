@@ -14,7 +14,7 @@
 // Makes sure we don't get any redefinition errors.
 #pragma once
 
-// Define a boolean type - TEXT("bool").
+// Define a boolean type - "bool".
 #ifndef bool
 	typedef enum { false, true } bool;
 #endif
@@ -32,9 +32,10 @@ struct _ListNode
 	ListNode pPrevious;
 };
 
-// Define the TEXT("DynamicListC") object.
+// Define the "DynamicListC" object.
 typedef struct _DynamicListC
 {
+	int itemCount;
 	ListNode pStart;
 	ListNode pEnd;
 	ListNode pCurrent;
@@ -42,6 +43,9 @@ typedef struct _DynamicListC
 
 // Initialize the linked list
 bool listInit(DynamicListC *pList);
+
+// Gets the number of items in the list
+int listGetListCount(DynamicListC pList);
 
 // Select the first item in the linked list
 ListNode listSelectFirst(DynamicListC pList);
