@@ -13,8 +13,9 @@ HFONT hFontBold = NULL, hFontNormal = NULL;
 enum SORT { Sort_Ascending, Sort_Descending };
 int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 int compareNames(Contact *target, LPTSTR name);
+void adjustColumnWidth(HWND hWndListView);
 
-void fillListView(DynamicListC pList, LPTSTR string)
+void fillListView(HWND hWndListView, DynamicListC pList, LPTSTR string)
 {
 	Contact *contact;
 	int i, listCount, chr = 0;
@@ -24,7 +25,7 @@ void fillListView(DynamicListC pList, LPTSTR string)
 	if (!pList)
 		return;
 
-	ListView_DeleteAllItems(hwndListView);
+	ListView_DeleteAllItems(hWndListView);
 	if (string && _tcslen(string) > 0)
 	{
 		_tcslwr_s(string, _tcslen(string) + 1);
@@ -32,7 +33,7 @@ void fillListView(DynamicListC pList, LPTSTR string)
 		{
 			listGetValue(pList, NULL, &contact);
 			if (compareNames(contact, string))
-				addListViewItem(hwndListView, contact);
+				addListViewItem(hWndListView, contact);
 		}
 	}
 	else
@@ -40,18 +41,18 @@ void fillListView(DynamicListC pList, LPTSTR string)
 		for (listSelectFirst(pList); listSelectCurrent(pList); listSelectNext(pList, NULL))
 		{
 			listGetValue(pList, NULL, &contact);
-			addListViewItem(hwndListView, contact);
+			addListViewItem(hWndListView, contact);
 		}
 	}
-	ListView_SortItems(hwndListView, sortListViewItems, Sort_Ascending);
-	listCount = ListView_GetItemCount(hwndListView);
+	ListView_SortItems(hWndListView, sortListViewItems, Sort_Ascending);
+	listCount = ListView_GetItemCount(hWndListView);
 	for (i = 0; i < listCount; i++)
 	{
 		lvItem.iItem = i;
 		lvItem.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
 		lvItem.pszText = tempStr;
 		lvItem.cchTextMax = 1000;
-		ListView_GetItem(hwndListView, &lvItem);
+		ListView_GetItem(hWndListView, &lvItem);
 		if (lvItem.lParam)
 		{
 			if (chr != toupper(((Contact*)lvItem.lParam)->lastName[0]))
@@ -59,11 +60,12 @@ void fillListView(DynamicListC pList, LPTSTR string)
 				chr = toupper(((Contact*)lvItem.lParam)->lastName[0]);
 				_stprintf_s(lvItem.pszText, lvItem.cchTextMax, TEXT("%c"), chr);
 				lvItem.lParam = (LPARAM)NULL;
-				if (ListView_InsertItem(hwndListView, &lvItem) > -1)
+				if (ListView_InsertItem(hWndListView, &lvItem) > -1)
 					listCount++, i++;
 			}
 		}
 	}
+	adjustColumnWidth(hWndListView);
 }
 
 // addListViewItem - adds columns to a list-view control.
@@ -91,7 +93,22 @@ BOOL addListViewItem(HWND hWndListView, Contact *contact)
     if (ListView_InsertItem(hWndListView, &lvItem) == -1) 
 		return FALSE;
 
+	adjustColumnWidth(hWndListView);
+
     return TRUE; 
+}
+
+void adjustColumnWidth(HWND hWndListView)
+{
+	int cx;
+	if (ListView_GetItemCount(hWndListView) > 6)
+	{
+		cx = 319 - GetSystemMetrics(SM_CXVSCROLL);
+		if (ListView_GetColumnWidth(hWndListView, 0) == 319)
+			ListView_SetColumnWidth(hWndListView, 0, cx);
+	}
+	else if (ListView_GetColumnWidth(hWndListView, 0) < 319)
+		ListView_SetColumnWidth(hWndListView, 0, 319);
 }
 
 // initListViewColumns - adds columns to a list-view control.
@@ -276,14 +293,14 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 				// Else draw it with blue-ish background
 				contact = (Contact*)lvItem.lParam;
 				if (!contact)
-					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_LET_SEP);
+					setImageToDcStretched(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_LET_SEP);
 				else if (lvItem.state & LVIS_SELECTED)
-					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
+					setImageToDcStretched(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
 				else
-					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
+					setImageToDcStretched(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
 				// Print text to item's DC.
 
-				rcOffset.left = 5;
+				rcOffset.left = 10;
 				if (contact)
 				{
 					hFont = (HFONT)SelectObject(lpNMCustomDraw->nmcd.hdc, hFontNormal);
@@ -291,7 +308,7 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
 					DrawTextEx(lpNMCustomDraw->nmcd.hdc, contact->firstName, _tcslen(contact->firstName), &rcOffset, DT_CALCRECT, NULL);
 					textTop = lpNMCustomDraw->nmcd.rc.top + (lpNMCustomDraw->nmcd.rc.bottom - lpNMCustomDraw->nmcd.rc.top - tm.tmHeight) / 2;
-					TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + 5, textTop, contact->firstName, _tcslen(contact->firstName));
+					TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + 10, textTop, contact->firstName, _tcslen(contact->firstName));
 
 					SelectObject(lpNMCustomDraw->nmcd.hdc, hFontBold);
 					GetTextMetrics(lpNMCustomDraw->nmcd.hdc, &tm);
@@ -312,7 +329,7 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 					GetTextMetrics(lpNMCustomDraw->nmcd.hdc, &tm);
 					DrawTextEx(lpNMCustomDraw->nmcd.hdc, lvItem.pszText, _tcslen(lvItem.pszText), &rcOffset, DT_CALCRECT, NULL);
 					textTop = lpNMCustomDraw->nmcd.rc.top + (lpNMCustomDraw->nmcd.rc.bottom - lpNMCustomDraw->nmcd.rc.top - tm.tmHeight) / 2;
-					TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + 5, textTop, lvItem.pszText, _tcslen(lvItem.pszText));
+					TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + 10, textTop, lvItem.pszText, _tcslen(lvItem.pszText));
 					SetTextColor(lpNMCustomDraw->nmcd.hdc, origColor);
 				}
 

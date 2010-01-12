@@ -210,6 +210,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Miscellaneous.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Resource.h"
 				>
 			</File>
@@ -488,6 +492,14 @@
 			Name="GUI"
 			>
 			<File
+				RelativePath=".\Clock.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Clock.h"
+				>
+			</File>
+			<File
 				RelativePath=".\EditButton.c"
 				>
 			</File>
@@ -511,17 +523,13 @@
 				RelativePath=".\ListView.h"
 				>
 			</File>
-			<File
-				RelativePath=".\Miscellaneous.c"
-				>
-			</File>
-			<File
-				RelativePath=".\Miscellaneous.h"
-				>
-			</File>
 		</Filter>
 		<File
 			RelativePath=".\iPhoneBook.exe.manifest"
+			>
+		</File>
+		<File
+			RelativePath=".\Miscellaneous.c"
 			>
 		</File>
 		<File
