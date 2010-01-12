@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "HoverButton.h"
+#include "Miscellaneous.h"
 
 #define MAX_BUTTONS 100
 HoverButton *hoverButtons[MAX_BUTTONS];
@@ -10,7 +11,7 @@ WNDPROC wndDefHoverProc = NULL;
 
 LRESULT CALLBACK	HoverBtnProc(HWND, UINT, WPARAM, LPARAM);
 void invalidateButtonRect(HoverButton *hoverButton);
-void setHoverButtonImage(HoverButton *hoverButton, HDC hDC, int imageId);
+void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId);
 BOOL setTrackMouse(HoverButton *hoverButton);
 
 HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height, int controlId, int onImage, int offImage, TCHAR *caption)
@@ -88,27 +89,31 @@ void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption)
 	invalidateButtonRect(hoverButton);
 }
 
-void getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t length)
+size_t getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t length)
 {
+	size_t copyLen = 0;
+
 	if (hoverButton->caption)
+	{
 		_tcscpy_s(destination, length, hoverButton->caption);
+		copyLen = _tcslen(hoverButton->caption);
+	}
 	else
 		_tcscpy_s(destination, length, TEXT(""));
+
+	return copyLen;
 }
 
 void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize)
 {
-	HDC hDC;
-	LOGFONT logFont = {0};
-
-	hDC = GetDC(hoverButton->hButton);
-	_tcscpy_s(logFont.lfFaceName, 32, fontName);
-	logFont.lfHeight = -MulDiv(fontSize, GetDeviceCaps(hDC, LOGPIXELSY), 72);
-	ReleaseDC(hoverButton->hButton, hDC);
+	HDC hdc;
 	
 	if (hoverButton->hFont)
 		DeleteObject(hoverButton->hFont);
-	hoverButton->hFont = CreateFontIndirect(&logFont);
+	hdc = GetDC(hoverButton->hButton);
+	hoverButton->hFont = CreateFont(-MulDiv(fontSize, GetDeviceCaps(hdc, LOGPIXELSY), 72), 0, 0, 0, FW_DONTCARE, 0, 0, 0, DEFAULT_CHARSET,
+							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, fontName);
+	ReleaseDC(hoverButton->hButton, hdc);
 	// Force redraw of the button
 	invalidateButtonRect(hoverButton);
 }
@@ -128,6 +133,11 @@ void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color)
 void lockHoverButtonImage(HoverButton *hoverButton, int enable)
 {
 	hoverButton->isLocked = enable;
+	if (enable)
+	{
+		hoverButton->isPushed = FALSE;
+		hoverButton->isHovering = FALSE;
+	}
 }
 
 void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable)
@@ -145,27 +155,12 @@ BOOL setTrackMouse(HoverButton *hoverButton)
 	return TrackMouseEvent(&tme);
 }
 
-void setHoverButtonImage(HoverButton *hoverButton, HDC hDC, int imageId)
+void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId)
 {
-	HBITMAP hbmpOld, hbmpImage;
-	HDC hDCMem;
-	RECT rect;
-
-	// Create a DC in memory, compatible with the button's original DC.
-	hDCMem = CreateCompatibleDC(hDC);
-	// Load the selected image from the resource file.
-	hbmpImage = LoadBitmap(hoverButton->hInstance, MAKEINTRESOURCE(imageId));
-	// Select the image into the DC. Keep a reference to the old bitmap.
-	hbmpOld = (HBITMAP)SelectObject(hDCMem, hbmpImage);
+	RECT rect, rcOffset = {0};
 	// Gets the dimensions of the button
 	GetClientRect(hoverButton->hButton, &rect);
-	// Copies the bitmap from the memory DC into the buttons DC 
-	BitBlt(hDC, 0, 0, rect.right, rect.bottom, hDCMem, 0, 0, SRCCOPY);
-	// Select the original memory DC's bitmap.
-	SelectObject(hDCMem, hbmpOld);
-	// Free resources.
-	DeleteDC(hDCMem);
-	DeleteObject(hbmpImage);
+	setImageToDc(hoverButton->hInstance, &rect, &rcOffset, hdc, imageId);
 }
 
 LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -176,6 +171,20 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
 	switch (message)
 	{
+	case WM_RBUTTONDOWN:
+		hoverButton = findButton(0, hWnd);
+		hoverButton->isPushed = TRUE;
+		if (!hoverButton->isLocked)
+			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_RMOUSE_DOWN), (LPARAM)hWnd);
+		return FALSE;
+		break;
+	case WM_RBUTTONUP:
+		hoverButton = findButton(0, hWnd);
+		hoverButton->isPushed = FALSE;
+		if (!hoverButton->isLocked)
+			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_RMOUSE_UP), (LPARAM)hWnd);
+		return FALSE;
+		break;
 	case WM_LBUTTONDOWN:
 		hoverButton = findButton(0, hWnd);
 		hoverButton->isPushed = TRUE;
@@ -189,7 +198,6 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		break;
 	case WM_LBUTTONUP:
 		hoverButton = findButton(0, hWnd);
-		hoverButton->isPushed = FALSE;
 		if (!hoverButton->isLocked)
 		{
 			if (hoverButton->isPushButton)
@@ -197,8 +205,10 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 				hoverButton->isHovering = FALSE;
 				invalidateButtonRect(hoverButton);
 			}
-			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_LMOUSE_UP), (LPARAM)hWnd);
+			if (hoverButton->isPushed)
+				SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_LMOUSE_UP), (LPARAM)hWnd);
 		}
+		hoverButton->isPushed = FALSE;
 		return FALSE;
 		break;
 	case WM_MOUSEMOVE:
@@ -239,7 +249,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		{
 			HFONT hFontOld;
 			HBITMAP hbmpOld, hbmpImage;
-			HDC hDCMem;
+			HDC hdcMem;
 			RECT rect;
 
 
@@ -248,36 +258,36 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			// Gets the dimensions of the button
 			GetClientRect(hWnd, &rect);
 			// Create a DC in memory, compatible with the button's original DC.
-			hDCMem = CreateCompatibleDC(hdc);
+			hdcMem = CreateCompatibleDC(hdc);
 			// Load the selected image from the resource file.
 			hbmpImage = CreateCompatibleBitmap(hdc, rect.right, rect.bottom);
 			// Select the image into the DC. Keep a reference to the old bitmap.
-			hbmpOld = (HBITMAP)SelectObject(hDCMem, hbmpImage);
+			hbmpOld = (HBITMAP)SelectObject(hdcMem, hbmpImage);
 
 			hoverButton = findButton(0, hWnd);
 			if (hoverButton->isHovering)
-				setHoverButtonImage(hoverButton, hDCMem, hoverButton->onImage);
+				setHoverButtonImage(hoverButton, hdcMem, hoverButton->onImage);
 			else
-				setHoverButtonImage(hoverButton, hDCMem, hoverButton->offImage);
+				setHoverButtonImage(hoverButton, hdcMem, hoverButton->offImage);
 			if (hoverButton->caption)
 			{
 				TEXTMETRIC tm;
-				SetBkMode(hDCMem, TRANSPARENT);
-				SetTextColor(hDCMem, hoverButton->color);
-				SetTextAlign(hDCMem, TA_CENTER);
-				hFontOld = (HFONT)SelectObject(hDCMem, hoverButton->hFont);
-				GetTextMetrics(hDCMem, &tm);
-				TextOut(hDCMem, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
+				SetBkMode(hdcMem, TRANSPARENT);
+				SetTextColor(hdcMem, hoverButton->color);
+				SetTextAlign(hdcMem, TA_CENTER);
+				hFontOld = (HFONT)SelectObject(hdcMem, hoverButton->hFont);
+				GetTextMetrics(hdcMem, &tm);
+				TextOut(hdcMem, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
 					(hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - tm.tmHeight)/2,
 					hoverButton->caption, (int)_tcslen(hoverButton->caption));
-				SelectObject(hDCMem, hFontOld);
+				SelectObject(hdcMem, hFontOld);
 			}
 			// Copies the bitmap from the memory DC into the buttons DC 
-			BitBlt(hdc, 0, 0, rect.right, rect.bottom, hDCMem, 0, 0, SRCCOPY);
+			BitBlt(hdc, 0, 0, rect.right, rect.bottom, hdcMem, 0, 0, SRCCOPY);
 			// Select the original memory DC's bitmap.
-			SelectObject(hDCMem, hbmpOld);
+			SelectObject(hdcMem, hbmpOld);
 			// Free resources.
-			DeleteDC(hDCMem);
+			DeleteDC(hdcMem);
 			DeleteObject(hbmpImage);
 
 			EndPaint(hWnd, &ps);

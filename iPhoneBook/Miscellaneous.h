@@ -1,5 +1,8 @@
 #pragma once
+#include "DynamicListC.h"
 
-
-void setImageToDC(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hDC, int imageId);
-//ATOM RegisterClass(HINSTANCE hInstance, W);
+void setImageToDc(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hdc, int imageId);
+void setImageToDcStretched(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hdc, int imageId);
+DynamicListC getContactListLocal();
+DynamicListC getContactListFromFile();
+DynamicListC getContactListInitiated();

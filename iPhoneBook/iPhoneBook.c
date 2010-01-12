@@ -51,8 +51,9 @@ LRESULT CALLBACK	ContainerProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 void createGUI(HWND hWnd, HINSTANCE hInstance);
+void showChildContainers(int nCmdShow);
+void enableChildContainers(BOOL value);
 
-ScreenMode screenMode;
 
 HoverButton 
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton,
@@ -62,8 +63,10 @@ HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts;
 HWND hwndSearchBox, hwndConfirmDialog;
 HWND hLV;
 WNDPROC defContainerProc;
-static int inButton;
 const RECT ifoneScreenRect = { 67, 136, 386, 615 };
+DynamicListC contactList = NULL;
+ScreenMode screenMode = SCREEN_MAIN;
+int isConfirmOn = FALSE;
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -198,32 +201,38 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			{
 			case BUTTON_ID_CLOCK:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
 					ShowWindow(hwndConfirmDialog, SW_SHOW);
+					isConfirmOn = TRUE;
+					enableChildContainers(FALSE);
+				}
 				break;
 			case BUTTON_ID_CONTACT:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
-					ShowWindow(getHoverButtonHwnd(hbMainCenterPic), FALSE);
-					ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), FALSE);
-					ShowWindow(hwndContainerMainButtons, FALSE);
-					ShowWindow(hwndContainerMiscButtons, TRUE);
-					ShowWindow(hwndContainerContacts, TRUE);
+					showChildContainers(SW_HIDE);
+					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
+					ShowWindow(hwndContainerContacts, SW_SHOW);
 					screenMode = SCREEN_CONTACTS;
-					fillListView(getContactList(), NULL);
+					fillListView(hLV, getContactListInitiated(), NULL);
 					SetFocus(hwndSearchBox);
 				}
 				break;
 			case BUTTON_ID_YES:
 			case BUTTON_ID_NO:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
 					ShowWindow(hwndConfirmDialog, SW_HIDE);
+					isConfirmOn = FALSE;
+					enableChildContainers(TRUE);
+				}
 				break;
 			case EDIT_ID_SEARCH:
 				if (wmEvent == EN_CHANGE)
 				{
 					TCHAR str[256];
 					GetWindowText((HWND)lParam, str, 256);
-					fillListView(getContactList(), str);
+					fillListView(hLV, getContactListLocal(), str);
 				}
 			default:
 				break;
@@ -236,6 +245,14 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			LRESULT ret = ListViewProc(hWnd, wParam, lParam);
 			if (ret)
 				return ret;
+		}
+		break;
+	case WM_DESTROY:
+		{
+			HBITMAP hBmp;
+			hBmp = (HBITMAP)SendMessage(hWnd, STM_GETIMAGE, IMAGE_BITMAP, (LPARAM)0);
+			if (hBmp)
+				DeleteObject(hBmp);
 		}
 		break;
 	default:
@@ -264,11 +281,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case BUTTON_ID_PWR:
 			if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 			{
-				ShowWindow(hwndContainerMiscButtons, FALSE);
-				ShowWindow(hwndContainerContacts, FALSE);
-				ShowWindow(getHoverButtonHwnd(hbMainCenterPic), TRUE);
-				ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), TRUE);
-				ShowWindow(hwndContainerMainButtons, TRUE);
+				if (screenMode != SCREEN_MAIN)
+				{
+					showChildContainers(SW_HIDE);
+					ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_SHOW);
+					ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
+					ShowWindow(hwndContainerMainButtons, SW_SHOW);
+				}
 				KillTimer(hWnd, PWRBTN_TIMER_ID);
 				screenMode = SCREEN_MAIN;
 			}
@@ -285,11 +304,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			DestroyWindow(hWnd);
 			break;
 		case 3:
-			if (!editBtn->inTextMode && (wmId % 10) == CID_MAIN_OFFSET)
+			if (!editBtn->inTextMode && (wmId % 10) == CID_MAIN_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				showEditButtonEdit(editBtn, TRUE);
-			else if ((wmId % 10) == CID_OK_OFFSET)
+			else if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				showEditButtonEdit(editBtn, FALSE);
-			else if ((wmId % 10) == CID_CANCEL_OFFSET)
+			else if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				showEditButtonEdit(editBtn, FALSE);
 			break;
 		default:
@@ -311,7 +330,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			// If we're over the client area, return TitleBar area (caption area) 
 			// so that we can move the window by dragging on the client area
 			// Else return whatever the part we're on.
-			if(uHitTest == HTCLIENT)
+			if(uHitTest == HTCLIENT && !isConfirmOn)
 				return HTCAPTION;
 			else
 				return uHitTest;
@@ -320,7 +339,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT:
 		{
 			hdc = BeginPaint(hWnd, &ps);
-			setImageToDC(hInst, &ps.rcPaint, &ps.rcPaint, hdc, IDB_IFONE_BG);
+			setImageToDc(hInst, &ps.rcPaint, &ps.rcPaint, hdc, IDB_IFONE_BG);
 			EndPaint(hWnd, &ps);
 		}
 		break;
@@ -387,11 +406,31 @@ VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD d
 		if (screenMode == SCREEN_MAIN)
 		{
 			setHoverButtonText(hbMainUnderDateBg, str);
-			setHoverButtonText(hbTopBarSkype, NULL);
+			if (getHoverButtonText(hbTopBarSkype, str, 1000) > 0)
+				setHoverButtonText(hbTopBarSkype, NULL);
 		}
 		else
 			setHoverButtonText(hbTopBarSkype, str);
 	}
+}
+
+void showChildContainers(int nCmdShow)
+{	
+	ShowWindow(getHoverButtonHwnd(hbMainCenterPic), nCmdShow);
+	ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), nCmdShow);
+	ShowWindow(hwndContainerMainButtons, nCmdShow);
+	ShowWindow(hwndContainerMiscButtons, nCmdShow);
+	ShowWindow(hwndContainerContacts, nCmdShow);
+}
+
+void enableChildContainers(BOOL value)
+{	
+	EnableWindow(getHoverButtonHwnd(hbMainCenterPic), value);
+	EnableWindow(getHoverButtonHwnd(hbMainUnderDateBg), value);
+	EnableWindow(hwndContainerMainButtons, value);
+	EnableWindow(hwndContainerMiscButtons, value);
+	EnableWindow(hwndContainerContacts, value);
+	InvalidateRect(GetParent(hwndConfirmDialog), NULL, FALSE);
 }
 
 void createGUI(HWND hWnd, HINSTANCE hInstance)
@@ -408,6 +447,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	lockHoverButtonImage(hbMainUnderDateBg, TRUE);
 	setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
 	setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
+	ClockTimerProc(NULL, 0, 0, 0); // Draw clock.
 	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 271, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
 	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, BUTTON_ID_PWR, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
