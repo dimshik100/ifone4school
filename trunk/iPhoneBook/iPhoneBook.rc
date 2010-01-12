@@ -1,4 +1,4 @@
-//Microsoft Visual C++ generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -13,12 +13,18 @@
 #define APSTUDIO_HIDDEN_SYMBOLS
 #include "windows.h"
 #undef APSTUDIO_HIDDEN_SYMBOLS
+
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-LANGUAGE 9, 1
-#pragma code_page(1255)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -27,24 +33,23 @@ LANGUAGE 9, 1
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-
-IDI_IPHONEBOOK       ICON         "iPhoneBook.ico"
-IDI_SMALL               ICON         "small.ico"
+IDI_IPHONEBOOK          ICON                    "iPhoneBook.ico"
+IDI_SMALL               ICON                    "small.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu
 //
 
-IDC_IPHONEBOOK MENU
+IDC_IPHONEBOOK MENU 
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "E&xit",                IDM_EXIT
+        MENUITEM "E&xit",                       IDM_EXIT
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About ...",           IDM_ABOUT
+        MENUITEM "&About ...",                  IDM_ABOUT
     END
 END
 
@@ -54,7 +59,7 @@ END
 // Accelerator
 //
 
-IDC_IPHONEBOOK ACCELERATORS
+IDC_IPHONEBOOK ACCELERATORS 
 BEGIN
     "?",            IDM_ABOUT,              ASCII,  ALT
     "/",            IDM_ABOUT,              ASCII,  ALT
@@ -69,13 +74,14 @@ END
 IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About iPhoneBook"
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    ICON            128,IDC_STATIC,14,14,21,20
     LTEXT           "iPhoneBook, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2009",IDC_STATIC,42,26,114,8
     DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
 END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -83,7 +89,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
+GUIDELINES DESIGNINFO 
 BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
@@ -95,19 +101,21 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
+
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
 // TEXTINCLUDE
 //
-1 TEXTINCLUDE
+
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE
+2 TEXTINCLUDE 
 BEGIN
-	"#ifndef APSTUDIO_INVOKED\r\n"
+    "#ifndef APSTUDIO_INVOKED\r\n"
     "#include ""targetver.h""\r\n"
     "#endif\r\n"
     "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
@@ -116,7 +124,7 @@ BEGIN
     "\0"
 END
 
-3 TEXTINCLUDE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -124,118 +132,90 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE
-BEGIN
-   IDC_IPHONEBOOK   "IPHONEBOOK"
-   IDS_APP_TITLE       "iPhoneBook"
-END
-
-#endif
-/////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Bitmap
 //
-//NAME				TYPE					PATH
-IDB_OFF             BITMAP                  "imgs\\off.bmp"
-IDB_ON             BITMAP                  "imgs\\on.bmp"
 
-
-
-IDB_IFONE_BG					BITMAP					"imgs\\ifone_bg.bmp"
-
-IDB_TOP_BAR_SKYPE_OFF			BITMAP					"imgs\\top_bar_skype_off.bmp"
-IDB_TOP_BAR_SKYPE_ON			BITMAP					"imgs\\top_bar_skype_on.bmp"
-
-IDB_MAIN_WND_UNDER_DATE_BG		BITMAP					"imgs\\main_wnd_under_date_bg.bmp"
-IDB_MAIN_WND_CENTER_PIC			BITMAP					"imgs\\main_wnd_center_pic.bmp"
-//////////////////////////MAIN WINDOW BUTTONS MENU//////////////////////////////////
-IDB_MAIN_WND_LOW_BAR_LEFT		BITMAP					"imgs\\main_wnd_low_bar_left.bmp"
-
-IDB_MAIN_WND_CLOCK_OFF			BITMAP					"imgs\\main_wnd_clock_off.bmp"
-IDB_MAIN_WND_CLOCK_ON			BITMAP					"imgs\\main_wnd_clock_on.bmp"
-
-IDB_MAIN_WND_CONTACT_OFF		BITMAP					"imgs\\main_wnd_contact_off.bmp"
-IDB_MAIN_WND_CONTACT_ON			BITMAP					"imgs\\main_wnd_contact_on.bmp"
-
-IDB_MAIN_WND_INFO_OFF			BITMAP					"imgs\\main_wnd_info_off.bmp"
-IDB_MAIN_WND_INFO_ON			BITMAP					"imgs\\main_wnd_info_on.bmp"
-
-IDB_MAIN_WND_BIN_FULL_OFF		BITMAP					"imgs\\main_wnd_bin_full_off.bmp"
-IDB_MAIN_WND_BIN_FULL_ON		BITMAP					"imgs\\main_wnd_bin_full_on.bmp"
-
-IDB_MAIN_WND_BIN_EMPTY_OFF		BITMAP					"imgs\\main_wnd_bin_empty_off.bmp"
-IDB_MAIN_WND_BIN_EMPTY_ON		BITMAP					"imgs\\main_wnd_bin_empty_on.bmp"
-
-IDB_MAIN_WND_LOW_BAR_RIGHT		BITMAP					"imgs\\main_wnd_low_bar_right.bmp"
-//////////////////////////CONTACT WINDOW//////////////////////////////////
-IDB_CONTACT_WND_APP_NAME		BITMAP					"imgs\\contact_wnd_app_name_bg.bmp"
-
-IDB_CONTACT_WND_SEARCH			BITMAP					"imgs\\contact_wnd_search_bg.bmp"
-
-IDB_CONTACT_WND_LET_SEP			BITMAP					"imgs\\contact_wnd_letter_seperator_bg.bmp"
-
-IDB_CONTACT_WND_NAME_BG_OFF		BITMAP					"imgs\\contact_wnd_name_bg_off.bmp"
-IDB_CONTACT_WND_NAME_BG_ON		BITMAP					"imgs\\contact_wnd_name_bg_on.bmp"
-
-////////////////////////////////EDIT BUTTON//////////////////////////////////
-
-IDB_EDIT_BTN_CANCEL_BTN_OFF		BITMAP					"imgs\\cancelButton_off.bmp"
-IDB_EDIT_BTN_CANCEL_BTN_ON		BITMAP					"imgs\\cancelButton_on.bmp"
-
-IDB_EDIT_BTN_OK_BTN_OFF			BITMAP					"imgs\\okButton_off.bmp"
-IDB_EDIT_BTN_OK_BTN_ON			BITMAP					"imgs\\okButton_on.bmp"
-
-//////////////////////////CONTACT DETAILS WINDOW//////////////////////////////////
-IDB_CONTACT_INFO_WND_APP_NAME	BITMAP					"imgs\\contact_info_wnd_app_name_bg.bmp"
-IDB_CONTACT_INFO_ALL_CONTACTS	BITMAP					"imgs\\all_contacts_button.bmp"
-IDB_CONTACT_INFO_EDIT_CONTACT	BITMAP					"imgs\\edit_contact_button.bmp"
-
-IDB_CONTACT_DTL_EMAIL_OFF		BITMAP					"imgs\\email_off.bmp"
-IDB_CONTACT_DTL_EMAIL_ON		BITMAP					"imgs\\email_on.bmp"
-
-IDB_CONTACT_DTL_MAP_OFF			BITMAP					"imgs\\map_off.bmp"
-IDB_CONTACT_DTL_MAP_ON			BITMAP					"imgs\\map_on.bmp"
-
-IDB_CONTACT_DTL_WWW_OFF			BITMAP					"imgs\\www_off.bmp"
-IDB_CONTACT_DTL_WWW_ON			BITMAP					"imgs\\www_on.bmp"
-
-IDB_CONTACT_DTL_SKYPE_OFF		BITMAP					"imgs\\skype_off.bmp"
-IDB_CONTACT_DTL_SKYPE_ON		BITMAP					"imgs\\skype_on.bmp"
-
-//////////////////////////CONTACT WINDOW BUTTONS MENU//////////////////////////////////
-IDB_CONTACT_WND_BUTTON_BG		BITMAP					"imgs\\contact_wnd_button_bg.bmp"
-
-IDB_CONTACT_WND_BUTTON_CALL_OFF	BITMAP					"imgs\\contact_wnd_button_call_off.bmp"
-IDB_CONTACT_WND_BUTTON_CALL_ON	BITMAP					"imgs\\contact_wnd_button_call_on.bmp"
-
-IDB_CONTACT_WND_BUTTON_INFO_OFF	BITMAP					"imgs\\contact_wnd_button_info_off.bmp"
-IDB_CONTACT_WND_BUTTON_INFO_ON	BITMAP					"imgs\\contact_wnd_button_info_on.bmp"
-
-IDB_CONTACT_WND_BUTTON_EDIT_OFF	BITMAP					"imgs\\contact_wnd_button_edit_off.bmp"
-IDB_CONTACT_WND_BUTTON_EDIT_ON	BITMAP					"imgs\\contact_wnd_button_edit_on.bmp"
-
-IDB_CONTACT_WND_BUTTON_DEL_OFF	BITMAP					"imgs\\contact_wnd_button_delete_off.bmp"
-IDB_CONTACT_WND_BUTTON_DEL_ON	BITMAP					"imgs\\contact_wnd_button_delete_on.bmp"
-/////////////////////////////////////////////////////////////////////////////
-
-IDB_EXIT_BUTTON_OFF				BITMAP					"imgs\\exit_button_off.bmp"
-IDB_EXIT_BUTTON_ON				BITMAP					"imgs\\exit_button_on.bmp"
-/////////////////////////////////////////////////////////////////////////////
-
-IDB_CONFIRM_WND					BITMAP					"imgs\\alert_bg.bmp"
-IDB_CONFIRM_YES_ON				BITMAP					"imgs\\alert_yes_on.bmp"
-IDB_CONFIRM_YES_OFF				BITMAP					"imgs\\alert_yes_off.bmp"
-IDB_CONFIRM_NO_ON				BITMAP					"imgs\\alert_no_on.bmp"
-IDB_CONFIRM_NO_OFF				BITMAP					"imgs\\alert_no_off.bmp"
+IDB_OFF                 BITMAP                  "imgs\\off.bmp"
+IDB_ON                  BITMAP                  "imgs\\on.bmp"
+IDB_IFONE_BG            BITMAP                  "imgs\\ifone_bg.bmp"
+IDB_TOP_BAR_SKYPE_OFF   BITMAP                  "imgs\\top_bar_skype_off.bmp"
+IDB_TOP_BAR_SKYPE_ON    BITMAP                  "imgs\\top_bar_skype_on.bmp"
+IDB_MAIN_WND_UNDER_DATE_BG BITMAP                  "imgs\\main_wnd_under_date_bg.bmp"
+IDB_MAIN_WND_CENTER_PIC BITMAP                  "imgs\\main_wnd_center_pic.bmp"
+IDB_MAIN_WND_LOW_BAR_LEFT BITMAP                  "imgs\\main_wnd_low_bar_left.bmp"
+IDB_MAIN_WND_CLOCK_OFF  BITMAP                  "imgs\\main_wnd_clock_off.bmp"
+IDB_MAIN_WND_CLOCK_ON   BITMAP                  "imgs\\main_wnd_clock_on.bmp"
+IDB_MAIN_WND_CONTACT_OFF BITMAP                  "imgs\\main_wnd_contact_off.bmp"
+IDB_MAIN_WND_CONTACT_ON BITMAP                  "imgs\\main_wnd_contact_on.bmp"
+IDB_MAIN_WND_INFO_OFF   BITMAP                  "imgs\\main_wnd_info_off.bmp"
+IDB_MAIN_WND_INFO_ON    BITMAP                  "imgs\\main_wnd_info_on.bmp"
+IDB_MAIN_WND_BIN_FULL_OFF BITMAP                  "imgs\\main_wnd_bin_full_off.bmp"
+IDB_MAIN_WND_BIN_FULL_ON BITMAP                  "imgs\\main_wnd_bin_full_on.bmp"
+IDB_MAIN_WND_BIN_EMPTY_OFF BITMAP                  "imgs\\main_wnd_bin_empty_off.bmp"
+IDB_MAIN_WND_BIN_EMPTY_ON BITMAP                  "imgs\\main_wnd_bin_empty_on.bmp"
+IDB_MAIN_WND_LOW_BAR_RIGHT BITMAP                  "imgs\\main_wnd_low_bar_right.bmp"
+IDB_CONTACT_WND_APP_NAME BITMAP                  "imgs\\contact_wnd_app_name_bg.bmp"
+IDB_CONTACT_WND_SEARCH  BITMAP                  "imgs\\contact_wnd_search_bg.bmp"
+IDB_CONTACT_WND_LET_SEP BITMAP                  "imgs\\contact_wnd_letter_seperator_bg.bmp"
+IDB_CONTACT_WND_NAME_BG_OFF BITMAP                  "imgs\\contact_wnd_name_bg_off.bmp"
+IDB_CONTACT_WND_NAME_BG_ON BITMAP                  "imgs\\contact_wnd_name_bg_on.bmp"
+IDB_EDIT_BTN_CANCEL_BTN_OFF BITMAP                  "imgs\\cancelButton_off.bmp"
+IDB_EDIT_BTN_CANCEL_BTN_ON BITMAP                  "imgs\\cancelButton_on.bmp"
+IDB_EDIT_BTN_OK_BTN_OFF BITMAP                  "imgs\\okButton_off.bmp"
+IDB_EDIT_BTN_OK_BTN_ON  BITMAP                  "imgs\\okButton_on.bmp"
+IDB_CONTACT_INFO_WND_APP_NAME BITMAP                  "imgs\\contact_info_wnd_app_name_bg.bmp"
+IDB_CONTACT_INFO_ALL_CONTACTS BITMAP                  "imgs\\all_contacts_button.bmp"
+IDB_CONTACT_INFO_EDIT_CONTACT BITMAP                  "imgs\\edit_contact_button.bmp"
+IDB_CONTACT_DTL_EMAIL_OFF BITMAP                  "imgs\\email_off.bmp"
+IDB_CONTACT_DTL_EMAIL_ON BITMAP                  "imgs\\email_on.bmp"
+IDB_CONTACT_DTL_MAP_OFF BITMAP                  "imgs\\map_off.bmp"
+IDB_CONTACT_DTL_MAP_ON  BITMAP                  "imgs\\map_on.bmp"
+IDB_CONTACT_DTL_WWW_OFF BITMAP                  "imgs\\www_off.bmp"
+IDB_CONTACT_DTL_WWW_ON  BITMAP                  "imgs\\www_on.bmp"
+IDB_CONTACT_DTL_SKYPE_OFF BITMAP                  "imgs\\skype_off.bmp"
+IDB_CONTACT_DTL_SKYPE_ON BITMAP                  "imgs\\skype_on.bmp"
+IDB_CONTACT_WND_BUTTON_BG BITMAP                  "imgs\\contact_wnd_button_bg.bmp"
+IDB_CONTACT_WND_BUTTON_CALL_OFF BITMAP                  "imgs\\contact_wnd_button_call_off.bmp"
+IDB_CONTACT_WND_BUTTON_CALL_ON BITMAP                  "imgs\\contact_wnd_button_call_on.bmp"
+IDB_CONTACT_WND_BUTTON_INFO_OFF BITMAP                  "imgs\\contact_wnd_button_info_off.bmp"
+IDB_CONTACT_WND_BUTTON_INFO_ON BITMAP                  "imgs\\contact_wnd_button_info_on.bmp"
+IDB_CONTACT_WND_BUTTON_EDIT_OFF BITMAP                  "imgs\\contact_wnd_button_edit_off.bmp"
+IDB_CONTACT_WND_BUTTON_EDIT_ON BITMAP                  "imgs\\contact_wnd_button_edit_on.bmp"
+IDB_CONTACT_WND_BUTTON_DEL_OFF BITMAP                  "imgs\\contact_wnd_button_delete_off.bmp"
+IDB_CONTACT_WND_BUTTON_DEL_ON BITMAP                  "imgs\\contact_wnd_button_delete_on.bmp"
+IDB_EXIT_BUTTON_OFF     BITMAP                  "imgs\\exit_button_off.bmp"
+IDB_EXIT_BUTTON_ON      BITMAP                  "imgs\\exit_button_on.bmp"
+IDB_ALERT_BG            BITMAP                  "imgs\\alert_bg.bmp"
+IDB_ALERT_NO_OFF        BITMAP                  "imgs\\alert_no_off.bmp"
+IDB_ALERT_NO_ON         BITMAP                  "imgs\\alert_no_on.bmp"
+IDB_ALERT_YES_OFF       BITMAP                  "imgs\\alert_yes_off.bmp"
+IDB_ALERT_YES_ON        BITMAP                  "imgs\\alert_yes_on.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
+//
+// RT_MANIFEST
+//
+
+1                       RT_MANIFEST             "iPhoneBook.exe.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_APP_TITLE           "iPhoneBook"
+    IDC_IPHONEBOOK          "IPHONEBOOK"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
 
 #ifndef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -243,8 +223,7 @@ IDB_CONFIRM_NO_OFF				BITMAP					"imgs\\alert_no_off.bmp"
 // Generated from the TEXTINCLUDE 3 resource.
 //
 
+
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
 
-// Manifest file
-CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "iPhoneBook.exe.manifest"

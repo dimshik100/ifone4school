@@ -178,23 +178,28 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	{
 	case WM_LBUTTONDOWN:
 		hoverButton = findButton(0, hWnd);
-		if (!hoverButton->isLocked && hoverButton->isPushButton)
+		hoverButton->isPushed = TRUE;
+		if (!hoverButton->isLocked)
 		{
 			hoverButton->isHovering = TRUE;
 			invalidateButtonRect(hoverButton);
-			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_DOWN), (LPARAM)hWnd);
-			return FALSE;
+			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_LMOUSE_DOWN), (LPARAM)hWnd);
 		}
+		return FALSE;
 		break;
 	case WM_LBUTTONUP:
 		hoverButton = findButton(0, hWnd);
-		if (!hoverButton->isLocked && hoverButton->isPushButton)
+		hoverButton->isPushed = FALSE;
+		if (!hoverButton->isLocked)
 		{
-			hoverButton->isHovering = FALSE;
-			invalidateButtonRect(hoverButton);
-			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_UP), (LPARAM)hWnd);
-			return FALSE;
+			if (hoverButton->isPushButton)
+			{
+				hoverButton->isHovering = FALSE;
+				invalidateButtonRect(hoverButton);
+			}
+			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_LMOUSE_UP), (LPARAM)hWnd);
 		}
+		return FALSE;
 		break;
 	case WM_MOUSEMOVE:
 		{
@@ -218,8 +223,14 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	case WM_MOUSELEAVE:
 		{
 			hoverButton = findButton(0, hWnd);
-			hoverButton->isHovering = FALSE;
-			invalidateButtonRect(hoverButton);
+
+			if (!hoverButton->isLocked)
+			{
+				hoverButton->isHovering = FALSE;
+				invalidateButtonRect(hoverButton);
+				if (hoverButton->isPushed)
+					SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_MOUSE_DOWN_LEAVE), (LPARAM)hWnd);
+			}
 			return FALSE;
 		}
 		break;

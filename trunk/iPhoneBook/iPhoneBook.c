@@ -9,6 +9,7 @@
 #include "EditButton.h"
 #include "HoverButton.h"
 #include "PhoneBook.h"
+#include "Miscellaneous.h"
 #include <commctrl.h>
 
 #define MAX_LOADSTRING 100
@@ -26,8 +27,10 @@
 #define BUTTON_ID_MISC2 (CONTROL_ID + 6)
 #define BUTTON_ID_MISC3 (CONTROL_ID + 7)
 #define BUTTON_ID_MISC4 (CONTROL_ID + 8)
+#define BUTTON_ID_YES	(CONTROL_ID + 9)
+#define BUTTON_ID_NO	(CONTROL_ID + 10)
 
-#define EDIT_ID_SEARCH (CONTROL_ID + 9)
+#define EDIT_ID_SEARCH (CONTROL_ID + 20)
 
 
 typedef enum {	SCREEN_MAIN, SCREEN_CONTACTS, SCREEN_MEM_INFO, SCREEN_TRASH, 
@@ -48,19 +51,19 @@ LRESULT CALLBACK	ContainerProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 void createGUI(HWND hWnd, HINSTANCE hInstance);
-void setImageToDC(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hDC, int imageId);
 
 ScreenMode screenMode;
 
 HoverButton 
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton,
-		*hbMainActionBtn[4], *hbMiscActionBtn[4];
+		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo;
 
 HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts;
-HWND hwndSearchBox;
+HWND hwndSearchBox, hwndConfirmDialog;
 HWND hLV;
 WNDPROC defContainerProc;
 static int inButton;
+const RECT ifoneScreenRect = { 67, 136, 386, 615 };
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -193,15 +196,27 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			int wmEvent = HIWORD(wParam);
 			switch(wmId)
 			{
+			case BUTTON_ID_CLOCK:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+					ShowWindow(hwndConfirmDialog, SW_SHOW);
+				break;
 			case BUTTON_ID_CONTACT:
-				ShowWindow(getHoverButtonHwnd(hbMainCenterPic), FALSE);
-				ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), FALSE);
-				ShowWindow(hwndContainerMainButtons, FALSE);
-				ShowWindow(hwndContainerMiscButtons, TRUE);
-				ShowWindow(hwndContainerContacts, TRUE);
-				screenMode = SCREEN_CONTACTS;
-				fillListView(getContactList(), NULL);
-				SetFocus(hwndSearchBox);
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
+					ShowWindow(getHoverButtonHwnd(hbMainCenterPic), FALSE);
+					ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), FALSE);
+					ShowWindow(hwndContainerMainButtons, FALSE);
+					ShowWindow(hwndContainerMiscButtons, TRUE);
+					ShowWindow(hwndContainerContacts, TRUE);
+					screenMode = SCREEN_CONTACTS;
+					fillListView(getContactList(), NULL);
+					SetFocus(hwndSearchBox);
+				}
+				break;
+			case BUTTON_ID_YES:
+			case BUTTON_ID_NO:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+					ShowWindow(hwndConfirmDialog, SW_HIDE);
 				break;
 			case EDIT_ID_SEARCH:
 				if (wmEvent == EN_CHANGE)
@@ -247,7 +262,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (getEditButtonControlId(wmId))
 		{
 		case BUTTON_ID_PWR:
-			if (wmEvent == HOVER_BUTTON_UP)
+			if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 			{
 				ShowWindow(hwndContainerMiscButtons, FALSE);
 				ShowWindow(hwndContainerContacts, FALSE);
@@ -257,7 +272,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				KillTimer(hWnd, PWRBTN_TIMER_ID);
 				screenMode = SCREEN_MAIN;
 			}
-			else if (wmEvent == HOVER_BUTTON_DOWN)
+			else if (wmEvent == HOVER_BUTTON_MOUSE_DOWN_LEAVE)
+				KillTimer(hWnd, PWRBTN_TIMER_ID);
+			else if (wmEvent == HOVER_BUTTON_LMOUSE_DOWN)
 				SetTimer(hWnd, PWRBTN_TIMER_ID, 3000, NULL);
 			ClockTimerProc(NULL, 0, 0, 0);
 			break;
@@ -356,26 +373,6 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
-void setImageToDC(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hDC, int imageId)
-{
-	HBITMAP hbmpOld, hbmpImage;
-	HDC hDCMem;
-
-	// Create a DC in memory, compatible with the button's original DC.
-	hDCMem = CreateCompatibleDC(hDC);
-	// Load the selected image from the resource file.
-	hbmpImage = LoadBitmap(hInstance, MAKEINTRESOURCE(imageId));
-	// Select the image into the DC. Keep a reference to the old bitmap.
-	hbmpOld = (HBITMAP)SelectObject(hDCMem, hbmpImage);
-	// Copies the bitmap from the memory DC into the buttons DC 
-	BitBlt(hDC, lprc->left, lprc->top, lprc->right, lprc->bottom, hDCMem, lprcOffset->left, lprcOffset->top, SRCCOPY);
-	// Select the original memory DC's bitmap.
-	SelectObject(hDCMem, hbmpOld);
-	// Free resources.
-	DeleteDC(hDCMem);
-	DeleteObject(hbmpImage);
-}
-
 VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dwTime)
 {
 	TCHAR str[1000];
@@ -411,7 +408,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	lockHoverButtonImage(hbMainUnderDateBg, TRUE);
 	setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
 	setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
-	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 273, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
+	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 271, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
 	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, BUTTON_ID_PWR, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
 	setHoverButtonAsPushButton(hbExitButton, TRUE);
@@ -462,4 +459,19 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	lockHoverButtonImage(tempBtn, TRUE);
 	EnableWindow(tempBtn->hButton, FALSE);
 	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 35, 56, 265, 23, hwndContainerContacts, (HMENU)EDIT_ID_SEARCH, hInstance, NULL);
+
+	hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_ALERT_BG));
+	hwndConfirmDialog = CreateWindowEx(0, TEXT("static"), NULL,  WS_CHILD | WS_POPUP | SS_BITMAP,
+		ifoneScreenRect.left + (ifoneScreenRect.right - 277) / 2,
+		ifoneScreenRect.top + (ifoneScreenRect.bottom - 103) / 2,
+		277, 103, hWnd, NULL, hInstance, NULL);
+	SetWindowLong(hwndConfirmDialog, GWL_EXSTYLE, WS_EX_LAYERED);
+	SetLayeredWindowAttributes(hwndConfirmDialog, 0, 192, LWA_ALPHA);
+	SetWindowPos(hwndConfirmDialog, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	SendMessage(hwndConfirmDialog, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
+	SetWindowLong(hwndConfirmDialog, GWL_WNDPROC, (LONG_PTR)ContainerProc);
+	ShowWindow(hwndConfirmDialog, SW_SHOW);
+
+	hbYes = createHoverButton(hwndConfirmDialog, hInstance, 8, 53, 128, 43, BUTTON_ID_YES, IDB_ALERT_YES_ON, IDB_ALERT_YES_OFF, NULL);
+	hbNo = createHoverButton(hwndConfirmDialog, hInstance, 143, 53, 128, 43, BUTTON_ID_NO, IDB_ALERT_NO_ON, IDB_ALERT_NO_OFF, NULL);
 }
