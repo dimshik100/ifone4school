@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "ListView.h"
+#include "Miscellaneous.h"
 #include "resource.h"
 #include <windows.h>
 #include <commctrl.h>
@@ -7,15 +8,18 @@
 WNDPROC wndDefListViewProc = NULL;
 HINSTANCE hInst = NULL;
 HWND hwndListView = NULL;
+HFONT hFontBold = NULL, hFontNormal = NULL;
 
 enum SORT { Sort_Ascending, Sort_Descending };
-extern void setImageToDC(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hDC, int imageId);
 int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 int compareNames(Contact *target, LPTSTR name);
 
 void fillListView(DynamicListC pList, LPTSTR string)
 {
 	Contact *contact;
+	int i, listCount, chr = 0;
+	TCHAR tempStr[1000];
+	LVITEM lvItem = {0};
 
 	if (!pList)
 		return;
@@ -37,6 +41,27 @@ void fillListView(DynamicListC pList, LPTSTR string)
 		{
 			listGetValue(pList, NULL, &contact);
 			addListViewItem(hwndListView, contact);
+		}
+	}
+	ListView_SortItems(hwndListView, sortListViewItems, Sort_Ascending);
+	listCount = ListView_GetItemCount(hwndListView);
+	for (i = 0; i < listCount; i++)
+	{
+		lvItem.iItem = i;
+		lvItem.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
+		lvItem.pszText = tempStr;
+		lvItem.cchTextMax = 1000;
+		ListView_GetItem(hwndListView, &lvItem);
+		if (lvItem.lParam)
+		{
+			if (chr != toupper(((Contact*)lvItem.lParam)->lastName[0]))
+			{
+				chr = toupper(((Contact*)lvItem.lParam)->lastName[0]);
+				_stprintf_s(lvItem.pszText, lvItem.cchTextMax, TEXT("%c"), chr);
+				lvItem.lParam = (LPARAM)NULL;
+				if (ListView_InsertItem(hwndListView, &lvItem) > -1)
+					listCount++, i++;
+			}
 		}
 	}
 }
@@ -65,9 +90,6 @@ BOOL addListViewItem(HWND hWndListView, Contact *contact)
 	lvItem.lParam = (LPARAM)contact;
     if (ListView_InsertItem(hWndListView, &lvItem) == -1) 
 		return FALSE;
-
-	ListView_SortItems(hWndListView, sortListViewItems, Sort_Ascending);
-
 
     return TRUE; 
 }
@@ -141,6 +163,7 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 
 HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height)
 {
+	HDC hdc;
 	HIMAGELIST imageList = ImageList_Create(1, 43, ILC_COLORDDB, 0, 0);
 	hwndListView = CreateWindowEx(0, WC_LISTVIEW, NULL, 
 		WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SINGLESEL | /*LVS_OWNERDRAWFIXED |*/ LVS_NOCOLUMNHEADER | LVS_AUTOARRANGE,
@@ -150,12 +173,20 @@ HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int widt
 	ListView_SetImageList(hwndListView, imageList, LVSIL_SMALL);
 	hInst = hInstance;
 
+	hdc = GetDC(hwndListView);
+	hFontBold = CreateFont(-MulDiv(14, GetDeviceCaps(hdc, LOGPIXELSY), 72), 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
+							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, TEXT("Arial"));
+	hFontNormal = CreateFont(-MulDiv(14, GetDeviceCaps(hdc, LOGPIXELSY), 72), 0, 0, 0, FW_DONTCARE, 0, 0, 0, DEFAULT_CHARSET,
+							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, TEXT("Arial"));
+	ReleaseDC(hwndListView, hdc);
+
 	return hwndListView;
 }
 
 int compareNames(Contact *target, LPTSTR name)
 {
-	TCHAR origName[200], lastName[100], firstName[100], fullName1[200], fullName2[200], *tempStr;
+	TCHAR origName[200], lastName[100], firstName[100], *token, *nextToken, delims[] = TEXT(" "), *tempStr;
+	int ret;
 
 	_tcscpy_s(origName, 200, name);
 	_tcslwr_s(origName, _tcslen(origName) + 1);
@@ -166,25 +197,33 @@ int compareNames(Contact *target, LPTSTR name)
 	_tcscpy_s(firstName, 100, target->firstName);
 	_tcslwr_s(firstName, _tcslen(firstName) + 1);
 
-	_stprintf_s(fullName1, 200, TEXT("%s %s"), lastName, firstName);
-	_tcslwr_s(fullName1, _tcslen(fullName1) + 1);
-
-	_stprintf_s(fullName2, 200, TEXT("%s %s"), firstName, lastName);
-	_tcslwr_s(fullName2, _tcslen(fullName2) + 1);
-
-	tempStr = _tcsstr(lastName, origName);
-	if (tempStr && tempStr == lastName)
-		return TRUE;
-	tempStr = _tcsstr(firstName, origName);
-	if (tempStr && tempStr == lastName)
-		return TRUE;
-	tempStr = _tcsstr(fullName1, origName);
-	if (tempStr && tempStr == fullName1)
-		return TRUE;
-	tempStr = _tcsstr(fullName2, origName);
-	if (tempStr && tempStr == fullName2)
-		return TRUE;
-	return FALSE;
+	token = _tcstok_s(origName, delims, &nextToken);
+	while (token)
+	{
+		ret = FALSE;
+		if (_tcslen(lastName))
+		{
+			tempStr = _tcsstr(lastName, token);
+			if (tempStr && tempStr == lastName)
+			{
+				_tcscpy_s(lastName, 100, TEXT(""));
+				ret = TRUE;
+			}
+		}
+		if (_tcslen(firstName))
+		{
+			tempStr = _tcsstr(firstName, token);
+			if (tempStr && tempStr == firstName)
+			{
+				_tcscpy_s(firstName, 100, TEXT(""));
+				ret = TRUE;
+			}
+		}
+		if (!ret)
+			break;
+		token = _tcstok_s(NULL, delims, &nextToken);
+	}
+	return ret;
 }
 
 LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
@@ -218,38 +257,73 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 				RECT rcOffset = {0};
 				TCHAR str[1000];
 				TEXTMETRIC tm;
+				LVITEM lvItem;
 				int textTop;
+				HFONT hFont;
+				Contact *contact = NULL;
 
 				// Get current item's rect.
+				lvItem.iItem = lpNMCustomDraw->nmcd.dwItemSpec;
+				lvItem.mask = LVIF_TEXT | LVIF_PARAM | LVIF_STATE;
+				lvItem.stateMask = LVIS_SELECTED;
+				lvItem.pszText = str;
+				lvItem.cchTextMax = 1000;
+				ListView_GetItem(lpNMCustomDraw->nmcd.hdr.hwndFrom, &lvItem);
 				ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &lpNMCustomDraw->nmcd.rc, LVIR_BOUNDS);
-				lpNMCustomDraw->nmcd.uItemState = ListView_GetItemState(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, LVIS_SELECTED);
 				lpNMCustomDraw->nmcd.rc.right++;
-				// Get current item's text
-				ListView_GetItemText(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, 0, str, 1000);
-				// If item is being hovered on, draw a differet colored rect around it.
+				// If item is a "letter seperator"
+				// Else If item is being hovered on, draw a differet colored rect around it.
 				// Else draw it with blue-ish background
-				if (lpNMCustomDraw->nmcd.uItemState & LVIS_SELECTED)
+				contact = (Contact*)lvItem.lParam;
+				if (!contact)
+					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_LET_SEP);
+				else if (lvItem.state & LVIS_SELECTED)
 					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
 				else
 					setImageToDC(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
 				// Print text to item's DC.
-				GetTextMetrics(lpNMCustomDraw->nmcd.hdc, &tm);
-				textTop = lpNMCustomDraw->nmcd.rc.top + (lpNMCustomDraw->nmcd.rc.bottom - lpNMCustomDraw->nmcd.rc.top - tm.tmHeight) / 2;
 
-				TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + 5, textTop, str, _tcslen(str));
+				rcOffset.left = 5;
+				if (contact)
+				{
+					hFont = (HFONT)SelectObject(lpNMCustomDraw->nmcd.hdc, hFontNormal);
+					GetTextMetrics(lpNMCustomDraw->nmcd.hdc, &tm);
+
+					DrawTextEx(lpNMCustomDraw->nmcd.hdc, contact->firstName, _tcslen(contact->firstName), &rcOffset, DT_CALCRECT, NULL);
+					textTop = lpNMCustomDraw->nmcd.rc.top + (lpNMCustomDraw->nmcd.rc.bottom - lpNMCustomDraw->nmcd.rc.top - tm.tmHeight) / 2;
+					TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + 5, textTop, contact->firstName, _tcslen(contact->firstName));
+
+					SelectObject(lpNMCustomDraw->nmcd.hdc, hFontBold);
+					GetTextMetrics(lpNMCustomDraw->nmcd.hdc, &tm);
+					textTop = lpNMCustomDraw->nmcd.rc.top + (lpNMCustomDraw->nmcd.rc.bottom - lpNMCustomDraw->nmcd.rc.top - tm.tmHeight) / 2;
+
+					rcOffset.left = rcOffset.right;
+					DrawTextEx(lpNMCustomDraw->nmcd.hdc, TEXT(" "), _tcslen(TEXT(" ")), &rcOffset, DT_CALCRECT, NULL);					
+					TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + rcOffset.left, textTop, TEXT(" "), _tcslen(TEXT(" ")));
+					rcOffset.left = rcOffset.right;
+					DrawTextEx(lpNMCustomDraw->nmcd.hdc, lvItem.pszText, _tcslen(lvItem.pszText), &rcOffset, DT_CALCRECT, NULL);					
+					TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + rcOffset.left, textTop, contact->lastName, _tcslen(contact->lastName));
+				}
+				else
+				{
+					COLORREF origColor = GetTextColor(lpNMCustomDraw->nmcd.hdc);
+					SetTextColor(lpNMCustomDraw->nmcd.hdc, RGB(255, 255, 255));
+					hFont = (HFONT)SelectObject(lpNMCustomDraw->nmcd.hdc, hFontBold);
+					GetTextMetrics(lpNMCustomDraw->nmcd.hdc, &tm);
+					DrawTextEx(lpNMCustomDraw->nmcd.hdc, lvItem.pszText, _tcslen(lvItem.pszText), &rcOffset, DT_CALCRECT, NULL);
+					textTop = lpNMCustomDraw->nmcd.rc.top + (lpNMCustomDraw->nmcd.rc.bottom - lpNMCustomDraw->nmcd.rc.top - tm.tmHeight) / 2;
+					TextOut(lpNMCustomDraw->nmcd.hdc, lpNMCustomDraw->nmcd.rc.left + 5, textTop, lvItem.pszText, _tcslen(lvItem.pszText));
+					SetTextColor(lpNMCustomDraw->nmcd.hdc, origColor);
+				}
+
+				SelectObject(lpNMCustomDraw->nmcd.hdc, hFont);
+
 			}
 			break;
 		//case CDDS_ITEMPREERASE:
 		//	break;
-		case CDDS_ITEMPOSTERASE:
-			if (lpNMCustomDraw->dwItemType == LVCDI_ITEM)
-			{
-				RECT rc, rcOffset = {0};
-				ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &rc, LVIR_BOUNDS);
-				setImageToDC(hInst, &rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
-			}
-			return CDRF_DODEFAULT;
-			break;
+		//case CDDS_ITEMPOSTERASE:
+		//	break;
 		case CDDS_ITEMPREPAINT:
 			// Make sure CDDS_ITEMPOSTPAINT occurs.
 			lpNMCustomDraw->rcText.left = 0; 
