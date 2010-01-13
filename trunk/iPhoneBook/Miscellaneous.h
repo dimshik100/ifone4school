@@ -9,3 +9,4 @@ DynamicListC getContactListLocal();
 DynamicListC getContactListFromFile();
 DynamicListC getContactListInitiated();
 void showChildWindows(HWND hwnd, int nCmdShow);
+int isOsVista();

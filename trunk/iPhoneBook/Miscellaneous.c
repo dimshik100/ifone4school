@@ -107,3 +107,21 @@ void setImageToDcActual(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage
 	// Free resources.
 	DeleteDC(hdcMem);
 }
+
+int isOsVista()
+{
+	typedef LONG (WINAPI *PROCNTQSI)(UINT,PVOID,ULONG,PULONG);
+	PROCNTQSI NtQuerySystemInformation;
+	OSVERSIONINFO osv;
+
+	NtQuerySystemInformation = (PROCNTQSI)GetProcAddress(
+		GetModuleHandle(_T("ntdll")), "NtQuerySystemInformation");
+	osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	if(GetVersionEx( &osv )) {
+		if (osv.dwPlatformId == 2 && osv.dwMajorVersion >= 6)
+			return TRUE;
+		else
+			return FALSE;
+	}
+	return FALSE;
+}
