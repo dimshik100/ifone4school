@@ -23,6 +23,7 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 		newHoverButton = (HoverButton*)calloc(1, sizeof(HoverButton));
 		newHoverButton->onImage = onImage;
 		newHoverButton->offImage = offImage;
+		newHoverButton->activeImage = offImage;
 		newHoverButton->cId = controlId;
 		newHoverButton->hInstance = hInstance;
 		newHoverButton->buttonRect.left = x;
@@ -171,6 +172,9 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
 	switch (message)
 	{
+	case WM_COMMAND:
+		SendMessage(GetParent(hWnd), WM_COMMAND, wParam, lParam);
+		break;
 	case WM_RBUTTONDOWN:
 		hoverButton = findButton(0, hWnd);
 		hoverButton->isPushed = TRUE;
@@ -190,6 +194,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		hoverButton->isPushed = TRUE;
 		if (!hoverButton->isLocked)
 		{
+			hoverButton->activeImage = hoverButton->onImage;
 			hoverButton->isHovering = TRUE;
 			invalidateButtonRect(hoverButton);
 			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_LMOUSE_DOWN), (LPARAM)hWnd);
@@ -202,6 +207,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		{
 			if (hoverButton->isPushButton)
 			{
+				hoverButton->activeImage = hoverButton->offImage;
 				hoverButton->isHovering = FALSE;
 				invalidateButtonRect(hoverButton);
 			}
@@ -221,6 +227,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			{
 				if (setTrackMouse(hoverButton))
 				{
+					hoverButton->activeImage = hoverButton->onImage;
 					hoverButton->isHovering = TRUE;
 
 					// Force redraw of the button
@@ -236,6 +243,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
 			if (!hoverButton->isLocked)
 			{
+				hoverButton->activeImage = hoverButton->offImage;
 				hoverButton->isHovering = FALSE;
 				invalidateButtonRect(hoverButton);
 				if (hoverButton->isPushed)
@@ -265,10 +273,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			hbmpOld = (HBITMAP)SelectObject(hdcMem, hbmpImage);
 
 			hoverButton = findButton(0, hWnd);
-			if (hoverButton->isHovering)
-				setHoverButtonImage(hoverButton, hdcMem, hoverButton->onImage);
-			else
-				setHoverButtonImage(hoverButton, hdcMem, hoverButton->offImage);
+			setHoverButtonImage(hoverButton, hdcMem, hoverButton->activeImage);
 			if (hoverButton->caption)
 			{
 				TEXTMETRIC tm;

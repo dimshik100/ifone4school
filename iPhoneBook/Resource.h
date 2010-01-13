@@ -69,6 +69,7 @@
 #define IDB_CONTACT_INFO_WND_APP_NAME   255
 #define IDB_CONTACT_INFO_ALL_CONTACTS   256
 #define IDB_CONTACT_INFO_EDIT_CONTACT   257
+#define IDB_CONTACT_INFO_WND_BG		    258
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

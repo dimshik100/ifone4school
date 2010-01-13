@@ -8,3 +8,4 @@ void setBitmapToDcStretched(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpI
 DynamicListC getContactListLocal();
 DynamicListC getContactListFromFile();
 DynamicListC getContactListInitiated();
+void showChildWindows(HWND hwnd, int nCmdShow);

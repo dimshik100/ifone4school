@@ -12,7 +12,6 @@ typedef struct _EditButton
 	HWND hParent;
 	HINSTANCE hInstance;
 	RECT editRect;
-	int inTextMode;
 	int onImage;
 	int offImage;
 
@@ -26,5 +25,4 @@ void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize);
 HFONT getEditButtonFont(EditButton *editButton);
 void setEditButtonTextColor(EditButton *editButton, COLORREF color);
 void showEditButtonEdit(EditButton *editButton, int show);
-void setDefaultEditButtonProc(WNDPROC wndProc);
 int getEditButtonControlId(int cId);

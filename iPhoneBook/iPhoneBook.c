@@ -30,6 +30,16 @@
 #define BUTTON_ID_MISC4 (CONTROL_ID + 8)
 #define BUTTON_ID_YES	(CONTROL_ID + 9)
 #define BUTTON_ID_NO	(CONTROL_ID + 10)
+#define INFO_ID_CNTNAME	(CONTROL_ID + 11)
+#define INFO_ID_PHONE	(CONTROL_ID + 12)
+#define INFO_ID_WEB		(CONTROL_ID + 13)
+#define INFO_ID_EMAIL	(CONTROL_ID + 14)
+#define INFO_ID_AGE		(CONTROL_ID + 15)
+#define INFO_ID_ADDRESS	(CONTROL_ID + 16)
+#define BUTTON_ID_ALL_CONTACTS (CONTROL_ID + 17)
+#define BUTTON_ID_EDIT_CONTACT (CONTROL_ID + 18)
+
+
 
 #define EDIT_ID_SEARCH (CONTROL_ID + 20)
 
@@ -58,9 +68,19 @@ void enableChildContainers(BOOL value);
 
 HoverButton 
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton,
-		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo;
+		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo, *allContactsButton, *editContactButton;
 
-HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts;
+EditButton *ebContactInfo[6];
+	/* 
+	0- Name
+	1- Phone Number 
+	2- Website
+	3- Email
+	4- Age
+	5- Address
+	*/
+
+HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts, hwndContainerContactDetails;
 HWND hwndSearchBox, hwndConfirmDialog;
 HWND hLV;
 WNDPROC defContainerProc;
@@ -198,7 +218,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 		{
 			int wmId    = LOWORD(wParam);
 			int wmEvent = HIWORD(wParam);
-			switch(wmId)
+			switch(getEditButtonControlId(wmId))
 			{
 			case BUTTON_ID_CLOCK:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
@@ -208,7 +228,24 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					enableChildContainers(FALSE);
 				}
 				break;
+			//case INFO_ID_CNTNAME:
+			//	if ((wmId % 10) == CID_MAIN_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
+			//		showEditButtonEdit(ebContactInfo[0], TRUE);
+			//	else if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
+			//		showEditButtonEdit(ebContactInfo[0], FALSE);
+			//	else if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
+			//		showEditButtonEdit(ebContactInfo[0], FALSE);
+			//	break;
+			//case INFO_ID_PHONE:
+			//	if ((wmId % 10) == CID_MAIN_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
+			//		showEditButtonEdit(ebContactInfo[1], TRUE);
+			//	else if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
+			//		showEditButtonEdit(ebContactInfo[1], FALSE);
+			//	else if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
+			//		showEditButtonEdit(ebContactInfo[1], FALSE);
+				break;
 			case BUTTON_ID_CONTACT:
+			case BUTTON_ID_ALL_CONTACTS:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
 					showChildContainers(SW_HIDE);
@@ -217,6 +254,15 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					screenMode = SCREEN_CONTACTS;
 					fillListView(hLV, getContactListInitiated(), NULL);
 					SetFocus(hwndSearchBox);
+				}
+				break;
+			case BUTTON_ID_MISC3: // Go to Single contact info screen
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
+					showChildContainers(SW_HIDE);
+					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
+					ShowWindow(hwndContainerContactDetails, SW_SHOW);
+					screenMode = SCREEN_CONTACT_INFO;
 				}
 				break;
 			case BUTTON_ID_YES:
@@ -306,12 +352,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			DestroyWindow(hWnd);
 			break;
 		case 3:
-			if (!editBtn->inTextMode && (wmId % 10) == CID_MAIN_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
-				showEditButtonEdit(editBtn, TRUE);
-			else if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
-				showEditButtonEdit(editBtn, FALSE);
-			else if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
-				showEditButtonEdit(editBtn, FALSE);
+			if ((wmId % 10) == CID_MAIN_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP);
+			else if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP);
+			else if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP);
 			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
@@ -361,7 +404,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			setHoverButtonFont(createHoverButton(hWnd, hInst, 450+178, 500, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, TEXT("abcdefgh")),
 				TEXT("Fixedsys Excelsior 3.01"), 24);
 
-			setDefaultEditButtonProc(WndProc);
 			editBtn = createEditButton(hWnd, hInst, 450, 500+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Test text"));
 			setEditButtonFont(editBtn, TEXT("Arial"), 16);
 
@@ -423,6 +465,7 @@ void showChildContainers(int nCmdShow)
 	ShowWindow(hwndContainerMainButtons, nCmdShow);
 	ShowWindow(hwndContainerMiscButtons, nCmdShow);
 	ShowWindow(hwndContainerContacts, nCmdShow);
+	ShowWindow(hwndContainerContactDetails, nCmdShow);
 }
 
 void enableChildContainers(BOOL value)
@@ -438,6 +481,7 @@ void enableChildContainers(BOOL value)
 void createGUI(HWND hWnd, HINSTANCE hInstance)
 {
 	HoverButton *tempBtn;
+
 	int x, y, width, height;
 	HBITMAP hBmp;
 
@@ -501,7 +545,8 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	lockHoverButtonImage(tempBtn, TRUE);
 	EnableWindow(tempBtn->hButton, FALSE);
 	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 35, 56, 265, 23, hwndContainerContacts, (HMENU)EDIT_ID_SEARCH, hInstance, NULL);
-
+	
+	// confirm dialog
 	hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_ALERT_BG));
 	hwndConfirmDialog = CreateWindowEx(0, TEXT("static"), NULL,  WS_CHILD | /*WS_POPUP | */SS_BITMAP,
 		ifoneScreenRect.left + (ifoneScreenRect.right - 277) / 2,
@@ -518,4 +563,35 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hbNo = createHoverButton(hwndConfirmDialog, hInstance, 143, 53, 128, 43, BUTTON_ID_NO, IDB_ALERT_NO_ON, IDB_ALERT_NO_OFF, NULL);
 
 	//createClock(hWnd, hInstance, 450, 0, 320, 480, 0, IDB_CLOCK_WND_BG);
+
+
+	// create cintact details 
+	//http://www.codeproject.com/KB/dialog/scroll_dialog.aspx
+	hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_CONTACT_INFO_WND_BG));
+	hwndContainerContactDetails = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD /*| WS_VISIBLE*/ | SS_BITMAP, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
+	SendMessage(hwndContainerContactDetails, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
+	SetWindowLong(hwndContainerContactDetails, GWL_WNDPROC, (LONG_PTR)ContainerProc);
+	allContactsButton = createHoverButton(hwndContainerContactDetails, hInstance, 13, 7, 91, 30, BUTTON_ID_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, NULL);
+	editContactButton = createHoverButton(hwndContainerContactDetails, hInstance, 254, 7, 50, 30, BUTTON_ID_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, NULL);
+
+	x = 0;
+	y = 44;
+	width = 320;
+	height = 44;
+
+	//setDefaultEditButtonProc(WndProc);
+	ebContactInfo[0] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_CNTNAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Moshe"));
+	setEditButtonFont(ebContactInfo[0], TEXT("Arial"), 10);
+	y += height;
+	ebContactInfo[1] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_PHONE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("0542312"));
+	y += height;
+	ebContactInfo[2] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_WEB, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("www."));
+	y += height;
+	ebContactInfo[3] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@a"));
+	y += height;
+	ebContactInfo[4] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_AGE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("24"));
+	y += height;
+	ebContactInfo[5] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("israel rehovot tuchman 20"));
+	
+	
 }

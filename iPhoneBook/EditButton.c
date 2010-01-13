@@ -1,11 +1,11 @@
 #include "StdAfx.h"
 #include "EditButton.h"
 #include "resource.h"
+#include "Miscellaneous.h"
 
 #define EDIT_BUTTON_CTL_ID	5000
 #define FUNC_BUTTON_SIZE	20
 
-WNDPROC wndDefEditBtnProc = NULL;
 WNDPROC wndDefBtnProc = NULL;
 WNDPROC wndDefEditProc = NULL;
 
@@ -68,18 +68,12 @@ void setEditButtonTextColor(EditButton *editButton, COLORREF color)
 	setHoverButtonTextColor(editButton->mainButton, color);
 }
 
-void setDefaultEditButtonProc(WNDPROC wndProc)
-{
-	wndDefEditBtnProc = wndProc;
-}
-
 void showEditButtonEdit(EditButton *editButton, int show)
 {
 	ShowWindow(editButton->okButton->hButton, show);
 	ShowWindow(editButton->cancelButton->hButton, show);
 	ShowWindow(editButton->hEdit, show);
 	lockHoverButtonImage(editButton->mainButton, show);
-	editButton->inTextMode = show;
 	if (show)
 	{
 		setHoverButtonStateImages(editButton->mainButton, editButton->onImage, editButton->onImage);
@@ -102,22 +96,33 @@ LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 	switch (message)
 	{
 	case WM_COMMAND:
-		if (wndDefEditBtnProc)
-			CallWindowProc(wndDefEditBtnProc, hWnd, message, wParam, lParam);
-		if ((LOWORD(wParam) % 10) == CID_OK_OFFSET)
 		{
-			HoverButton *hoverButton = findButton(0, (HWND)lParam);
-			if (hoverButton)
+			int wmId    = LOWORD(wParam);
+			int wmEvent = HIWORD(wParam);
+			if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
 			{
-				TCHAR string[256];
-				HWND hwndEdit = NULL;
-				EnumChildWindows(hWnd, FindEditInEditButtonProc, (LPARAM)&hwndEdit);
-				hoverButton = findButton(0, hWnd);
-				if (hwndEdit && hoverButton)
+				HoverButton *hoverButton = findButton(0, hWnd);
+				if (hoverButton)
+					lockHoverButtonImage(hoverButton, FALSE);
+				showChildWindows(hWnd, SW_HIDE);
+			}
+			if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
+			{
+				HoverButton *hoverButton = findButton(0, hWnd);
+				if (hoverButton)
 				{
-					GetWindowText(hwndEdit, string, 256);
-					setHoverButtonText(hoverButton, string);
+					TCHAR string[256];
+					HWND hwndEdit = NULL;
+					EnumChildWindows(hWnd, FindEditInEditButtonProc, (LPARAM)&hwndEdit);
+					hoverButton = findButton(0, hWnd);
+					if (hwndEdit && hoverButton)
+					{
+						GetWindowText(hwndEdit, string, 256);
+						setHoverButtonText(hoverButton, string);
+					}
+					lockHoverButtonImage(hoverButton, FALSE);
 				}
+				showChildWindows(hWnd, SW_HIDE);
 			}
 		}
 		break;
@@ -135,6 +140,8 @@ LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 					SetWindowText(hwndEdit, string);
 					SendMessage(hwndEdit, EM_SETSEL, (WPARAM)0, (LPARAM)_tcslen(string));
 				}
+				lockHoverButtonImage(hoverButton, TRUE);
+				showChildWindows(hWnd, SW_SHOW);
 			}
 		}
 		break;
