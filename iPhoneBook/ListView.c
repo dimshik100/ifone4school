@@ -274,7 +274,7 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 				RECT rcOffset = {0};
 				TCHAR str[1000];
 				TEXTMETRIC tm;
-				LVITEM lvItem;
+				LVITEM lvItem = {0};
 				int textTop;
 				HFONT hFont;
 				Contact *contact = NULL;
@@ -301,6 +301,7 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 				// Print text to item's DC.
 
 				rcOffset.left = 10;
+				SetBkMode(lpNMCustomDraw->nmcd.hdc, TRANSPARENT);
 				if (contact)
 				{
 					hFont = (HFONT)SelectObject(lpNMCustomDraw->nmcd.hdc, hFontNormal);
