@@ -36,28 +36,42 @@ DynamicListC getCurrentContactList(int fromFile)
 	return contactList;
 }
 
-void setImageToDcActual(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hdc, int imageId, int stretch);
+void setImageToDcActual(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage, int stretch);
+
+void setBitmapToDc(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage)
+{
+	setImageToDcActual(lprc, lprcOffset, hdc, hbmpImage, FALSE);
+}
+
+void setBitmapToDcStretched(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage)
+{
+	setImageToDcActual(lprc, lprcOffset, hdc, hbmpImage, TRUE);
+}
 
 void setImageToDc(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hdc, int imageId)
 {
-	setImageToDcActual(hInstance, lprc, lprcOffset, hdc, imageId, FALSE);
+	// Load the selected image from the resource file.
+	HBITMAP hbmpImage = LoadBitmap(hInstance, MAKEINTRESOURCE(imageId));
+	setImageToDcActual(lprc, lprcOffset, hdc, hbmpImage, FALSE);
+	DeleteObject(hbmpImage);
 }
 
 void setImageToDcStretched(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hdc, int imageId)
 {
-	setImageToDcActual(hInstance, lprc, lprcOffset, hdc, imageId, TRUE);
+	// Load the selected image from the resource file.
+	HBITMAP hbmpImage = LoadBitmap(hInstance, MAKEINTRESOURCE(imageId));
+	setImageToDcActual(lprc, lprcOffset, hdc, hbmpImage, TRUE);
+	DeleteObject(hbmpImage);
 }
 
-void setImageToDcActual(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC hdc, int imageId, int stretch)
+void setImageToDcActual(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage, int stretch)
 {
-	HBITMAP hbmpOld, hbmpImage;
+	HBITMAP hbmpOld;
 	BITMAP bm;
 	HDC hdcMem;
 
 	// Create a DC in memory, compatible with the button's original DC.
 	hdcMem = CreateCompatibleDC(hdc);
-	// Load the selected image from the resource file.
-	hbmpImage = LoadBitmap(hInstance, MAKEINTRESOURCE(imageId));
 	// Select the image into the DC. Keep a reference to the old bitmap.
 	hbmpOld = (HBITMAP)SelectObject(hdcMem, hbmpImage);
 	if (stretch)
@@ -78,5 +92,4 @@ void setImageToDcActual(HINSTANCE hInstance, RECT *lprc, RECT *lprcOffset, HDC h
 	SelectObject(hdcMem, hbmpOld);
 	// Free resources.
 	DeleteDC(hdcMem);
-	DeleteObject(hbmpImage);
 }

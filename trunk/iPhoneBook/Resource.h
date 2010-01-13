@@ -17,6 +17,8 @@
 #define IDB_ALERT_NO_ON                 131
 #define IDB_ALERT_YES_OFF               132
 #define IDB_ALERT_YES_ON                133
+#define IDB_CLOCK_BG                    134
+#define IDB_CLOCK_WND_BG                134
 #define IDB_ON                          202
 #define IDB_OFF                         203
 #define IDB_IFONE_BG                    210
@@ -74,7 +76,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_RESOURCE_VALUE        135
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110

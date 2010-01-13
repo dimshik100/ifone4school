@@ -193,6 +193,7 @@ IDB_ALERT_NO_OFF        BITMAP                  "imgs\\alert_no_off.bmp"
 IDB_ALERT_NO_ON         BITMAP                  "imgs\\alert_no_on.bmp"
 IDB_ALERT_YES_OFF       BITMAP                  "imgs\\alert_yes_off.bmp"
 IDB_ALERT_YES_ON        BITMAP                  "imgs\\alert_yes_on.bmp"
+IDB_CLOCK_WND_BG        BITMAP                  "imgs\\clock_bg.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
