@@ -17,6 +17,7 @@ typedef struct _HoverButton
 	int isPushed;
 	int onImage;
 	int offImage;
+	int activeImage;
 	int cId;
 
 }HoverButton;

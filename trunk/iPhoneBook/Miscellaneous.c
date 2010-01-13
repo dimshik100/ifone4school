@@ -2,6 +2,20 @@
 #include "Miscellaneous.h"
 #include "PhoneBook.h"
 
+
+BOOL CALLBACK		showChildWindowsEnumProc(HWND hwnd, LPARAM lParam);
+
+BOOL CALLBACK		showChildWindowsEnumProc(HWND hwnd, LPARAM lParam)
+{
+	ShowWindow(hwnd, (int)lParam);
+	return TRUE;
+}
+
+void showChildWindows(HWND hwnd, int nCmdShow)
+{
+	EnumChildWindows(hwnd, showChildWindowsEnumProc, (int)nCmdShow);
+}
+
 DynamicListC getCurrentContactList(int fromFile);
 
 DynamicListC getContactListLocal()
