@@ -8,6 +8,7 @@
 #include "ListView.h"
 #include "EditButton.h"
 #include "HoverButton.h"
+#include "Clock.h"
 #include "PhoneBook.h"
 #include "Miscellaneous.h"
 #include <commctrl.h>
@@ -249,6 +250,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 		break;
 	case WM_DESTROY:
 		{
+			// If we had set a background image to our container, we should free it's memory/resources.
 			HBITMAP hBmp;
 			hBmp = (HBITMAP)SendMessage(hWnd, STM_GETIMAGE, IMAGE_BITMAP, (LPARAM)0);
 			if (hBmp)
@@ -353,14 +355,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			createGUI(hWnd, hInst);
 			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);
-			btn = createHoverButton(hWnd, hInst, 450, 165, 178, 178, 1, IDB_ON, IDB_OFF, TEXT("Test text"));
+			btn = createHoverButton(hWnd, hInst, 450, 500, 178, 178, 1, IDB_ON, IDB_OFF, TEXT("Test text"));
 			setHoverButtonTextColor(btn, 255);
 			
-			setHoverButtonFont(createHoverButton(hWnd, hInst, 450+178, 155, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, TEXT("abcdefgh")),
+			setHoverButtonFont(createHoverButton(hWnd, hInst, 450+178, 500, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, TEXT("abcdefgh")),
 				TEXT("Fixedsys Excelsior 3.01"), 24);
 
 			setDefaultEditButtonProc(WndProc);
-			editBtn = createEditButton(hWnd, hInst, 450, 165+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Test text"));
+			editBtn = createEditButton(hWnd, hInst, 450, 500+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Test text"));
 			setEditButtonFont(editBtn, TEXT("Arial"), 16);
 
 			initListViewColumns(hLV);
@@ -514,4 +516,6 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 
 	hbYes = createHoverButton(hwndConfirmDialog, hInstance, 8, 53, 128, 43, BUTTON_ID_YES, IDB_ALERT_YES_ON, IDB_ALERT_YES_OFF, NULL);
 	hbNo = createHoverButton(hwndConfirmDialog, hInstance, 143, 53, 128, 43, BUTTON_ID_NO, IDB_ALERT_NO_ON, IDB_ALERT_NO_OFF, NULL);
+
+	createClock(hWnd, hInstance, 450, 0, 320, 480, 0, IDB_CLOCK_WND_BG);
 }

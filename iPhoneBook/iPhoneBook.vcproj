@@ -180,6 +180,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Miscellaneous.c"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.c"
 				>
 				<FileConfiguration
@@ -261,6 +265,10 @@
 			</File>
 			<File
 				RelativePath=".\imgs\cancelButton_on.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\imgs\clock_bg.bmp"
 				>
 			</File>
 			<File
@@ -526,10 +534,6 @@
 		</Filter>
 		<File
 			RelativePath=".\iPhoneBook.exe.manifest"
-			>
-		</File>
-		<File
-			RelativePath=".\Miscellaneous.c"
 			>
 		</File>
 		<File
