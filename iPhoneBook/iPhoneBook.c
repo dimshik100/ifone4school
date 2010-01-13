@@ -223,6 +223,17 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			case BUTTON_ID_CLOCK:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
+					if (isOsVista())
+					{
+					// If we support transparent confirm dialog, we must set it's position
+					// to be centered on the ifonebook screen
+						POINT pt = {0, 0};
+						ClientToScreen(GetParent(hWnd), &pt);
+						MoveWindow(hwndConfirmDialog, 
+							pt.x + ifoneScreenRect.left + (ifoneScreenRect.right - ifoneScreenRect.left - 277) / 2,
+							pt.y + ifoneScreenRect.top + (ifoneScreenRect.bottom - ifoneScreenRect.top - 103) / 2,
+							277, 103, TRUE);
+					}
 					ShowWindow(hwndConfirmDialog, SW_SHOW);
 					isConfirmOn = TRUE;
 					enableChildContainers(FALSE);
@@ -548,19 +559,28 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	
 	// confirm dialog
 	hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_ALERT_BG));
-	hwndConfirmDialog = CreateWindowEx(0, TEXT("static"), NULL,  WS_CHILD | /*WS_POPUP | */SS_BITMAP,
-		ifoneScreenRect.left + (ifoneScreenRect.right - 277) / 2,
-		ifoneScreenRect.top + (ifoneScreenRect.bottom - 103) / 2,
-		277, 103, hWnd, NULL, hInstance, NULL);
-	SetWindowLong(hwndConfirmDialog, GWL_EXSTYLE, WS_EX_LAYERED);
-	SetLayeredWindowAttributes(hwndConfirmDialog, 0, 192, LWA_ALPHA);
-	SetWindowPos(hwndConfirmDialog, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-	SendMessage(hwndConfirmDialog, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
+	if (isOsVista())
+	{
+		POINT pt = {0, 0};
+		ClientToScreen(hWnd, &pt);
+		hwndConfirmDialog = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOPMOST, TEXT("static"), NULL,  SS_BITMAP | WS_POPUP,
+			pt.x + ifoneScreenRect.left + (ifoneScreenRect.right - ifoneScreenRect.left - 277) / 2,
+			pt.y + ifoneScreenRect.top + (ifoneScreenRect.bottom - ifoneScreenRect.top - 103) / 2,
+			277, 103, hWnd, NULL, hInstance, NULL);
+		SetLayeredWindowAttributes(hwndConfirmDialog, 0, 192, LWA_ALPHA);
+	}
+	else
+	{
+		hwndConfirmDialog = CreateWindowEx(0, TEXT("static"), NULL,  WS_CHILD | SS_BITMAP,
+			ifoneScreenRect.left + (ifoneScreenRect.right - ifoneScreenRect.left - 277) / 2,
+			ifoneScreenRect.top + (ifoneScreenRect.bottom - ifoneScreenRect.top - 103) / 2,
+			277, 103, hWnd, NULL, hInstance, NULL);
+	}
 	SetWindowLong(hwndConfirmDialog, GWL_WNDPROC, (LONG_PTR)ContainerProc);
-	//ShowWindow(hwndConfirmDialog, SW_SHOW);
-
+	SendMessage(hwndConfirmDialog, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
 	hbYes = createHoverButton(hwndConfirmDialog, hInstance, 8, 53, 128, 43, BUTTON_ID_YES, IDB_ALERT_YES_ON, IDB_ALERT_YES_OFF, NULL);
 	hbNo = createHoverButton(hwndConfirmDialog, hInstance, 143, 53, 128, 43, BUTTON_ID_NO, IDB_ALERT_NO_ON, IDB_ALERT_NO_OFF, NULL);
+
 
 	//createClock(hWnd, hInstance, 450, 0, 320, 480, 0, IDB_CLOCK_WND_BG);
 
