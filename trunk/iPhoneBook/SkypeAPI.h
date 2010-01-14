@@ -1,5 +1,6 @@
 #pragma once
 #pragma comment(lib, "SkypeApiDll.lib")
+
 #ifdef SKYPEAPIDLL_EXPORTS
 #define SKYPEAPIDLL_API __declspec(dllexport)
 #else

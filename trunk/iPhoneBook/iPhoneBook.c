@@ -20,25 +20,32 @@
 #define	PWRBTN_TIMER_ID TIMER_ID + 2
 
 #define CONTROL_ID 20
-#define BUTTON_ID_PWR (CONTROL_ID + 0)
-#define BUTTON_ID_CLOCK (CONTROL_ID + 1)
-#define BUTTON_ID_CONTACT (CONTROL_ID + 2)
-#define BUTTON_ID_INFO (CONTROL_ID + 3)
-#define BUTTON_ID_BIN (CONTROL_ID + 4)
-#define BUTTON_ID_MISC1 (CONTROL_ID + 5)
-#define BUTTON_ID_MISC2 (CONTROL_ID + 6)
-#define BUTTON_ID_MISC3 (CONTROL_ID + 7)
-#define BUTTON_ID_MISC4 (CONTROL_ID + 8)
-#define BUTTON_ID_YES	(CONTROL_ID + 9)
-#define BUTTON_ID_NO	(CONTROL_ID + 10)
-#define INFO_ID_CNTNAME	(CONTROL_ID + 11)
-#define INFO_ID_PHONE	(CONTROL_ID + 12)
-#define INFO_ID_WEB		(CONTROL_ID + 13)
-#define INFO_ID_EMAIL	(CONTROL_ID + 14)
-#define INFO_ID_AGE		(CONTROL_ID + 15)
-#define INFO_ID_ADDRESS	(CONTROL_ID + 16)
-#define BUTTON_ID_ALL_CONTACTS (CONTROL_ID + 17)
-#define BUTTON_ID_EDIT_CONTACT (CONTROL_ID + 18)
+#define BUTTON_ID_PWR			(CONTROL_ID + 0)
+#define BUTTON_ID_CLOCK			(CONTROL_ID + 1)
+#define BUTTON_ID_CONTACT		(CONTROL_ID + 2)
+#define BUTTON_ID_INFO			(CONTROL_ID + 3)
+#define BUTTON_ID_BIN			(CONTROL_ID + 4)
+#define BUTTON_ID_MISC1			(CONTROL_ID + 5)
+#define BUTTON_ID_MISC2			(CONTROL_ID + 6)
+#define BUTTON_ID_MISC3			(CONTROL_ID + 7)
+#define BUTTON_ID_MISC4			(CONTROL_ID + 8)
+#define BUTTON_ID_YES			(CONTROL_ID + 9)
+#define BUTTON_ID_NO			(CONTROL_ID + 10)
+#define INFO_ID_LAST_NAME		(CONTROL_ID + 11)
+#define INFO_ID_FIRST_NAME		(CONTROL_ID + 12)
+#define INFO_ID_PHONE			(CONTROL_ID + 13)
+#define INFO_ID_WEB				(CONTROL_ID + 14)
+#define INFO_ID_EMAIL			(CONTROL_ID + 15)
+#define INFO_ID_AGE				(CONTROL_ID + 16)
+#define INFO_ID_ADDRESS_CNT		(CONTROL_ID + 17)
+#define INFO_ID_ADDRESS_CTY		(CONTROL_ID + 18)
+#define INFO_ID_ADDRESS_STR		(CONTROL_ID + 19)
+#define INFO_ID_ADDRESS_NUM		(CONTROL_ID + 20)
+#define INFO_ID_ADDRESS			(CONTROL_ID + 21)
+#define INFO_ID_SKYPE			(CONTROL_ID + 22)
+#define BUTTON_ID_ALL_CONTACTS	(CONTROL_ID + 23)
+#define BUTTON_ID_EDIT_CONTACT	(CONTROL_ID + 24)
+#define LV_CONTACTS_ID			(CONTROL_ID + 25)
 
 
 
@@ -71,20 +78,25 @@ void enableChildContainers(BOOL value);
 
 
 HoverButton 
-		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton,
+		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton, *hbContactInfoAddress,
 		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo, *allContactsButton, *editContactButton;
 
-EditButton *ebContactInfo[6];
+EditButton *ebContactInfo[10];
 	/* 
-	0- Name
-	1- Phone Number 
-	2- Website
-	3- Email
-	4- Age
-	5- Address
+	0- First Name
+	1- Last Name
+	2- Phone Number 
+	3- Skype Name
+	4- Email
+	5- Website
+	6- Address Country
+	7- Address City
+	8- Address Street
+	9- Address Number
 	*/
 
-HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts, hwndContainerContactDetails;
+HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts, hwndContainerContactDetails,
+		hwndAddressContainer;
 HWND hwndSearchBox, hwndConfirmDialog;
 HWND hLV;
 WNDPROC defContainerProc;
@@ -377,6 +389,31 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			LRESULT ret = ListViewProc(hWnd, wParam, lParam);
 			if (ret)
 				return ret;
+			//if (lParam && ((LPNMHDR)lParam)->hwndFrom == hLV && ((LPNMHDR)lParam)->code == LVN_ITEMACTIVATE)
+			//{
+			//	LVITEM lvItem;
+			//	int index = ((LPNMITEMACTIVATE)lParam)->iItem;
+
+			//	if (index >= 0)
+			//	{
+			//		lvItem.iItem = index;
+			//		lvItem.mask = LVIF_PARAM;					
+			//		ListView_GetItem(hLV, &lvItem);
+			//	}
+			//	else
+			//		lvItem.lParam = NULL;
+			//	if (lvItem.lParam)
+			//	{
+			//		lockHoverButtonImage(hbMiscActionBtn[1], FALSE);
+			//		lockHoverButtonImage(hbMiscActionBtn[2], FALSE);
+			//	}
+			//	else
+			//	{
+			//		lockHoverButtonImage(hbMiscActionBtn[1], TRUE);
+			//		lockHoverButtonImage(hbMiscActionBtn[2], TRUE);
+			//	}
+			//	return FALSE;
+			//}
 		}
 		break;
 	case WM_DESTROY:
@@ -676,20 +713,32 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	y = 44;
 	width = 320;
 	height = 44;
+/*INFO_ID_PHONE		
+INFO_ID_WEB			
+INFO_ID_EMAIL		
+INFO_ID_AGE			
+INFO_ID_ADDRESS_CNT	
+INFO_ID_ADDRESS_CTY	
+INFO_ID_ADDRESS_STR	
+INFO_ID_ADDRESS_NUM	
+INFO_ID_SKYPE	*/	
+
 
 	//setDefaultEditButtonProc(WndProc);
-	ebContactInfo[0] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_CNTNAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Moshe"));
+	ebContactInfo[0] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_LAST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Moshe"));
 	setEditButtonFont(ebContactInfo[0], TEXT("Arial"), 10);
-	y += height;
-	ebContactInfo[1] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_PHONE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("0542312"));
-	y += height;
-	ebContactInfo[2] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_WEB, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("www."));
-	y += height;
-	ebContactInfo[3] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@a"));
-	y += height;
-	ebContactInfo[4] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_AGE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("24"));
-	y += height;
-	ebContactInfo[5] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("israel rehovot tuchman 20"));
+	y += height+12;
+	ebContactInfo[1] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_FIRST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Cohen"));
+	y += height+12;
+	ebContactInfo[2] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_PHONE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("3253245"));
+	y += height+12;
+	ebContactInfo[3] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_SKYPE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("golom"));
+	y += height+12;
+	ebContactInfo[4] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@a"));
+	y += height+12;
+	ebContactInfo[5] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_WEB, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("www.asdfasdf.com"));
+	y += height+12;
+	hbContactInfoAddress = createHoverButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("israel rehovot tuchman 20"));
 	
-	
+	//hwndAddressContainer = CreateWindowEx(WS_EX_TOPMOST, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE | SS_BITMAP, 0, 44, 320, 264, hwndContainerContactDetails, NULL, hInstance, NULL);
 }
