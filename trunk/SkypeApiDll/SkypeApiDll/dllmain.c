@@ -12,12 +12,11 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		hInst = hModule;
-		connectSkype(hModule);
+		break;
 	case DLL_THREAD_ATTACH:
+		break;
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
-		disconnectSkype(hInst);
 		break;
 	}
 	return TRUE;

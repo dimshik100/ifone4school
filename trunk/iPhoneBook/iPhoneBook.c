@@ -11,6 +11,7 @@
 #include "Clock.h"
 #include "PhoneBook.h"
 #include "Miscellaneous.h"
+#include "SkypeAPI.h"
 #include <commctrl.h>
 
 #define MAX_LOADSTRING 100
@@ -57,9 +58,12 @@ TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+
 VOID CALLBACK		ClockTimerProc(HWND, UINT, UINT_PTR, DWORD);
 LRESULT CALLBACK	ContainerProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+void CALLBACK		skypeCallStatusCallback(SkypeCallObject *skypeCallObject);
+void CALLBACK		skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus);
 
 void createGUI(HWND hWnd, HINSTANCE hInstance);
 void showChildContainers(int nCmdShow);
@@ -197,6 +201,64 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    UpdateWindow(hWnd);
 
    return TRUE;
+}
+
+void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
+{
+	skypeCallObject = skypeCallObject;
+	//if (skypeCallObject && skypeCallObject->object == OBJECT_CALL)
+	//{
+	//	TCHAR str[256] = {0};
+	//	int strPos = 0;
+	//	if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
+	//		strPos = _stprintf_s(str, 256, TEXT("Incoming call... "));
+	//	else if (skypeCallObject->type == CALLTYPE_OUTGOING_P2P || skypeCallObject->type == CALLTYPE_OUTGOING_PSTN)
+	//		strPos = _stprintf_s(str, 256, TEXT("Outgoing call... "));
+	//	switch (skypeCallObject->property)
+	//	{
+	//	case CALLPROPERTY_DURATION:
+	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, duration: %02dh:%02dm:%02ds"), skypeCallObject->callId, skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
+	//		break;
+	//	case CALLPROPERTY_STATUS:
+	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, status: %d"), skypeCallObject->callId, skypeCallObject->status);
+	//		break;
+	//	default:
+	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, property: %d"), skypeCallObject->callId, skypeCallObject->property);
+	//		break;
+	//	}
+	//	if (skypeCallObject->partnerHandle)
+	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT(" partner H: %s"), skypeCallObject->partnerHandle);
+	//	if (skypeCallObject->partnerDisplayName)
+	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT(" partner N: %s"), skypeCallObject->partnerDisplayName);
+	//	SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
+	//}
+}
+
+void CALLBACK skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus)
+{
+	switch (skypeApiInitStatus)
+	{
+	// User defined constants
+	case ATTACH_ACTIVE:
+		break;
+	case ATTACH_CONNECTION_LOST:
+		setHoverButtonStateImages(hbTopBarSkype, IDB_TOP_BAR_SKYPE_OFF, IDB_TOP_BAR_SKYPE_OFF);
+		break;
+	// Skype defined constants
+	case ATTACH_AVAILABLE:
+		break;
+	case ATTACH_NOT_AVAILABLE:
+		setHoverButtonStateImages(hbTopBarSkype, IDB_TOP_BAR_SKYPE_OFF, IDB_TOP_BAR_SKYPE_OFF);
+		break;
+	case ATTACH_PENDING:
+		break;
+	case ATTACH_REFUSED:
+		setHoverButtonStateImages(hbTopBarSkype, IDB_TOP_BAR_SKYPE_OFF, IDB_TOP_BAR_SKYPE_OFF);
+		break;
+	case ATTACH_SUCCESS:
+		setHoverButtonStateImages(hbTopBarSkype, IDB_TOP_BAR_SKYPE_ON, IDB_TOP_BAR_SKYPE_ON);
+		break;
+	}
 }
 
 //
@@ -401,6 +463,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_DESTROY:
 		deleteHoverButtons();
+		disconnectSkype(hInst);
 		PostQuitMessage(0);
 		break;
 	case WM_CREATE:
@@ -408,6 +471,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			HoverButton *btn;
 
 			createGUI(hWnd, hInst);
+			setSkypeCallStatusCallback(skypeCallStatusCallback);
+			setSkypeConnectionStatusCallback(skypeConnectionStatusCallback);
+			connectSkype(hInst);
 			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);
 			btn = createHoverButton(hWnd, hInst, 450, 500, 178, 178, 1, IDB_ON, IDB_OFF, TEXT("Test text"));
 			setHoverButtonTextColor(btn, 255);

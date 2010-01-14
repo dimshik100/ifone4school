@@ -72,6 +72,10 @@ void deleteHoverButtons()
 
 void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage)
 {
+	if (hoverButton->activeImage == hoverButton->onImage)
+		hoverButton->activeImage = onImage;
+	else
+		hoverButton->activeImage = offImage;
 	hoverButton->onImage = onImage;
 	hoverButton->offImage = offImage;
 	// Force redraw of the button
