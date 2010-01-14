@@ -205,33 +205,45 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 {
-	skypeCallObject = skypeCallObject;
-	//if (skypeCallObject && skypeCallObject->object == OBJECT_CALL)
-	//{
-	//	TCHAR str[256] = {0};
-	//	int strPos = 0;
-	//	if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
-	//		strPos = _stprintf_s(str, 256, TEXT("Incoming call... "));
-	//	else if (skypeCallObject->type == CALLTYPE_OUTGOING_P2P || skypeCallObject->type == CALLTYPE_OUTGOING_PSTN)
-	//		strPos = _stprintf_s(str, 256, TEXT("Outgoing call... "));
-	//	switch (skypeCallObject->property)
-	//	{
-	//	case CALLPROPERTY_DURATION:
-	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, duration: %02dh:%02dm:%02ds"), skypeCallObject->callId, skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
-	//		break;
-	//	case CALLPROPERTY_STATUS:
-	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, status: %d"), skypeCallObject->callId, skypeCallObject->status);
-	//		break;
-	//	default:
-	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d, property: %d"), skypeCallObject->callId, skypeCallObject->property);
-	//		break;
-	//	}
-	//	if (skypeCallObject->partnerHandle)
-	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT(" partner H: %s"), skypeCallObject->partnerHandle);
-	//	if (skypeCallObject->partnerDisplayName)
-	//		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT(" partner N: %s"), skypeCallObject->partnerDisplayName);
-	//	SendMessage(hList, LB_ADDSTRING, 0, (LPARAM)str);
-	//}
+	if (skypeCallObject && skypeCallObject->object == OBJECT_CALL)
+	{
+		TCHAR str[256] = {0};
+		HDC hdc;
+		int strPos = 0;
+		RECT rc;
+
+		if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
+			strPos = _stprintf_s(str, 256, TEXT("Incoming call...\n"));
+		else if (skypeCallObject->type == CALLTYPE_OUTGOING_P2P || skypeCallObject->type == CALLTYPE_OUTGOING_PSTN)
+			strPos = _stprintf_s(str, 256, TEXT("Outgoing call...\n"));
+		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d\n"), skypeCallObject->callId);
+		if (skypeCallObject->partnerHandle)
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Partner:\n\t%s\n"), skypeCallObject->partnerHandle);
+		if (skypeCallObject->partnerDisplayName)
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Display name:\n\t%s\n"), skypeCallObject->partnerDisplayName);
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Duration: %02dh:%02dm:%02ds\n"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Status: %d\n"), skypeCallObject->status);
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Property: %d\n"), skypeCallObject->property);
+		switch (skypeCallObject->property)
+		{
+		case CALLPROPERTY_DURATION:
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Duration update\n"), skypeCallObject->property);
+			break;
+		case CALLPROPERTY_STATUS:
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Status notification\n"), skypeCallObject->property);
+			break;
+		default:
+			strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Other property notification\n"), skypeCallObject->property);
+			break;
+		}
+		strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("skypeCallObject = 0x%p"), skypeCallObject);
+
+		hdc = GetDC(getHoverButtonHwnd(hbMainCenterPic));
+		GetClientRect(getHoverButtonHwnd(hbMainCenterPic), &rc);
+		FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW+1));
+		DrawText(hdc, str, strPos, &rc, DT_WORDBREAK | DT_EXPANDTABS);
+		ReleaseDC(getHoverButtonHwnd(hbMainCenterPic), hdc);		
+	}
 }
 
 void CALLBACK skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus)
