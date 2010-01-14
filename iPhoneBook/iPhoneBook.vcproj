@@ -492,6 +492,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SkypeAPI.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Types.h"
 				>
 			</File>

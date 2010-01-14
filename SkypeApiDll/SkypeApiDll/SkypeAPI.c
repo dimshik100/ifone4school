@@ -69,6 +69,8 @@ SKYPEAPIDLL_API LRESULT connectSkype(HINSTANCE hInstance)
 
 SKYPEAPIDLL_API void disconnectSkype(HINSTANCE hInstance)
 {
+	DWORD exitCode = 0;
+
 	// In case disconnectSkype was already called.
 	if (!hMutex)
 		return;
@@ -79,7 +81,8 @@ SKYPEAPIDLL_API void disconnectSkype(HINSTANCE hInstance)
 	DestroyWindow(hiddenWindowHandle);
 	hiddenWindowHandle = NULL;
 	UnregisterClass(CLASS_WND_NAME, hInstance);
-	WaitForSingleObject(queueManagerHandle, INFINITE);
+	if (GetExitCodeThread(queueManagerHandle, &exitCode) && exitCode == STILL_ACTIVE)
+		WaitForSingleObject(queueManagerHandle, INFINITE);
 	CloseHandle(queueManagerHandle);
 	queueManagerHandle = NULL;
 	CloseHandle(hMutex);
@@ -116,23 +119,28 @@ SKYPEAPIDLL_API BOOL processAttachmentMessage(UINT message, WPARAM wParam, LPARA
 			skypeApiWindowHandle = (HWND)wParam;
 			skypePingStatus = 1;
 			SetTimer(hiddenWindowHandle, PING_TIMER_ID, 5000, PingTimerProc);
-			skypeConnectionStatusCallback(ATTACH_SUCCESS);
+			if (skypeConnectionStatusCallback)
+				skypeConnectionStatusCallback(ATTACH_SUCCESS);
 			break;
 		case ATTACH_PENDING:
-			skypeConnectionStatusCallback(ATTACH_PENDING);
+			if (skypeConnectionStatusCallback)
+				skypeConnectionStatusCallback(ATTACH_PENDING);
 			break;
 		case ATTACH_REFUSED:
-			skypeConnectionStatusCallback(ATTACH_REFUSED);
+			if (skypeConnectionStatusCallback)
+				skypeConnectionStatusCallback(ATTACH_REFUSED);
 			break;
 		case ATTACH_CONNECTION_LOST:
 		case ATTACH_NOT_AVAILABLE:	
 			skypeApiWindowHandle = NULL;
 			KillTimer(hiddenWindowHandle, PING_TIMER_ID);
-			skypeConnectionStatusCallback((SkypeApiInitStatus)lParam);
+			if (skypeConnectionStatusCallback)
+				skypeConnectionStatusCallback((SkypeApiInitStatus)lParam);
 			break;
 		case ATTACH_AVAILABLE:
 			SendMessage(HWND_BROADCAST, msgIdApiDiscover, (WPARAM)hiddenWindowHandle, 0);
-			skypeConnectionStatusCallback(ATTACH_AVAILABLE);
+			if (skypeConnectionStatusCallback)
+				skypeConnectionStatusCallback(ATTACH_AVAILABLE);
 			break;
 		}
 	}
@@ -245,7 +253,6 @@ SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeOb
 						callObject->status = CALLSTATUS_VM_CANCELLED;
 					else if (!_tcscmp(token, TEXT("VM_RECORDING")))
 						callObject->status = CALLSTATUS_VM_RECORDING;
-
 				}
 				else if (!_tcscmp(token, TEXT("DURATION")))
 				{
@@ -525,7 +532,8 @@ DWORD WINAPI SkypeQueueManagerThreadProc(__in  LPVOID lpParameter)
 			case OBJECT_CALL:
 				{
 					SkypeCallObject *callObject = (SkypeCallObject*)skypeObject;
-					for ( ; callObject; )
+					// While callObject exists and skypeCallStatusCallback is set
+					for ( ; callObject && skypeCallStatusCallback; )
 					{
 						if (!WaitForSingleObject(hMutex, 100))
 						{
@@ -562,7 +570,8 @@ VOID CALLBACK		PingTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dw
 		if (skypePingStatus)
 		{
 			sendSkypeMessage(TEXT("PING"));
-			skypeConnectionStatusCallback(ATTACH_ACTIVE);
+			if (skypeConnectionStatusCallback)
+				skypeConnectionStatusCallback(ATTACH_ACTIVE);
 		}
 		else
 			processAttachmentMessage(msgIdApiAttach, 0, ATTACH_CONNECTION_LOST);

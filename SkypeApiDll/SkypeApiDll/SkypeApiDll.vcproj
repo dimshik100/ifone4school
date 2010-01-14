@@ -201,10 +201,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SkypeApiDll.c"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.c"
 				>
 				<FileConfiguration
@@ -236,10 +232,6 @@
 			</File>
 			<File
 				RelativePath=".\SkypeAPI.h"
-				>
-			</File>
-			<File
-				RelativePath=".\SkypeApiDll.h"
 				>
 			</File>
 			<File
