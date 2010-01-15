@@ -21,37 +21,35 @@
 #define	PWRBTN_TIMER_ID TIMER_ID + 2
 
 #define CONTROL_ID 20
-#define BUTTON_ID_PWR			(CONTROL_ID + 0)
-#define BUTTON_ID_CLOCK			(CONTROL_ID + 1)
-#define BUTTON_ID_CONTACT		(CONTROL_ID + 2)
-#define BUTTON_ID_INFO			(CONTROL_ID + 3)
-#define BUTTON_ID_BIN			(CONTROL_ID + 4)
-#define BUTTON_ID_MISC1			(CONTROL_ID + 5)
-#define BUTTON_ID_MISC2			(CONTROL_ID + 6)
-#define BUTTON_ID_MISC3			(CONTROL_ID + 7)
-#define BUTTON_ID_MISC4			(CONTROL_ID + 8)
-#define BUTTON_ID_YES			(CONTROL_ID + 9)
-#define BUTTON_ID_NO			(CONTROL_ID + 10)
-#define INFO_ID_LAST_NAME		(CONTROL_ID + 11)
-#define INFO_ID_FIRST_NAME		(CONTROL_ID + 12)
-#define INFO_ID_PHONE			(CONTROL_ID + 13)
-#define INFO_ID_WEB				(CONTROL_ID + 14)
-#define INFO_ID_EMAIL			(CONTROL_ID + 15)
-#define INFO_ID_AGE				(CONTROL_ID + 16)
-#define INFO_ID_ADDRESS_CNT		(CONTROL_ID + 17)
-#define INFO_ID_ADDRESS_CTY		(CONTROL_ID + 18)
-#define INFO_ID_ADDRESS_STR		(CONTROL_ID + 19)
-#define INFO_ID_ADDRESS_NUM		(CONTROL_ID + 20)
-#define INFO_ID_ADDRESS			(CONTROL_ID + 21)
-#define INFO_ID_SKYPE			(CONTROL_ID + 22)
-#define BUTTON_ID_ALL_CONTACTS	(CONTROL_ID + 23)
-#define BUTTON_ID_EDIT_CONTACT	(CONTROL_ID + 24)
-#define LV_CONTACTS_ID			(CONTROL_ID + 25)
-
-
-
-#define EDIT_ID_SEARCH (CONTROL_ID + 20)
-
+#define BUTTON_ID_PWR				(CONTROL_ID + 0)
+#define BUTTON_ID_CLOCK				(CONTROL_ID + 1)
+#define BUTTON_ID_CONTACT			(CONTROL_ID + 2)
+#define BUTTON_ID_INFO				(CONTROL_ID + 3)
+#define BUTTON_ID_BIN				(CONTROL_ID + 4)
+#define BUTTON_ID_MISC1				(CONTROL_ID + 5)
+#define BUTTON_ID_MISC2				(CONTROL_ID + 6)
+#define BUTTON_ID_MISC3				(CONTROL_ID + 7)
+#define BUTTON_ID_MISC4				(CONTROL_ID + 8)
+#define BUTTON_ID_YES				(CONTROL_ID + 9)
+#define BUTTON_ID_NO				(CONTROL_ID + 10)
+#define INFO_ID_LAST_NAME			(CONTROL_ID + 11)
+#define INFO_ID_FIRST_NAME			(CONTROL_ID + 12)
+#define INFO_ID_PHONE				(CONTROL_ID + 13)
+#define INFO_ID_WEB					(CONTROL_ID + 14)
+#define INFO_ID_EMAIL				(CONTROL_ID + 15)
+#define INFO_ID_AGE					(CONTROL_ID + 16)
+#define INFO_ID_ADDRESS_CNT			(CONTROL_ID + 17)
+#define INFO_ID_ADDRESS_CTY			(CONTROL_ID + 18)
+#define INFO_ID_ADDRESS_STR			(CONTROL_ID + 19)
+#define INFO_ID_ADDRESS_NUM			(CONTROL_ID + 20)
+#define INFO_ID_ADDRESS				(CONTROL_ID + 21)
+#define INFO_ID_SKYPE				(CONTROL_ID + 22)
+#define BUTTON_ID_ALL_CONTACTS		(CONTROL_ID + 23)
+#define BUTTON_ID_EDIT_CONTACT		(CONTROL_ID + 24)
+#define BUTTON_ID_SAVE_CONTACT		(CONTROL_ID + 25)
+#define BUTTON_ID_CANCEL_CONTACT	(CONTROL_ID + 26)
+#define LV_CONTACTS_ID				(CONTROL_ID + 30)
+#define EDIT_ID_SEARCH				(CONTROL_ID + 31)
 
 typedef enum {	SCREEN_MAIN, SCREEN_CONTACTS, SCREEN_MEM_INFO, SCREEN_TRASH, 
 				SCREEN_CONTACT_INFO, SCREEN_CONTACT_EDIT, SCREEN_CLOCK, SCREEN_CALL_MODE }
@@ -324,6 +322,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					ShowWindow(hwndConfirmDialog, SW_SHOW);
 					isConfirmOn = TRUE;
 					enableChildContainers(FALSE);
+					screenMode = SCREEN_CLOCK;
 				}
 				break;
 			//case INFO_ID_CNTNAME:
@@ -352,6 +351,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					screenMode = SCREEN_CONTACTS;
 					fillListView(hLV, getContactListInitiated(), NULL);
 					SetFocus(hwndSearchBox);
+					screenMode = SCREEN_CONTACTS;
 				}
 				break;
 			case BUTTON_ID_MISC3: // Go to Single contact info screen
@@ -710,7 +710,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 
 	// create contact details 
 	//http://www.codeproject.com/KB/dialog/scroll_dialog.aspx
-	hwndContainerContactDetails = createScrollContainer(hWnd, hInstance, 0, 67, 156, 320, 394, 320, 900, 0, IDB_CONTACT_INFO_WND_BG);
+	hwndContainerContactDetails = createScrollContainer(hWnd, hInstance, 0, 67, 156, 320, 394, 320 - GetSystemMetrics(SM_CXVSCROLL), 900, 0, IDB_CONTACT_INFO_WND_BG);
 	//SetWindowLong(hwndContainerContactDetails, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 	allContactsButton = createHoverButton(hwndContainerContactDetails, hInstance, 13, 7, 91, 30, BUTTON_ID_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, NULL);
 	editContactButton = createHoverButton(hwndContainerContactDetails, hInstance, 254, 7, 50, 30, BUTTON_ID_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, NULL);
@@ -719,21 +719,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	y = 44;
 	width = 320 - GetSystemMetrics(SM_CXVSCROLL);
 	height = 44;
-//INFO_ID_LAST_NAME	
-//INFO_ID_FIRST_NAME	
-//INFO_ID_PHONE		
-//INFO_ID_SKYPE		
-//INFO_ID_EMAIL		
-//INFO_ID_WEB			
-//INFO_ID_AGE			
-//INFO_ID_ADDRESS_CNT	
-//INFO_ID_ADDRESS_CTY	
-//INFO_ID_ADDRESS_STR	
-//INFO_ID_ADDRESS_NUM	
 
-
-
-	//setDefaultEditButtonProc(WndProc);
 	ebContactInfo[0] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_LAST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Moshe"));
 	y += height+15;
 	ebContactInfo[1] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_FIRST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Cohen"));

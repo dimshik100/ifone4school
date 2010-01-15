@@ -5,7 +5,7 @@
 // For shorter and clearer code.
 #define ItemSize (long)sizeof(Contact)
 #define DbItemSize (long)sizeof(DbInfo)
-// Calculate the an item's offset in the database.
+// Calculate an item's offset in the database file.
 #define getOffset(num_of_items) ((long)(DbItemSize + (ItemSize * (num_of_items))))
 
 int createAccount(TCHAR* user, TCHAR* pass);
@@ -21,3 +21,8 @@ int editContact(Contact* contact);
 int checkDataIntegrity();
 int getMemoryInfo(int *count, int *total, DbType source);
 void dupContact(Contact *dst, Contact *src);
+// Extension functions for easier/faster management of contacts
+void		 freeContactListLocal();
+DynamicListC getContactListLocal();
+DynamicListC getContactListFromFile();
+DynamicListC getContactListInitiated();

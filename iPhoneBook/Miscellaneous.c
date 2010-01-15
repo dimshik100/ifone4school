@@ -5,6 +5,16 @@
 BOOL CALLBACK		shiftChildWindowsProc(HWND hWnd, LPARAM lParam);
 BOOL CALLBACK		showChildWindowsEnumProc(HWND hWnd, LPARAM lParam);
 
+void getChildInParentOffset(HWND hWnd, POINT *lppt)
+{
+	POINT ptCtl = {0, 0} , ptParent = {0, 0};
+
+	ClientToScreen(GetParent(hWnd), &ptParent);
+	ClientToScreen(hWnd, &ptCtl);
+	lppt->x = ptCtl.x - ptParent.x;
+	lppt->y = ptCtl.y - ptParent.y;
+}
+
 BOOL CALLBACK		shiftChildWindowsProc(HWND hWnd, LPARAM lParam)
 {
 	void **paramArray = (void**)lParam;
@@ -14,14 +24,11 @@ BOOL CALLBACK		shiftChildWindowsProc(HWND hWnd, LPARAM lParam)
 	if (hWndParent == GetParent(hWnd))
 	{
 		RECT rc;
-		POINT ptCtl = {0, 0} , ptParent = {0, 0}, ptOffset;
+		POINT ptCtl, ptOffset;
 		ptOffset.x = *(int*)paramArray[1], ptOffset.y = *(int*)paramArray[2];
 
-		ClientToScreen(GetParent(hWnd), &ptParent);
-		ClientToScreen(hWnd, &ptCtl);
+		getChildInParentOffset(hWnd, &ptCtl);
 		GetClientRect(hWnd, &rc);
-		ptCtl.x -= ptParent.x;
-		ptCtl.y -= ptParent.y;
 		MoveWindow(hWnd, ptCtl.x + ptOffset.x , ptCtl.y + ptOffset.y, rc.right, rc.bottom, TRUE);
 	}
 
@@ -48,40 +55,6 @@ BOOL CALLBACK		showChildWindowsEnumProc(HWND hWnd, LPARAM lParam)
 void showChildWindows(HWND hWnd, int nCmdShow)
 {
 	EnumChildWindows(hWnd, showChildWindowsEnumProc, (LPARAM)nCmdShow);
-}
-
-DynamicListC getCurrentContactList(int fromFile);
-
-DynamicListC getContactListLocal()
-{
-	return getCurrentContactList(FALSE);
-}
-
-DynamicListC getContactListFromFile()
-{
-	return getCurrentContactList(TRUE);
-}
-
-DynamicListC getContactListInitiated()
-{
-	DynamicListC list = getCurrentContactList(FALSE);
-	if (!list)
-		list = getCurrentContactList(TRUE);
-	return list;
-}
-
-DynamicListC getCurrentContactList(int fromFile)
-{
-	static DynamicListC contactList = NULL;
-
-	if (fromFile)
-	{	
-		if (contactList)
-			listFree(&contactList);
-		//contactList = getContactList();
-	}
-
-	return contactList;
 }
 
 void setImageToDcActual(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage, int stretch);

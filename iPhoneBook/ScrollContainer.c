@@ -30,23 +30,24 @@ HWND createScrollContainer(HWND hWndParent, HINSTANCE hInstance, DWORD dwStyle, 
 
 void setScrollContainerSize(HWND hWnd, SIZE *size, SIZE *virtSize)
 {
-	SCROLLINFO si;
+	SCROLLINFO si = {0};
+	POINT pt;
 
 	si.cbSize = sizeof(SCROLLINFO);
-	si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
+	si.fMask = SIF_RANGE | SIF_POS | SIF_PAGE;
 	si.nPos = si.nMin = 1;
-
-	SetWindowPos(hWnd, NULL, 0, 0, size->cx, size->cy, SWP_NOMOVE | SWP_NOOWNERZORDER);
-
-	si.nMax = virtSize->cy;
-	si.nPage = size->cy;
-	SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
-	GetScrollInfo(hWnd, SB_VERT, &si);
 
 	si.nMax = virtSize->cx;
 	si.nPage = size->cx;
-	SetScrollInfo(hWnd, SB_HORZ, &si, TRUE);
-	GetScrollInfo(hWnd, SB_HORZ, &si);
+	SetScrollInfo(hWnd, SB_HORZ, &si, FALSE);
+
+	si.fMask |= SIF_DISABLENOSCROLL;
+	si.nMax = virtSize->cy;
+	si.nPage = size->cy;
+	SetScrollInfo(hWnd, SB_VERT, &si, FALSE);
+
+	getChildInParentOffset(hWnd, &pt);
+	MoveWindow(hWnd, pt.x, pt.y, size->cx, size->cy, TRUE);
 }
 
 void setScrollContainerImageStretch(HWND hWnd, int enable)
@@ -60,6 +61,22 @@ LRESULT CALLBACK	ScrollContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 {
 	switch (message)
 	{
+	case WM_SIZE:
+		{
+			int cx = LOWORD(lParam);
+			int cy = HIWORD(lParam);
+			SCROLLINFO si = {0};
+
+			si.cbSize = sizeof(SCROLLINFO);
+			si.fMask = SIF_PAGE;
+			si.nPage = cx;
+			SetScrollInfo(hWnd, SB_HORZ, &si, TRUE);
+			si.fMask |= SIF_DISABLENOSCROLL;
+			si.nPage = cy;
+			SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+		}
+		break;
+
 	case WM_MOUSEHWHEEL:
 	case WM_MOUSEWHEEL:
 		{

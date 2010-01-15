@@ -18,6 +18,7 @@ int searchDb (Contact* query, DynamicListC* pList, TCHAR *dbName);
 int getMemoryInfoActual(int *count, int *total, TCHAR *dbName);
 long getFileLen(FILE *file);
 void encryptDecryptCredentials(TCHAR *dst, TCHAR *src, int Len);
+DynamicListC *getCurrentContactList(int fromFile);
 
 int createAccount (TCHAR* user, TCHAR* pass)
 {
@@ -470,4 +471,43 @@ void encryptDecryptCredentials(TCHAR *dst, TCHAR *src, int Len)
 
 	for (i = 0; i < Len; i++)
 		dst[i] = src[i] ^ key;
+}
+
+void freeContactListLocal()
+{
+	DynamicListC *contactListPtr = getCurrentContactList(FALSE);
+	if (*contactListPtr)
+		listFree(contactListPtr);
+}
+
+DynamicListC getContactListLocal()
+{
+	return *getCurrentContactList(FALSE);
+}
+
+DynamicListC getContactListFromFile()
+{
+	return *getCurrentContactList(TRUE);
+}
+
+DynamicListC getContactListInitiated()
+{
+	DynamicListC list = *getCurrentContactList(FALSE);
+	if (!list)
+		list = *getCurrentContactList(TRUE);
+	return list;
+}
+
+DynamicListC *getCurrentContactList(int fromFile)
+{
+	static DynamicListC contactList = NULL;
+
+	if (fromFile)
+	{	
+		if (contactList)
+			listFree(&contactList);
+		contactList = getContactList();
+	}
+
+	return &contactList;
 }
