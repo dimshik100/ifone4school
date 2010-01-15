@@ -3,7 +3,9 @@
 
 
 BOOL CALLBACK		shiftChildWindowsProc(HWND hWnd, LPARAM lParam);
+BOOL CALLBACK		invalidateChildWindowsProc(HWND hWnd, LPARAM lParam);
 BOOL CALLBACK		showChildWindowsEnumProc(HWND hWnd, LPARAM lParam);
+void setImageToDcActual(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage, int stretch);
 
 void getChildInParentOffset(HWND hWnd, POINT *lppt)
 {
@@ -25,25 +27,38 @@ BOOL CALLBACK		shiftChildWindowsProc(HWND hWnd, LPARAM lParam)
 	{
 		RECT rc;
 		POINT ptCtl, ptOffset;
+		BOOL bErase = *(BOOL*)paramArray[3];
 		ptOffset.x = *(int*)paramArray[1], ptOffset.y = *(int*)paramArray[2];
 
 		getChildInParentOffset(hWnd, &ptCtl);
 		GetClientRect(hWnd, &rc);
-		MoveWindow(hWnd, ptCtl.x + ptOffset.x , ptCtl.y + ptOffset.y, rc.right, rc.bottom, TRUE);
+		MoveWindow(hWnd, ptCtl.x + ptOffset.x , ptCtl.y + ptOffset.y, rc.right, rc.bottom, FALSE);
+		InvalidateRect(hWnd, NULL, bErase);
 	}
 
 	return TRUE;
 }
 
-void shiftChildWindows(HWND hWnd, int xOffset, int yOffset)
+void shiftChildWindows(HWND hWnd, int xOffset, int yOffset, BOOL bErase)
 {
-	void *paramArray[3];
+	void *paramArray[4];
 
 	paramArray[0] = &hWnd;
 	paramArray[1] = &xOffset;
 	paramArray[2] = &yOffset;
+	paramArray[3] = &bErase;
 	EnumChildWindows(hWnd, shiftChildWindowsProc, (LPARAM)paramArray);
+}
 
+BOOL CALLBACK		invalidateChildWindowsProc(HWND hWnd, LPARAM lParam)
+{
+	InvalidateRect(hWnd, NULL, (BOOL)lParam);
+	return TRUE;
+}
+
+void invalidateChildWindows(HWND hWnd, BOOL bErase)
+{
+	EnumChildWindows(hWnd, invalidateChildWindowsProc, (LPARAM)bErase);
 }
 
 BOOL CALLBACK		showChildWindowsEnumProc(HWND hWnd, LPARAM lParam)
@@ -57,7 +72,6 @@ void showChildWindows(HWND hWnd, int nCmdShow)
 	EnumChildWindows(hWnd, showChildWindowsEnumProc, (LPARAM)nCmdShow);
 }
 
-void setImageToDcActual(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage, int stretch);
 
 void setBitmapToDc(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage)
 {

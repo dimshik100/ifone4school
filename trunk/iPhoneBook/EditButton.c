@@ -150,6 +150,9 @@ LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 			}
 		}
 		break;
+	case WM_PAINT:
+		invalidateChildWindows(hWnd, TRUE);
+		break;
 	}
 
 	return CallWindowProc(wndDefEditProc, hWnd, message, wParam, lParam);

@@ -32,7 +32,7 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 		newHoverButton->buttonRect.right = x + width;
 		newHoverButton->buttonRect.top = y;
 		newHoverButton->buttonRect.bottom = y + height;
-		newHoverButton->hButton = CreateWindowEx(0, TEXT("button"), NULL, WS_VISIBLE | WS_CHILD | BS_OWNERDRAW, x, y, width, height,
+		newHoverButton->hButton = CreateWindowEx(0, TEXT("button"), NULL, WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | BS_OWNERDRAW, x, y, width, height,
 			hWndParent, (HMENU)controlId, hInstance, NULL);
 		if (caption)
 			newHoverButton->caption = _tcsdup(caption);
