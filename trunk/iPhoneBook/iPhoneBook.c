@@ -8,6 +8,7 @@
 #include "ListView.h"
 #include "EditButton.h"
 #include "HoverButton.h"
+#include "ScrollContainer.h"
 #include "Clock.h"
 #include "PhoneBook.h"
 #include "Miscellaneous.h"
@@ -503,10 +504,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				return uHitTest;
 		}
 		break;
+	case WM_ERASEBKGND:
+		{
+			RECT rc;
+			GetClientRect(hWnd, &rc);
+			setImageToDc(hInst, &rc, &rc, (HDC)wParam, IDB_IFONE_BG);
+		}
+		return TRUE;
+		break;
 	case WM_PAINT:
 		{
 			hdc = BeginPaint(hWnd, &ps);
-			setImageToDc(hInst, &ps.rcPaint, &ps.rcPaint, hdc, IDB_IFONE_BG);
 			EndPaint(hWnd, &ps);
 		}
 		break;
@@ -700,45 +708,57 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	//createClock(hWnd, hInstance, 450, 0, 320, 480, 0, IDB_CLOCK_WND_BG);
 
 
-	// create cintact details 
+	// create contact details 
 	//http://www.codeproject.com/KB/dialog/scroll_dialog.aspx
-	hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_CONTACT_INFO_WND_BG));
-	hwndContainerContactDetails = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD /*| WS_VISIBLE*/ | SS_BITMAP, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
-	SendMessage(hwndContainerContactDetails, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
-	SetWindowLong(hwndContainerContactDetails, GWL_WNDPROC, (LONG_PTR)ContainerProc);
+	hwndContainerContactDetails = createScrollContainer(hWnd, hInstance, 0, 67, 156, 320, 394, 320, 900, 0, IDB_CONTACT_INFO_WND_BG);
+	//SetWindowLong(hwndContainerContactDetails, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 	allContactsButton = createHoverButton(hwndContainerContactDetails, hInstance, 13, 7, 91, 30, BUTTON_ID_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, NULL);
 	editContactButton = createHoverButton(hwndContainerContactDetails, hInstance, 254, 7, 50, 30, BUTTON_ID_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, NULL);
 
 	x = 0;
 	y = 44;
-	width = 320;
+	width = 320 - GetSystemMetrics(SM_CXVSCROLL);
 	height = 44;
-/*INFO_ID_PHONE		
-INFO_ID_WEB			
-INFO_ID_EMAIL		
-INFO_ID_AGE			
-INFO_ID_ADDRESS_CNT	
-INFO_ID_ADDRESS_CTY	
-INFO_ID_ADDRESS_STR	
-INFO_ID_ADDRESS_NUM	
-INFO_ID_SKYPE	*/	
+//INFO_ID_LAST_NAME	
+//INFO_ID_FIRST_NAME	
+//INFO_ID_PHONE		
+//INFO_ID_SKYPE		
+//INFO_ID_EMAIL		
+//INFO_ID_WEB			
+//INFO_ID_AGE			
+//INFO_ID_ADDRESS_CNT	
+//INFO_ID_ADDRESS_CTY	
+//INFO_ID_ADDRESS_STR	
+//INFO_ID_ADDRESS_NUM	
+
 
 
 	//setDefaultEditButtonProc(WndProc);
 	ebContactInfo[0] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_LAST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Moshe"));
-	setEditButtonFont(ebContactInfo[0], TEXT("Arial"), 10);
-	y += height+12;
+	y += height+15;
 	ebContactInfo[1] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_FIRST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Cohen"));
-	y += height+12;
-	ebContactInfo[2] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_PHONE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("3253245"));
-	y += height+12;
+	y += height+15;
+	ebContactInfo[2] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_PHONE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("98765432"));
+	y += height+15;
 	ebContactInfo[3] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_SKYPE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("golom"));
-	y += height+12;
-	ebContactInfo[4] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@a"));
-	y += height+12;
+	y += height+15;
+	ebContactInfo[4] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@b.c"));
+	y += height+15;
 	ebContactInfo[5] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_WEB, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("www.asdfasdf.com"));
-	y += height+12;
-	hbContactInfoAddress = createHoverButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("israel rehovot tuchman 20"));
-	
+	y += height+15;
+	ebContactInfo[6] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_AGE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("34"));
+	y += height+15;
+	ebContactInfo[7] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS_CNT, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Israel"));
+	y += height+15;
+	ebContactInfo[8] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS_CTY, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Holon"));
+	y += height+15;
+	ebContactInfo[9] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS_STR, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Golomb"));
+	y += height+15;
+	ebContactInfo[10] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS_NUM, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("52"));
+	y += height+15;
+	for (y = 0; y < 11; y++)
+		setEditButtonImageStretch(ebContactInfo[y], TRUE);
+
+	//setEditButtonFont(ebContactInfo[0], TEXT("Arial"), 10);	
 	//hwndAddressContainer = CreateWindowEx(WS_EX_TOPMOST, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE | SS_BITMAP, 0, 44, 320, 264, hwndContainerContactDetails, NULL, hInstance, NULL);
 }

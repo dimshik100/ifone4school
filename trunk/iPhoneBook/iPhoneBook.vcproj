@@ -504,7 +504,7 @@
 			Name="GUI"
 			>
 			<File
-				RelativePath=".\Clock.cpp"
+				RelativePath=".\Clock.c"
 				>
 			</File>
 			<File
@@ -533,6 +533,14 @@
 			</File>
 			<File
 				RelativePath=".\ListView.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ScrollContainer.c"
+				>
+			</File>
+			<File
+				RelativePath=".\ScrollContainer.h"
 				>
 			</File>
 		</Filter>

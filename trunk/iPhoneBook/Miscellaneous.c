@@ -1,19 +1,53 @@
 #include "StdAfx.h"
 #include "Miscellaneous.h"
-#include "PhoneBook.h"
 
 
-BOOL CALLBACK		showChildWindowsEnumProc(HWND hwnd, LPARAM lParam);
+BOOL CALLBACK		shiftChildWindowsProc(HWND hWnd, LPARAM lParam);
+BOOL CALLBACK		showChildWindowsEnumProc(HWND hWnd, LPARAM lParam);
 
-BOOL CALLBACK		showChildWindowsEnumProc(HWND hwnd, LPARAM lParam)
+BOOL CALLBACK		shiftChildWindowsProc(HWND hWnd, LPARAM lParam)
 {
-	ShowWindow(hwnd, (int)lParam);
+	void **paramArray = (void**)lParam;
+	HWND hWndParent = *(HWND*)paramArray[0];
+
+	// Make sure that we only move the first-children and not any other nested children.
+	if (hWndParent == GetParent(hWnd))
+	{
+		RECT rc;
+		POINT ptCtl = {0, 0} , ptParent = {0, 0}, ptOffset;
+		ptOffset.x = *(int*)paramArray[1], ptOffset.y = *(int*)paramArray[2];
+
+		ClientToScreen(GetParent(hWnd), &ptParent);
+		ClientToScreen(hWnd, &ptCtl);
+		GetClientRect(hWnd, &rc);
+		ptCtl.x -= ptParent.x;
+		ptCtl.y -= ptParent.y;
+		MoveWindow(hWnd, ptCtl.x + ptOffset.x , ptCtl.y + ptOffset.y, rc.right, rc.bottom, TRUE);
+	}
+
 	return TRUE;
 }
 
-void showChildWindows(HWND hwnd, int nCmdShow)
+void shiftChildWindows(HWND hWnd, int xOffset, int yOffset)
 {
-	EnumChildWindows(hwnd, showChildWindowsEnumProc, (int)nCmdShow);
+	void *paramArray[3];
+
+	paramArray[0] = &hWnd;
+	paramArray[1] = &xOffset;
+	paramArray[2] = &yOffset;
+	EnumChildWindows(hWnd, shiftChildWindowsProc, (LPARAM)paramArray);
+
+}
+
+BOOL CALLBACK		showChildWindowsEnumProc(HWND hWnd, LPARAM lParam)
+{
+	ShowWindow(hWnd, (int)lParam);
+	return TRUE;
+}
+
+void showChildWindows(HWND hWnd, int nCmdShow)
+{
+	EnumChildWindows(hWnd, showChildWindowsEnumProc, (LPARAM)nCmdShow);
 }
 
 DynamicListC getCurrentContactList(int fromFile);
@@ -44,7 +78,7 @@ DynamicListC getCurrentContactList(int fromFile)
 	{	
 		if (contactList)
 			listFree(&contactList);
-		contactList = getContactList();
+		//contactList = getContactList();
 	}
 
 	return contactList;

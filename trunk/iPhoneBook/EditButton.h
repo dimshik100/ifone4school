@@ -21,6 +21,7 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 							   int width, int height, int controlId, int onImage, int offImage, TCHAR *caption);
 void setEditButtonText(EditButton *editButton, TCHAR *caption);
 void setEditButtonStateImages(EditButton *editButton, int onImage, int offImage);
+void setEditButtonImageStretch(EditButton *editButton, int enable);
 void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize);
 HFONT getEditButtonFont(EditButton *editButton);
 void setEditButtonTextColor(EditButton *editButton, COLORREF color);

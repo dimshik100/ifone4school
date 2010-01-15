@@ -8,5 +8,6 @@ void setBitmapToDcStretched(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpI
 DynamicListC getContactListLocal();
 DynamicListC getContactListFromFile();
 DynamicListC getContactListInitiated();
-void showChildWindows(HWND hwnd, int nCmdShow);
+void showChildWindows(HWND hWnd, int nCmdShow);
+void shiftChildWindows(HWND hWnd, int xOffset, int yOffset);
 int isOsVista();
