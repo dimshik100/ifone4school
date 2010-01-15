@@ -64,7 +64,7 @@ SKYPEAPIDLL_API LRESULT connectSkype(HINSTANCE hInstance)
 		queueManagerActive = 1;
 		queueManagerHandle = CreateThread(NULL, 0, SkypeQueueManagerThreadProc, NULL, 0, NULL);
 	}
-	return SendMessage(HWND_BROADCAST, msgIdApiDiscover, (WPARAM)hiddenWindowHandle, 0);
+	return PostMessage(HWND_BROADCAST, msgIdApiDiscover, (WPARAM)hiddenWindowHandle, 0);
 }
 
 SKYPEAPIDLL_API void disconnectSkype(HINSTANCE hInstance)
@@ -138,7 +138,7 @@ SKYPEAPIDLL_API BOOL processAttachmentMessage(UINT message, WPARAM wParam, LPARA
 				skypeConnectionStatusCallback((SkypeApiInitStatus)lParam);
 			break;
 		case ATTACH_AVAILABLE:
-			SendMessage(HWND_BROADCAST, msgIdApiDiscover, (WPARAM)hiddenWindowHandle, 0);
+			PostMessage(HWND_BROADCAST, msgIdApiDiscover, (WPARAM)hiddenWindowHandle, 0);
 			if (skypeConnectionStatusCallback)
 				skypeConnectionStatusCallback(ATTACH_AVAILABLE);
 			break;
