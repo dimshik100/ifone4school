@@ -14,7 +14,8 @@ void invalidateButtonRect(HoverButton *hoverButton);
 void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId);
 BOOL setTrackMouse(HoverButton *hoverButton);
 
-HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height, int controlId, int onImage, int offImage, TCHAR *caption)
+HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height,
+							   int controlId, int onImage, int offImage, TCHAR *caption)
 {
 	HoverButton *newHoverButton = NULL;
 
@@ -24,6 +25,7 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 		newHoverButton->onImage = onImage;
 		newHoverButton->offImage = offImage;
 		newHoverButton->activeImage = offImage;
+		newHoverButton->imgStretch = FALSE;
 		newHoverButton->cId = controlId;
 		newHoverButton->hInstance = hInstance;
 		newHoverButton->buttonRect.left = x;
@@ -80,6 +82,11 @@ void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offIma
 	hoverButton->offImage = offImage;
 	// Force redraw of the button
 	invalidateButtonRect(hoverButton);
+}
+
+void setHoverButtonImageStretch(HoverButton *hoverButton, int enable)
+{
+	hoverButton->imgStretch = enable;
 }
 
 void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption)
@@ -165,7 +172,10 @@ void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId)
 	RECT rect, rcOffset = {0};
 	// Gets the dimensions of the button
 	GetClientRect(hoverButton->hButton, &rect);
-	setImageToDc(hoverButton->hInstance, &rect, &rcOffset, hdc, imageId);
+	if (hoverButton->imgStretch)
+		setImageToDcStretched(hoverButton->hInstance, &rect, &rcOffset, hdc, imageId);
+	else
+		setImageToDc(hoverButton->hInstance, &rect, &rcOffset, hdc, imageId);
 }
 
 LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -194,6 +204,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		return FALSE;
 		break;
 	case WM_LBUTTONDOWN:
+		SetFocus(hWnd);
 		hoverButton = findButton(0, hWnd);
 		hoverButton->isPushed = TRUE;
 		if (!hoverButton->isLocked)
@@ -257,6 +268,9 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		}
 		break;
 
+	case WM_ERASEBKGND:
+		return TRUE;
+		break;
 	case WM_PAINT:
 		{
 			HFONT hFontOld;

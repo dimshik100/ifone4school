@@ -52,6 +52,11 @@ void setEditButtonStateImages(EditButton *editButton, int onImage, int offImage)
 	setHoverButtonStateImages(editButton->mainButton, onImage, offImage);
 }
 
+void setEditButtonImageStretch(EditButton *editButton, int enable)
+{
+	setHoverButtonImageStretch(editButton->mainButton, enable);
+}
+
 void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize)
 {
 	setHoverButtonFont(editButton->mainButton, fontName, fontSize);
