@@ -117,7 +117,7 @@ LRESULT CALLBACK	ScrollContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 				if (*deltaPos != 0)
 				{
 					SetScrollPos(hWnd, scrollBar, scrollPos, TRUE);
-					shiftChildWindows(hWnd, cx, cy);
+					shiftChildWindows(hWnd, cx, cy, TRUE);
 					InvalidateRect(hWnd, NULL, FALSE);
 					*prevVal = scrollPos;
 				}
