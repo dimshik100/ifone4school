@@ -85,20 +85,21 @@ LRESULT CALLBACK	ScrollContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	case WM_MOUSEWHEEL:
 		{
 			int scrolledRaw = (int)wParam, divider = WHEEL_DELTA;
-			int scrolled;
+			int scrolled, i;
+			int direction;
 			int orientation = (message == WM_MOUSEWHEEL) ? (1) : (-1);
-			int scrollBar = (message == WM_MOUSEWHEEL) ? (SB_VERT) : (SB_HORZ);
 			UINT newMsg = (message == WM_MOUSEWHEEL) ? (WM_VSCROLL) : (WM_HSCROLL);
 
 			// Calculate the number of lines scrolled.
 			while (scrolledRaw % divider == 0)
 				divider += WHEEL_DELTA;
 			scrolled = (divider / (scrolledRaw % divider)) * orientation;
+			direction = (scrolled < 0) ? (SB_LINEDOWN) : (SB_LINEUP);
 
 			// Set a new scroll position
-			SetScrollPos(hWnd, scrollBar, getCurrentScrollPos(hWnd, scrollBar) - (scrolled*10), FALSE);
-			// Notify our window a scroll has to occur.
-			SendMessage(hWnd, newMsg, SB_LINEUP, (LPARAM)NULL);
+			for (i = 0; i < abs(scrolled); i++)
+				// Notify our window a scroll has to occur.
+				SendMessage(hWnd, newMsg, direction, (LPARAM)NULL);
 
 			return FALSE;
 		}
