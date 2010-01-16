@@ -1,3 +1,54 @@
+#pragma once
+
+enum {	HOVER_BUTTON_LMOUSE_DOWN, HOVER_BUTTON_RMOUSE_DOWN, HOVER_BUTTON_LMOUSE_UP, HOVER_BUTTON_RMOUSE_UP,
+		HOVER_BUTTON_MOUSE_DOWN_LEAVE };
+
+#define EFF_DRAW_HOVER_BUTTON
+
+typedef struct _HoverButton
+{
+	HWND		hButton;
+	HINSTANCE	hInstance;
+	HFONT		hFont;
+	COLORREF	color;
+	RECT		buttonRect;
+	TCHAR		*caption;
+	#ifdef EFF_DRAW_HOVER_BUTTON
+	//*************************************
+	HBITMAP		hbitmap;
+	HDC			hdc;
+	//*************************************
+	#endif
+	int			isHovering;
+	int 		isLocked;
+	int 		isPushButton;
+	int 		isPushed;
+	int 		onImage;
+	int 		offImage;
+	int 		activeImage;
+	int 		imgStretch;
+	int 		cId;
+
+}HoverButton;
+
+HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
+							   int width, int height, int controlId, int onImage, int offImage, TCHAR *caption);
+void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption);
+size_t getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t length);
+void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage);
+void setHoverButtonImageStretch(HoverButton *hoverButton, int enable);
+void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize);
+HFONT getHoverButtonFont(HoverButton *hoverButton);
+void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color);
+void lockHoverButtonImage(HoverButton *hoverButton, int enable);
+void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable);
+void setDefaultHoverButtonProc(WNDPROC wndProc);
+HWND getHoverButtonHwnd(HoverButton *hoverButton);
+void deleteHoverButtons();
+HoverButton *findButton(int cId, HWND hWnd);
+
+//***********************************************************************************************************
+
 #include "StdAfx.h"
 #include "HoverButton.h"
 #include "Miscellaneous.h"
@@ -18,6 +69,11 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 							   int controlId, int onImage, int offImage, TCHAR *caption)
 {
 	HoverButton *newHoverButton = NULL;
+	#ifdef EFF_DRAW_HOVER_BUTTON
+	//*************************************
+	HDC hdcTemp;
+	//*************************************
+	#endif
 
 	if (hoverButtonCounter < MAX_BUTTONS)
 	{
@@ -38,6 +94,15 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 			newHoverButton->caption = _tcsdup(caption);
 		newHoverButton->hFont = NULL;
 		newHoverButton->color = GetSysColor(COLOR_BTNTEXT); // Get the default color for button text
+	#ifdef EFF_DRAW_HOVER_BUTTON
+	//*************************************
+		hdcTemp = GetDC(newHoverButton->hButton);
+		newHoverButton->hbitmap = CreateCompatibleBitmap(hdcTemp, width, height);
+		newHoverButton->hdc = CreateCompatibleDC(hdcTemp);
+		ReleaseDC(newHoverButton->hButton, hdcTemp);
+		DeleteObject(SelectObject(newHoverButton->hdc, newHoverButton->hbitmap));
+	//*************************************
+	#endif
 
 		/// !!! Apply new window procedure to control !!! ///
 		wndDefHoverProc = (WNDPROC)SetWindowLong(newHoverButton->hButton, GWL_WNDPROC, (LONG_PTR)HoverBtnProc);
@@ -67,6 +132,13 @@ void deleteHoverButtons()
 			DeleteObject(hoverButtons[i]->hFont);
 		if (hoverButtons[i]->caption)
 			free(hoverButtons[i]->caption);
+
+	#ifdef EFF_DRAW_HOVER_BUTTON
+	//*************************************
+		DeleteObject(hoverButtons[i]->hdc);
+		DeleteObject(hoverButtons[i]->hbitmap);
+	//*************************************
+	#endif
 		free(hoverButtons[i]);
 	}
 	hoverButtonCounter = 0;
@@ -170,8 +242,22 @@ BOOL setTrackMouse(HoverButton *hoverButton)
 void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId)
 {
 	RECT rect, rcOffset = {0};
+	HBITMAP hbmpImage;
+	HDC hdcImage;
 	// Gets the dimensions of the button
 	GetClientRect(hoverButton->hButton, &rect);
+
+	#ifdef EFF_DRAW_HOVER_BUTTON
+	//*************************************
+	hbmpImage = LoadBitmap(hoverButton->hInstance, MAKEINTRESOURCE(imageId));
+	hdcImage = CreateCompatibleDC(hoverButton->hdc);
+	DeleteObject(SelectObject(hdcImage, hbmpImage));
+	BitBlt(hoverButton->hdc, 0, 0, rect.right, rect.bottom, hdcImage, 0, 0, SRCCOPY);
+	DeleteObject(hbmpImage);
+	DeleteDC(hdcImage);
+	return;
+	//*************************************
+	#endif
 
 	if (hoverButton->imgStretch)
 		setImageToDcStretched(hoverButton->hInstance, &rect, &rcOffset, hdc, imageId);
@@ -280,6 +366,34 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			RECT rect;
 
 			hdc = BeginPaint(hWnd, &ps);
+
+	#ifdef EFF_DRAW_HOVER_BUTTON
+	//*************************************
+			hdcMem = NULL;
+			hoverButton = findButton(0, hWnd);
+			GetClientRect(hWnd, &rect);
+			setHoverButtonImage(hoverButton, hoverButton->hdc, hoverButton->activeImage);
+			if (hoverButton->caption)
+			{
+				TEXTMETRIC tm;
+				SetBkMode(hoverButton->hdc, TRANSPARENT);
+				SetTextColor(hoverButton->hdc, hoverButton->color);
+				SetTextAlign(hoverButton->hdc, TA_CENTER);
+				hFontOld = (HFONT)SelectObject(hoverButton->hdc, hoverButton->hFont);
+				GetTextMetrics(hoverButton->hdc, &tm);
+				TextOut(hoverButton->hdc, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
+					(hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - tm.tmHeight)/2,
+					hoverButton->caption, (int)_tcslen(hoverButton->caption));
+				SelectObject(hoverButton->hdc, hFontOld);
+			}
+			BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top, hoverButton->hdc, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
+
+			EndPaint(hWnd, &ps);
+
+			return FALSE;
+
+	//*************************************
+	#endif
 
 			// Gets the dimensions of the button
 			GetClientRect(hWnd, &rect);

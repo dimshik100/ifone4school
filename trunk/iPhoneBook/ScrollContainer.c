@@ -9,7 +9,10 @@ WNDPROC wndDefContainerProc = NULL;
 int getCurrentScrollPos(HWND hWnd, int scrollBar);
 int getScrollPos(HWND hWnd, int scrollBar, UINT code);
 
-HWND createScrollContainer(HWND hWndParent, HINSTANCE hInstance, DWORD dwStyle, int x, int y, int width, int height, int virtWidth, int virtHeight, int controlId, int bgImage)
+///Temporarily global variables:
+SIZE itemSize;
+
+HWND createScrollContainer(HWND hWndParent, HINSTANCE hInstance, DWORD dwStyle, int x, int y, int width, int height, int itemWidth, int itemHeight, int virtWidth, int virtHeight, int controlId, int bgImage)
 {
 	HoverButton *hoverButton;
 	HWND hWndContainer;
@@ -17,12 +20,13 @@ HWND createScrollContainer(HWND hWndParent, HINSTANCE hInstance, DWORD dwStyle, 
 
 	size.cx = width, size.cy = height;
 	virtSize.cx = virtWidth, virtSize.cy = virtHeight;
+	itemSize.cx = itemWidth, itemSize.cy = itemHeight;
 	hoverButton = createHoverButton(hWndParent, hInstance, x, y, width, height, controlId, bgImage, bgImage, NULL);
 	lockHoverButtonImage(hoverButton, TRUE);
 	hWndContainer = getHoverButtonHwnd(hoverButton);
-	ShowWindow(hWndContainer, SW_HIDE);
 	wndDefContainerProc = (WNDPROC)SetWindowLong(hWndContainer, GWL_WNDPROC, (LONG_PTR)ScrollContainerProc);
 	SetWindowLong(hWndContainer, GWL_STYLE, GetWindowLong(hWndContainer, GWL_STYLE) | WS_VSCROLL | WS_HSCROLL | dwStyle);
+	setScrollContainerSize(hWndContainer, &size, &size);
 	setScrollContainerSize(hWndContainer, &size, &virtSize);
 
 	return hWndContainer;
@@ -146,6 +150,7 @@ int getScrollPos(HWND hwnd, int scrollBar, UINT code)
     SCROLLINFO si;
     int minPos;
     int maxPos;
+	int item;
     int result = INT_MAX;
 
     si.cbSize = sizeof(SCROLLINFO);
@@ -154,15 +159,16 @@ int getScrollPos(HWND hwnd, int scrollBar, UINT code)
 
 	minPos = si.nMin;
 	maxPos = si.nMax - (si.nPage - 1);
+	item = (scrollBar == SB_VERT) ? (itemSize.cy) : (itemSize.cx);
 
     switch(code)
     {
     case SB_LINEUP /*SB_LINELEFT*/:
-        result = max(si.nPos - 1, minPos);
+        result = max(si.nPos - item, minPos);
         break;
 
     case SB_LINEDOWN /*SB_LINERIGHT*/:
-        result = min(si.nPos + 1, maxPos);
+        result = min(si.nPos + item, maxPos);
         break;
 
     case SB_PAGEUP /*SB_PAGELEFT*/:
@@ -178,7 +184,7 @@ int getScrollPos(HWND hwnd, int scrollBar, UINT code)
         break;
 
     case SB_THUMBTRACK:
-        result = si.nTrackPos;
+		result = (si.nTrackPos < maxPos) ? ((si.nTrackPos / item) * item) + 1: maxPos;
         break;
 
     case SB_TOP /*SB_LEFT*/:

@@ -23,7 +23,7 @@
 #define CONTROL_ID 20
 #define BUTTON_ID_PWR				(CONTROL_ID + 0)
 #define BUTTON_ID_CLOCK				(CONTROL_ID + 1)
-#define BUTTON_ID_CONTACT			(CONTROL_ID + 2)
+#define BUTTON_ID_CONTACTS			(CONTROL_ID + 2)
 #define BUTTON_ID_INFO				(CONTROL_ID + 3)
 #define BUTTON_ID_BIN				(CONTROL_ID + 4)
 #define BUTTON_ID_MISC1				(CONTROL_ID + 5)
@@ -77,7 +77,7 @@ void enableChildContainers(BOOL value);
 
 
 HoverButton 
-		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton, *hbContactInfoAddress,
+		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton,
 		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo, *allContactsButton, *editContactButton;
 
 EditButton *ebContactInfo[10];
@@ -94,8 +94,7 @@ EditButton *ebContactInfo[10];
 	9- Address Number
 	*/
 
-HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts, hwndContainerContactDetails,
-		hwndAddressContainer;
+HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts, hwndContainerContactDetails;
 HWND hwndSearchBox, hwndConfirmDialog;
 HWND hLV;
 WNDPROC defContainerProc;
@@ -305,8 +304,9 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			int wmEvent = HIWORD(wParam);
 			switch(getEditButtonControlId(wmId))
 			{
+			// Clock button handler
 			case BUTTON_ID_CLOCK:
-				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_CLOCK)
 				{
 					if (isOsVista())
 					{
@@ -325,25 +325,10 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					screenMode = SCREEN_CLOCK;
 				}
 				break;
-			//case INFO_ID_CNTNAME:
-			//	if ((wmId % 10) == CID_MAIN_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
-			//		showEditButtonEdit(ebContactInfo[0], TRUE);
-			//	else if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
-			//		showEditButtonEdit(ebContactInfo[0], FALSE);
-			//	else if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
-			//		showEditButtonEdit(ebContactInfo[0], FALSE);
-			//	break;
-			//case INFO_ID_PHONE:
-			//	if ((wmId % 10) == CID_MAIN_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
-			//		showEditButtonEdit(ebContactInfo[1], TRUE);
-			//	else if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
-			//		showEditButtonEdit(ebContactInfo[1], FALSE);
-			//	else if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
-			//		showEditButtonEdit(ebContactInfo[1], FALSE);
-				break;
-			case BUTTON_ID_CONTACT:
+			// View all contacts button(s) handler
+			case BUTTON_ID_CONTACTS:
 			case BUTTON_ID_ALL_CONTACTS:
-				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_CONTACTS)
 				{
 					showChildContainers(SW_HIDE);
 					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
@@ -354,8 +339,17 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					screenMode = SCREEN_CONTACTS;
 				}
 				break;
+			case BUTTON_ID_INFO:
+				break;
+			case BUTTON_ID_BIN:
+				break;
+			// Miscellaneous buttons handlers
+			case BUTTON_ID_MISC1:
+				break;
+			case BUTTON_ID_MISC2:
+				break;
 			case BUTTON_ID_MISC3: // Go to Single contact info screen
-				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_CONTACT_INFO)
 				{
 					showChildContainers(SW_HIDE);
 					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
@@ -363,6 +357,9 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					screenMode = SCREEN_CONTACT_INFO;
 				}
 				break;
+			case BUTTON_ID_MISC4:
+				break;
+			// Confirmation dialog handler
 			case BUTTON_ID_YES:
 			case BUTTON_ID_NO:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
@@ -372,6 +369,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					enableChildContainers(TRUE);
 				}
 				break;
+			// Search edit-control handler
 			case EDIT_ID_SEARCH:
 				if (wmEvent == EN_CHANGE)
 				{
@@ -379,6 +377,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					GetWindowText((HWND)lParam, str, 256);
 					fillListView(hLV, getContactListLocal(), str);
 				}
+				break;
 			default:
 				break;
 			}
@@ -632,7 +631,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
 	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, BUTTON_ID_PWR, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
 	setHoverButtonAsPushButton(hbExitButton, TRUE);
-	hwndContainerMainButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
+	hwndContainerMainButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
 	defContainerProc = (WNDPROC)SetWindowLong(hwndContainerMainButtons, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 
 	tempBtn = createHoverButton(hwndContainerMainButtons, hInstance, 0, 0, 10, 92, 0, IDB_MAIN_WND_LOW_BAR_LEFT, IDB_MAIN_WND_LOW_BAR_LEFT, NULL);
@@ -646,14 +645,14 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 
 	hbMainActionBtn[0] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_CLOCK, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, NULL);
 	x += width;
-	hbMainActionBtn[1] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_CONTACT, IDB_MAIN_WND_CONTACT_ON, IDB_MAIN_WND_CONTACT_OFF, NULL);
+	hbMainActionBtn[1] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_CONTACTS, IDB_MAIN_WND_CONTACT_ON, IDB_MAIN_WND_CONTACT_OFF, NULL);
 	x += width;
 	hbMainActionBtn[2] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width+1, height, BUTTON_ID_INFO, IDB_MAIN_WND_INFO_ON, IDB_MAIN_WND_INFO_OFF, NULL);
 	x += width+1;
 	hbMainActionBtn[3] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_BIN, IDB_MAIN_WND_BIN_EMPTY_ON, IDB_MAIN_WND_BIN_EMPTY_OFF, NULL);
 	
 	hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_CONTACT_WND_BUTTON_BG));
-	hwndContainerMiscButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD/* | WS_VISIBLE*/ | SS_BITMAP, 67, 550, 320, 66, hWnd, NULL, hInstance, NULL);
+	hwndContainerMiscButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN/* | WS_VISIBLE*/ | SS_BITMAP, 67, 550, 320, 66, hWnd, NULL, hInstance, NULL);
 	SendMessage(hwndContainerMiscButtons, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
 	SetWindowLong(hwndContainerMiscButtons, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 	x = 5;
@@ -669,7 +668,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	x += width+10;
 	hbMiscActionBtn[3] = createHoverButton(hwndContainerMiscButtons, hInstance, x, y, width, height, BUTTON_ID_MISC4, IDB_CONTACT_WND_BUTTON_DEL_ON, IDB_CONTACT_WND_BUTTON_DEL_OFF, NULL);
 
-	hwndContainerContacts = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD/* | WS_VISIBLE*/, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
+	hwndContainerContacts = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN/* | WS_VISIBLE*/, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
 	SetWindowLong(hwndContainerContacts, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 	// Create an Custom-Drawn list view control - see ListView.cpp for details.
 	hLV = createListView(hwndContainerContacts, hInst, 0, 88, 320, 306);
@@ -694,7 +693,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	}
 	else
 	{
-		hwndConfirmDialog = CreateWindowEx(0, TEXT("static"), NULL,  WS_CHILD | SS_BITMAP,
+		hwndConfirmDialog = CreateWindowEx(0, TEXT("static"), NULL,  WS_CHILD | WS_CLIPCHILDREN | SS_BITMAP,
 			ifoneScreenRect.left + (ifoneScreenRect.right - ifoneScreenRect.left - 277) / 2,
 			ifoneScreenRect.top + (ifoneScreenRect.bottom - ifoneScreenRect.top - 103) / 2,
 			277, 103, hWnd, NULL, hInstance, NULL);
@@ -708,42 +707,52 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	//createClock(hWnd, hInstance, 450, 0, 320, 480, 0, IDB_CLOCK_WND_BG);
 
 
-	// create contact details 
-	//http://www.codeproject.com/KB/dialog/scroll_dialog.aspx
-	hwndContainerContactDetails = createScrollContainer(hWnd, hInstance, 0, 67, 156, 320, 394, 320 - GetSystemMetrics(SM_CXVSCROLL), 900, 0, IDB_CONTACT_INFO_WND_BG);
-	//SetWindowLong(hwndContainerContactDetails, GWL_WNDPROC, (LONG_PTR)ContainerProc);
-	allContactsButton = createHoverButton(hwndContainerContactDetails, hInstance, 13, 7, 91, 30, BUTTON_ID_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, NULL);
-	editContactButton = createHoverButton(hwndContainerContactDetails, hInstance, 254, 7, 50, 30, BUTTON_ID_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, NULL);
+	{
+		HWND hwndScroll;
+		// create contact details 
+		// reference http://www.codeproject.com/KB/dialog/scroll_dialog.aspx
+		hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_CONTACT_INFO_WND_APP_NAME));
+		hwndContainerContactDetails = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN/* | WS_VISIBLE*/ | SS_BITMAP, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
+		SendMessage(hwndContainerContactDetails, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
+		SetWindowLong(hwndContainerContactDetails, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 
-	x = 0;
-	y = 44;
-	width = 320 - GetSystemMetrics(SM_CXVSCROLL);
-	height = 44;
+		x = 0;
+		y = 20;
+		width = 320 - GetSystemMetrics(SM_CXVSCROLL);
+		height = 44;
 
-	ebContactInfo[0] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_LAST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Moshe"));
-	y += height+15;
-	ebContactInfo[1] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_FIRST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Cohen"));
-	y += height+15;
-	ebContactInfo[2] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_PHONE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("98765432"));
-	y += height+15;
-	ebContactInfo[3] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_SKYPE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("golom"));
-	y += height+15;
-	ebContactInfo[4] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@b.c"));
-	y += height+15;
-	ebContactInfo[5] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_WEB, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("www.asdfasdf.com"));
-	y += height+15;
-	ebContactInfo[6] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_AGE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("34"));
-	y += height+15;
-	ebContactInfo[7] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS_CNT, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Israel"));
-	y += height+15;
-	ebContactInfo[8] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS_CTY, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Holon"));
-	y += height+15;
-	ebContactInfo[9] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS_STR, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Golomb"));
-	y += height+15;
-	ebContactInfo[10] = createEditButton(hwndContainerContactDetails, hInstance, x, y, width, height, INFO_ID_ADDRESS_NUM, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("52"));
-	y += height+15;
-	for (y = 0; y < 11; y++)
-		setEditButtonImageStretch(ebContactInfo[y], TRUE);
+		allContactsButton = createHoverButton(hwndContainerContactDetails, hInstance, 13, 7, 91, 30, BUTTON_ID_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, NULL);
+		editContactButton = createHoverButton(hwndContainerContactDetails, hInstance, 254, 7, 50, 30, BUTTON_ID_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, NULL);
+		// Needed width is 320 pixels - width of vertical scrollbar.
+		// Needed height is 64 pixels (44 button + 20 label) * 11 + 350 % 64 (addition of this fraction gives a nice, uniform effect to the list)
+		hwndScroll = createScrollContainer(hwndContainerContactDetails, hInstance, 0, 0, 44, 320, 350, width, height + 20, 
+			width, ((height + 20) * 11) + (350 % 64), 0, IDB_CONTACT_INFO_WND_BG);
+
+		ebContactInfo[0] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_LAST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Moshe"));
+		y += height+20;
+		ebContactInfo[1] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_FIRST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Cohen"));
+		y += height+20;
+		ebContactInfo[2] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_PHONE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("98765432"));
+		y += height+20;
+		ebContactInfo[3] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_SKYPE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("golom"));
+		y += height+20;
+		ebContactInfo[4] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@b.c"));
+		y += height+20;
+		ebContactInfo[5] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_WEB, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("www.asdfasdf.com"));
+		y += height+20;
+		ebContactInfo[6] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_AGE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("34"));
+		y += height+20;
+		ebContactInfo[7] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_ADDRESS_CNT, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Israel"));
+		y += height+20;
+		ebContactInfo[8] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_ADDRESS_CTY, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Holon"));
+		y += height+20;
+		ebContactInfo[9] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_ADDRESS_STR, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Golomb"));
+		y += height+20;
+		ebContactInfo[10] = createEditButton(hwndScroll, hInstance, x, y, width, height, INFO_ID_ADDRESS_NUM, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("52"));
+		y += height+20;
+		for (y = 0; y < 11; y++)
+			setEditButtonImageStretch(ebContactInfo[y], TRUE);
+	}
 
 	//setEditButtonFont(ebContactInfo[0], TEXT("Arial"), 10);	
 	//hwndAddressContainer = CreateWindowEx(WS_EX_TOPMOST, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE | SS_BITMAP, 0, 44, 320, 264, hwndContainerContactDetails, NULL, hInstance, NULL);

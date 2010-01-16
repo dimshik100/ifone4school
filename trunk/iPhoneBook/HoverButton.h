@@ -5,21 +5,21 @@ enum {	HOVER_BUTTON_LMOUSE_DOWN, HOVER_BUTTON_RMOUSE_DOWN, HOVER_BUTTON_LMOUSE_U
 
 typedef struct _HoverButton
 {
-	HWND hButton;
-	HINSTANCE hInstance;
-	HFONT hFont;
-	COLORREF color;
-	RECT buttonRect;
-	TCHAR *caption;
-	int isHovering;
-	int isLocked;
-	int isPushButton;
-	int isPushed;
-	int onImage;
-	int offImage;
-	int activeImage;
-	int imgStretch;
-	int cId;
+	HWND		hButton;
+	HINSTANCE	hInstance;
+	HFONT		hFont;
+	COLORREF	color;
+	RECT		buttonRect;
+	TCHAR		*caption;
+	int			isHovering;
+	int 		isLocked;
+	int 		isPushButton;
+	int 		isPushed;
+	int 		onImage;
+	int 		offImage;
+	int 		activeImage;
+	int 		imgStretch;
+	int 		cId;
 
 }HoverButton;
 
