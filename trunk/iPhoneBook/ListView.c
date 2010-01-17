@@ -98,6 +98,22 @@ BOOL addListViewItem(HWND hWndListView, Contact *contact)
     return TRUE; 
 }
 
+LPARAM getListViewSelectedItemParam(HWND hWndListView)
+{
+	int index = ListView_GetSelectionMark(hWndListView);
+	LPARAM lParam = (LPARAM)NULL;
+	if (index >= 0)
+	{
+		LVITEM lvItem = {0};
+
+		lvItem.iItem = index;
+		lvItem.mask = LVIF_PARAM;
+		ListView_GetItem(hWndListView, &lvItem);
+		lParam = lvItem.lParam;
+	}
+	return lParam;
+}
+
 void adjustColumnWidth(HWND hWndListView)
 {
 	int cx;

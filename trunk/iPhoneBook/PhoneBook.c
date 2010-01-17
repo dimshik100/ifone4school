@@ -480,6 +480,25 @@ void freeContactListLocal()
 		listFree(contactListPtr);
 }
 
+// Updates the linked list the same way we update the file physically.
+void deleteFromContactListLocal(Contact *contact)
+{
+	DynamicListC contactList = getCurrentContactList(FALSE);
+	if (contactList)
+	{
+		// Save current index.
+		int index = contact->index;
+		// Get last item.
+		Contact *last = listSelectLast(contactList);
+		// Replace content of last item with the one we're deleting
+		dupContact(contact, last);
+		// Delete last node
+		listDeleteNode(contactList, last);
+		// Give proper index to item
+		contact->index = index;
+	}
+}
+
 DynamicListC getContactListLocal()
 {
 	return *getCurrentContactList(FALSE);

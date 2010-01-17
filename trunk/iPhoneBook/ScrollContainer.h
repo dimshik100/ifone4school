@@ -5,7 +5,7 @@ void setScrollContainerSize(HWND hWnd, SIZE *size, SIZE *virtSize);
 void setScrollContainerImageStretch(HWND hWnd, int enable);
 
 void setScrollContainerText(HWND hWnd, TCHAR *caption);
-size_t getScrollContainerText(HWND hWnd, TCHAR *destination, size_t length);
+void getScrollContainerText(HWND hWnd, TCHAR *destination, size_t length);
 void setScrollContainerImage(HWND hWnd, int imgImage);
 void setScrollContainerImageStretch(HWND hWnd, int enable);
 void setScrollContainerFont(HWND hWnd, TCHAR *fontName, int fontSize);

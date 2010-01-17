@@ -23,6 +23,7 @@ int getMemoryInfo(int *count, int *total, DbType source);
 void dupContact(Contact *dst, Contact *src);
 // Extension functions for easier/faster management of contacts
 void		 freeContactListLocal();
+void		 deleteFromContactListLocal();
 DynamicListC getContactListLocal();
 DynamicListC getContactListFromFile();
 DynamicListC getContactListInitiated();

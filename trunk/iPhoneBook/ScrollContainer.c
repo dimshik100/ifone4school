@@ -52,6 +52,8 @@ void setScrollContainerSize(HWND hWnd, SIZE *size, SIZE *virtSize)
 
 	getChildInParentOffset(hWnd, &pt);
 	MoveWindow(hWnd, pt.x, pt.y, size->cx, size->cy, TRUE);
+	SendMessage(hWnd, WM_VSCROLL, SB_LINEUP, (LPARAM)NULL);
+	SendMessage(hWnd, WM_HSCROLL, SB_LINEUP, (LPARAM)NULL);
 }
 
 LRESULT CALLBACK	ScrollContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -206,15 +208,11 @@ void setScrollContainerText(HWND hWnd, TCHAR *caption)
 	}
 }
 
-size_t getScrollContainerText(HWND hWnd, TCHAR *destination, size_t length)
+void getScrollContainerText(HWND hWnd, TCHAR *destination, size_t length)
 {
 	HoverButton *hoverButton = findButton(0, hWnd);
-	size_t size = 0;
 	if (hoverButton)
-	{
-		size = getHoverButtonText(hoverButton, destination, length);
-	}
-	return size;
+		getHoverButtonText(hoverButton, destination, length);
 }
 
 void setScrollContainerImage(HWND hWnd, int imgImage)
