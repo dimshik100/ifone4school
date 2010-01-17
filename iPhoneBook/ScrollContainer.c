@@ -54,13 +54,6 @@ void setScrollContainerSize(HWND hWnd, SIZE *size, SIZE *virtSize)
 	MoveWindow(hWnd, pt.x, pt.y, size->cx, size->cy, TRUE);
 }
 
-void setScrollContainerImageStretch(HWND hWnd, int enable)
-{
-	HoverButton *hoverButton = findButton(0, hWnd);
-	if (hoverButton)
-		setHoverButtonImageStretch(hoverButton, enable);
-}
-
 LRESULT CALLBACK	ScrollContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -202,4 +195,71 @@ int getScrollPos(HWND hwnd, int scrollBar, UINT code)
     }
 
     return result;
+}
+
+void setScrollContainerText(HWND hWnd, TCHAR *caption)
+{
+	HoverButton *hoverButton = findButton(0, hWnd);
+	if (hoverButton)
+	{
+		setHoverButtonText(hoverButton, caption);
+	}
+}
+
+size_t getScrollContainerText(HWND hWnd, TCHAR *destination, size_t length)
+{
+	HoverButton *hoverButton = findButton(0, hWnd);
+	size_t size = 0;
+	if (hoverButton)
+	{
+		size = getHoverButtonText(hoverButton, destination, length);
+	}
+	return size;
+}
+
+void setScrollContainerImage(HWND hWnd, int imgImage)
+{
+	HoverButton *hoverButton = findButton(0, hWnd);
+	if (hoverButton)
+	{
+		setHoverButtonStateImages(hoverButton, imgImage, imgImage);
+	}
+}
+
+void setScrollContainerImageStretch(HWND hWnd, int enable)
+{
+	HoverButton *hoverButton = findButton(0, hWnd);
+	if (hoverButton)
+	{
+		setHoverButtonImageStretch(hoverButton, enable);
+	}
+}
+
+void setScrollContainerFont(HWND hWnd, TCHAR *fontName, int fontSize)
+{
+	HoverButton *hoverButton = findButton(0, hWnd);
+	if (hoverButton)
+	{
+		setHoverButtonFont(hoverButton, fontName, fontSize);
+	}
+}
+
+HFONT getScrollContainerFont(HWND hWnd)
+{
+	HoverButton *hoverButton = findButton(0, hWnd);
+	HFONT hFont = NULL;
+	if (hoverButton)
+	{
+		hFont = getHoverButtonFont(hoverButton);
+	}
+	return hFont;
+}
+
+void setScrollContainerTextColor(HWND hWnd, COLORREF color)
+{
+	HoverButton *hoverButton = findButton(0, hWnd);
+	if (hoverButton)
+	{
+		setHoverButtonTextColor(hoverButton, color);
+	}
 }
