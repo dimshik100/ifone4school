@@ -73,8 +73,23 @@ void setEditButtonTextColor(EditButton *editButton, COLORREF color)
 	setHoverButtonTextColor(editButton->mainButton, color);
 }
 
+void getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length)
+{
+	if (editButton->inEditMode)
+	{
+		HWND hwndEdit = NULL;
+		EnumChildWindows(getHoverButtonHwnd(editButton->mainButton), FindEditInEditButtonProc, (LPARAM)&hwndEdit);
+		if (hwndEdit)
+			GetWindowText(hwndEdit, destination, (int)length);
+	}
+	else
+		getHoverButtonText(editButton->mainButton, destination, length);
+}
+
 void showEditButtonEdit(EditButton *editButton, int show)
 {
+	editButton->inEditMode = show;
+	show = (show) ? (SW_SHOW) : (SW_HIDE);
 	ShowWindow(editButton->okButton->hButton, show);
 	ShowWindow(editButton->cancelButton->hButton, show);
 	ShowWindow(editButton->hEdit, show);
@@ -86,6 +101,16 @@ void showEditButtonEdit(EditButton *editButton, int show)
 	}
 	else
 		setHoverButtonStateImages(editButton->mainButton, editButton->onImage, editButton->offImage);
+}
+
+void lockEditButton(EditButton *editButton, int enable)
+{
+	lockHoverButtonImage(editButton->mainButton, enable);
+}
+
+HWND getEditButtonHwnd(EditButton *editButton)
+{
+	return getHoverButtonHwnd(editButton->mainButton);
 }
 
 int getEditButtonControlId(int cId)

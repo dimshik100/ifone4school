@@ -94,26 +94,23 @@ void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption)
 	if (hoverButton->caption)
 		free(hoverButton->caption);
 	if (caption)
+	{
 		hoverButton->caption = _tcsdup(caption);
+		//hoverButton->caption = (TCHAR*)malloc(sizeof(TCHAR)*(_tcslen(caption)+1));
+		//_tcscpy_s(hoverButton->caption, _tcslen(caption)+1, caption);
+	}
 	else
 		hoverButton->caption = NULL;
 	// Force redraw of the button
 	invalidateButtonRect(hoverButton);
 }
 
-size_t getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t length)
+void getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t length)
 {
-	size_t copyLen = 0;
-
 	if (hoverButton->caption)
-	{
 		_tcscpy_s(destination, length, hoverButton->caption);
-		copyLen = _tcslen(hoverButton->caption);
-	}
 	else
 		_tcscpy_s(destination, length, TEXT(""));
-
-	return copyLen;
 }
 
 void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize)
