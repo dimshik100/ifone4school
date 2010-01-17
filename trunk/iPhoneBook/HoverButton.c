@@ -293,16 +293,18 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			hoverButton = findButton(0, hWnd);
 			setHoverButtonImage(hoverButton, hdcMem, hoverButton->activeImage);
 			if (hoverButton->caption)
-			{
-				TEXTMETRIC tm;
+			{				
+				RECT rcText = {0};
 				SetBkMode(hdcMem, TRANSPARENT);
 				SetTextColor(hdcMem, hoverButton->color);
-				SetTextAlign(hdcMem, TA_CENTER);
 				hFontOld = (HFONT)SelectObject(hdcMem, hoverButton->hFont);
-				GetTextMetrics(hdcMem, &tm);
-				TextOut(hdcMem, (hoverButton->buttonRect.right - hoverButton->buttonRect.left)/2,
-					(hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - tm.tmHeight)/2,
-					hoverButton->caption, (int)_tcslen(hoverButton->caption));
+
+				DrawText(hdcMem, hoverButton->caption, (int)_tcslen(hoverButton->caption), &rcText, DT_CALCRECT);
+				rcText.left = (hoverButton->buttonRect.right - hoverButton->buttonRect.left - rcText.right) /2 ;
+				rcText.top = (hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - rcText.bottom) /2 ;
+				rcText.right = rcText.right + rcText.left;
+				rcText.bottom = rcText.bottom + rcText.top;
+				DrawText(hdcMem, hoverButton->caption, (int)_tcslen(hoverButton->caption), &rcText, DT_WORDBREAK | DT_EXPANDTABS | DT_CENTER);
 				SelectObject(hdcMem, hFontOld);
 			}
 			// Copies the bitmap from the memory DC into the buttons DC 

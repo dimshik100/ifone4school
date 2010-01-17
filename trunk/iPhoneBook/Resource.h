@@ -19,6 +19,9 @@
 #define IDB_ALERT_YES_ON                133
 #define IDB_CLOCK_BG                    134
 #define IDB_CLOCK_WND_BG                134
+#define IDB_END_CALL_OFF                135
+#define IDB_END_CALL_ON                 136
+#define IDB_MAIN_BG_CALL                137
 #define IDB_ON                          202
 #define IDB_OFF                         203
 #define IDB_IFONE_BG                    210
@@ -69,7 +72,7 @@
 #define IDB_CONTACT_INFO_WND_APP_NAME   255
 #define IDB_CONTACT_INFO_ALL_CONTACTS   256
 #define IDB_CONTACT_INFO_EDIT_CONTACT   257
-#define IDB_CONTACT_INFO_WND_BG		    258
+#define IDB_CONTACT_INFO_WND_BG         258
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -77,7 +80,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        135
+#define _APS_NEXT_RESOURCE_VALUE        138
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110

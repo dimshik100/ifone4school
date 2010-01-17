@@ -184,6 +184,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SkypeHandler.c"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.c"
 				>
 				<FileConfiguration
@@ -219,6 +223,10 @@
 			</File>
 			<File
 				RelativePath=".\Resource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SkypeHandler.h"
 				>
 			</File>
 			<File
@@ -273,6 +281,10 @@
 			</File>
 			<File
 				RelativePath=".\imgs\contact_info_wnd_app_name_bg.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\imgs\contact_info_wnd_bg.bmp"
 				>
 			</File>
 			<File
@@ -344,6 +356,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\imgs\end_call_off.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\imgs\end_call_on.bmp"
+				>
+			</File>
+			<File
 				RelativePath=".\imgs\exit_button_off.bmp"
 				>
 			</File>
@@ -361,6 +381,10 @@
 			</File>
 			<File
 				RelativePath=".\iPhoneBook.rc"
+				>
+			</File>
+			<File
+				RelativePath=".\imgs\main_bg_call.bmp"
 				>
 			</File>
 			<File
