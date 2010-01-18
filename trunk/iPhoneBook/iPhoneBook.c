@@ -77,7 +77,7 @@ void CALLBACK		skypeCallStatusCallback(SkypeCallObject *skypeCallObject);
 void CALLBACK		skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus);
 
 void createGUI(HWND hWnd, HINSTANCE hInstance);
-void showChildContainers(int nCmdShow);
+void showChildContainers(ScreenMode screen);
 void enableChildContainers(BOOL value);
 void fillContactDetails(Contact *contact);
 void fillEditContactDetails(Contact *contact);
@@ -221,7 +221,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	{
 		return FALSE;
 	}
-	makeWindowTransparentByMask(hWnd, IDB_IPHONE_BG_MASK);
+	//makeWindowTransparentByMask(hWnd, IDB_IPHONE_BG_MASK);
 
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
@@ -505,11 +505,15 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				}
 				break;
 			case BUTTON_ID_ADD_CONTACT:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_CONTACTS)
 				{
 					Contact contact = {0};
 					// Replace to "Save" image.
 					setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS);
 					fillEditContactDetails(&contact);
+					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
+					ShowWindow(hwndContainerContactDetails, SW_SHOW);
+					AnimateWindow(hwndContainerContacts, 2000, AW_CENTER|AW_HIDE /*| AW_HOR_POSITIVE*/);
 					showChildContainers(SW_HIDE);
 					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
 					ShowWindow(hwndContainerContactDetails, SW_SHOW);
@@ -623,6 +627,9 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			if (ret)
 				return ret;
 		}
+		break;
+	case WM_ERASEBKGND:
+		return TRUE;
 		break;
 	case WM_DESTROY:
 		{
@@ -808,15 +815,92 @@ VOID CALLBACK		EndCallTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD
 	KillTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID);
 }
 
-void showChildContainers(int nCmdShow)
-{	
-	ShowWindow(getHoverButtonHwnd(hbMainCenterPic), nCmdShow);
-	ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), nCmdShow);
-	ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), nCmdShow);
-	ShowWindow(hwndContainerMainButtons, nCmdShow);
-	ShowWindow(hwndContainerMiscButtons, nCmdShow);
-	ShowWindow(hwndContainerContacts, nCmdShow);
-	ShowWindow(hwndContainerContactDetails, nCmdShow);
+void showChildContainers(ScreenMode screen)
+{
+	switch(screen)
+	{
+	case SCREEN_MAIN:
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_SHOW);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
+		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
+		ShowWindow(hwndContainerContacts, SW_HIDE);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		break;
+	case SCREEN_CONTACTS:
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
+		ShowWindow(hwndContainerMainButtons, SW_HIDE);
+		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
+		ShowWindow(hwndContainerContacts, SW_SHOW);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		break;
+	case SCREEN_MEM_INFO:
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
+		ShowWindow(hwndContainerMainButtons, SW_HIDE);
+		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
+		ShowWindow(hwndContainerContacts, SW_HIDE);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		break;
+	case SCREEN_TRASH:
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
+		ShowWindow(hwndContainerMainButtons, SW_HIDE);
+		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
+		ShowWindow(hwndContainerContacts, SW_SHOW);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		break;
+	case SCREEN_CALL_MODE:
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
+		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
+		ShowWindow(hwndContainerContacts, SW_HIDE);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		break;
+	case SCREEN_CONTACT_INFO:
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
+		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
+		ShowWindow(hwndContainerContacts, SW_HIDE);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		break;
+	case SCREEN_CONTACT_ADD:
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
+		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
+		ShowWindow(hwndContainerContacts, SW_HIDE);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		break;
+	case SCREEN_CONTACT_EDIT:
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
+		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
+		ShowWindow(hwndContainerContacts, SW_HIDE);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		break;
+	case SCREEN_CLOCK:
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
+		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
+		ShowWindow(hwndContainerContacts, SW_HIDE);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		break;
+	}
 }
 
 void enableChildContainers(BOOL value)
