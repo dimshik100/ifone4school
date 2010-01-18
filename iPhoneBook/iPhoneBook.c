@@ -49,12 +49,13 @@
 #define BUTTON_ID_ALL_CONTACTS		(CONTROL_ID + 24)
 #define BUTTON_ID_EDIT_CONTACT		(CONTROL_ID + 25)
 #define BUTTON_ID_EDIT_SAVE_CONTACT	(CONTROL_ID + 26)
+#define BUTTON_ID_ADD_CONTACT		(CONTROL_ID + 27)
 #define BUTTON_ID_CANCEL_CONTACT	(CONTROL_ID + 30)
 #define LV_CONTACTS_ID				(CONTROL_ID + 31)
 #define EDIT_ID_SEARCH				(CONTROL_ID + 32)
 
-typedef enum {	SCREEN_MAIN, SCREEN_CONTACTS, SCREEN_MEM_INFO, SCREEN_TRASH, 
-				SCREEN_CONTACT_INFO, SCREEN_CONTACT_EDIT, SCREEN_CLOCK, SCREEN_CALL_MODE }
+typedef enum {	SCREEN_MAIN, SCREEN_CONTACTS, SCREEN_MEM_INFO, SCREEN_TRASH, SCREEN_CALL_MODE, 
+				SCREEN_CONTACT_INFO, SCREEN_CONTACT_ADD, SCREEN_CONTACT_EDIT, SCREEN_CLOCK }
 ScreenMode;
 
 // Global Variables:
@@ -83,9 +84,10 @@ void saveContactDetails(Contact *contact);
 
 HoverButton 
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton, *hbContainerCall,
-		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo, *allContactsButton, *editContactButton;
+		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo, *hbAllContacts, *hbEditSaveContact,
+		*hbAddContact;
 
-EditButton *ebContactInfo[10];
+EditButton *ebContactInfo[11];
 	/* 
 	0- First Name
 	1- Last Name
@@ -182,7 +184,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_IPHONEBOOK));
 	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground	= (HBRUSH)(COLOR_BTNFACE+1);
-	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_IPHONEBOOK);
+	wcex.lpszMenuName	= NULL;
 	wcex.lpszClassName	= szWindowClass;
 	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -201,22 +203,28 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   HWND hWnd;
+	HWND hWnd;
+	RECT rcSize = { 0, 0, 450, 750 };
+	SIZE size;
 
-   hInst = hInstance; // Store instance handle in our global variable
+	hInst = hInstance; // Store instance handle in our global variable
 
-   hwndMain = hWnd = CreateWindow(szWindowClass, szTitle, (WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX) | WS_CLIPCHILDREN,
-      25, 25, 830, 820, NULL, NULL, hInstance, NULL);
+	AdjustWindowRect(&rcSize, ((WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX) | WS_CLIPCHILDREN) & ~WS_OVERLAPPED, FALSE);
+	size.cx = rcSize.right - rcSize.left;
+	size.cy = rcSize.bottom - rcSize.top;
+	hwndMain = hWnd = CreateWindowEx(0, szWindowClass, szTitle, (WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX) | WS_CLIPCHILDREN,
+		CW_USEDEFAULT, 0, size.cx, size.cy, NULL, NULL, hInstance, NULL);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
+	if (!hWnd)
+	{
+		return FALSE;
+	}
+	makeWindowTransparentByMask(hWnd, IDB_IPHONE_BG_MASK);
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+	ShowWindow(hWnd, nCmdShow);
+	UpdateWindow(hWnd);
 
-   return TRUE;
+	return TRUE;
 }
 
 void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
@@ -414,21 +422,21 @@ void fillEditContactDetails(Contact *contact)
 void saveContactDetails(Contact *contact)
 {
 	int fieldCount = 0;
-	getEditButtonText(ebContactInfo[fieldCount++], contact->firstName, MAX_FNAME);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->lastName, MAX_LNAME);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->phone, MAX_PHONE);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->skypeName, MAX_SKYPE);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->email, MAX_EMAIL);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->webSite, MAX_SITE);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->firstName, MAX_FNAME-1);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->lastName, MAX_LNAME-1);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->phone, MAX_PHONE-1);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->skypeName, MAX_SKYPE-1);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->email, MAX_EMAIL-1);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->webSite, MAX_SITE-1);
 	{
 		TCHAR ageStr[20];
 		getEditButtonText(ebContactInfo[fieldCount++], ageStr, 20);
 		contact->age = _tstoi(ageStr);
 	}
-	getEditButtonText(ebContactInfo[fieldCount++], contact->address.country, MAX_COUNTRY);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->address.city, MAX_CITY);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->address.street, MAX_STREET);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->address.number, MAX_NUMBER);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->address.country, MAX_COUNTRY-1);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->address.city, MAX_CITY-1);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->address.street, MAX_STREET-1);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->address.number, MAX_NUMBER-1);
 }
 
 //
@@ -486,19 +494,42 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					screenMode = SCREEN_CONTACTS;
 				}
 				break;
+			case BUTTON_ID_ADD_CONTACT:
+				{
+					Contact contact = {0};
+					// Replace to "Save" image.
+					setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS);
+					fillEditContactDetails(&contact);
+					showChildContainers(SW_HIDE);
+					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
+					ShowWindow(hwndContainerContactDetails, SW_SHOW);
+					screenMode = SCREEN_CONTACT_ADD;
+				}
+				break;
 			case BUTTON_ID_EDIT_SAVE_CONTACT:
 				// If clicked Save in contact view
 				// Else if clicked Edit
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_CONTACT_EDIT)
 				{
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
+					setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT);
 					saveContactDetails(contact);
 					screenMode = SCREEN_CONTACT_INFO;
 					fillContactDetails(contact);
 					editContact(contact);
 				}				
 				else if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_CONTACT_INFO)
+					// Return to contact list
 					SendMessage(hWnd, message, MAKELONG(BUTTON_ID_MISC3, wmEvent), 0);
+				else if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_CONTACT_ADD)
+				{
+					Contact contact = {0};
+					saveContactDetails(&contact);
+					addContactToLocalList(&contact);
+					addContact(&contact);
+					// Return to contact list
+					SendMessage(hWnd, message, MAKELONG(BUTTON_ID_ALL_CONTACTS, wmEvent), 0);
+				}
 				break;
 			case BUTTON_ID_CANCEL_CONTACT:
 				break;
@@ -516,6 +547,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
 					if (contact)
 					{
+						setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT);
 						fillContactDetails(contact);
 						showChildContainers(SW_HIDE);
 						ShowWindow(hwndContainerMiscButtons, SW_SHOW);
@@ -531,6 +563,8 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
 					if (contact)
 					{
+						// Replace to "Save" image.
+						setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS);
 						fillEditContactDetails(contact);
 						showChildContainers(SW_HIDE);
 						ShowWindow(hwndContainerMiscButtons, SW_SHOW);
@@ -849,6 +883,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hLV = createListView(hwndContainerContacts, hInst, 0, 88, 320, 306);
 	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 0, 320, 44, 0, IDB_CONTACT_WND_APP_NAME, IDB_CONTACT_WND_APP_NAME, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
+	/*Add new contact button*/	tempBtn = createHoverButton(getHoverButtonHwnd(tempBtn), hInstance, 7, 7, 50, 30, BUTTON_ID_ADD_CONTACT, IDB_END_CALL_ON, IDB_END_CALL_OFF, NULL);
 	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 44, 320, 44, 0, IDB_CONTACT_WND_SEARCH, IDB_CONTACT_WND_SEARCH, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
 	EnableWindow(tempBtn->hButton, FALSE);
@@ -895,8 +930,8 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 		width = 320 - GetSystemMetrics(SM_CXVSCROLL);
 		height = 44;
 
-		allContactsButton = createHoverButton(hwndContainerContactDetails, hInstance, 13, 7, 91, 30, BUTTON_ID_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, NULL);
-		editContactButton = createHoverButton(hwndContainerContactDetails, hInstance, 254, 7, 50, 30, BUTTON_ID_EDIT_SAVE_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, NULL);
+		hbAllContacts = createHoverButton(hwndContainerContactDetails, hInstance, 13, 7, 91, 30, BUTTON_ID_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, NULL);
+		hbEditSaveContact = createHoverButton(hwndContainerContactDetails, hInstance, 254, 7, 50, 30, BUTTON_ID_EDIT_SAVE_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, NULL);
 		// Needed width is 320 pixels - width of vertical scrollbar.
 		// Needed height is 64 pixels (44 button + 20 label) * 11 + 350 % 64 (addition of this fraction gives a nice, uniform effect to the list)
 		hwndScrollContainer = createScrollContainer(hwndContainerContactDetails, hInstance, 0, 0, 44, 320, 350, width, height + 20, 

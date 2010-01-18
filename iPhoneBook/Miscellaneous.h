@@ -9,3 +9,4 @@ void shiftChildWindows(HWND hWnd, int xOffset, int yOffset, BOOL bErase);
 void invalidateChildWindows(HWND hWnd, BOOL bErase);
 void getChildInParentOffset(HWND hWnd, POINT *lppt);
 int isOsVista();
+void makeWindowTransparentByMask(HWND hWnd, int mask);

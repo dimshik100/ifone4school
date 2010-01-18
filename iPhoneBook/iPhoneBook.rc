@@ -198,6 +198,7 @@ IDB_CLOCK_WND_BG        BITMAP                  "imgs\\clock_bg.bmp"
 IDB_END_CALL_OFF        BITMAP                  "imgs\\end_call_off.bmp"
 IDB_END_CALL_ON         BITMAP                  "imgs\\end_call_on.bmp"
 IDB_MAIN_BG_CALL        BITMAP                  "imgs\\main_bg_call.bmp"
+IDB_IPHONE_BG_MASK      BITMAP                  "imgs\\alpha2.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //

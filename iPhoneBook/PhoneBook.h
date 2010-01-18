@@ -21,9 +21,10 @@ int editContact(Contact* contact);
 int checkDataIntegrity();
 int getMemoryInfo(int *count, int *total, DbType source);
 void dupContact(Contact *dst, Contact *src);
-// Extension functions for easier/faster management of contacts
+
+// Extension functions for easier/faster management of the contact list
+int			 addContactToLocalList(Contact *contact);
 void		 freeContactListLocal();
-void		 deleteFromContactListLocal();
 DynamicListC getContactListLocal();
 DynamicListC getContactListFromFile();
 DynamicListC getContactListInitiated();
