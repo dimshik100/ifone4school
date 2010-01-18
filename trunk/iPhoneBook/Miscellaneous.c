@@ -146,3 +146,52 @@ int isOsVista()
 	}
 	return FALSE;
 }
+
+void makeWindowTransparentByMask(HWND hWnd, int mask)
+{
+	HBITMAP hbmp, hbmpOld;
+	BITMAP bm;
+	HDC hdcMem, hdc;
+	RECT rc, rcRgn = {0};
+	HRGN hrgn, hrgnTemp;
+	int x, y;
+	COLORREF color;
+	POINT pt;
+
+	hdc = GetDC(hWnd);
+	hdcMem = CreateCompatibleDC(hdc);
+	ReleaseDC(hWnd, hdc);
+
+	GetClientRect(hWnd, &rc);
+	AdjustWindowRect(&rc, GetWindowLong(hWnd, GWL_STYLE) - WS_OVERLAPPED, FALSE);
+	rcRgn.left -= rc.left;
+	rcRgn.top -= rc.top;
+	GetClientRect(hWnd, &rc);
+	rcRgn.right = rcRgn.left + rc.right;
+	rcRgn.bottom = rcRgn.top + rc.bottom;
+	// Use GetModuleHandle instead of hInst.
+	hbmp = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(mask));
+	GetObject(hbmp, sizeof(bm), &bm);
+	hbmpOld = (HBITMAP)SelectObject(hdcMem, hbmp);
+
+	getChildInParentOffset(hWnd, &pt);
+	hrgn = CreateRectRgn(rcRgn.left, rcRgn.top, bm.bmWidth + rcRgn.left, bm.bmHeight + rcRgn.top);
+	for (x = 0; x <  bm.bmWidth; x++)
+	{
+		for (y = 0; y < bm.bmHeight; y++)
+		{
+			color = GetPixel(hdcMem, x, y);
+			if (color == 0)
+			{
+				hrgnTemp = CreateRectRgn(x + rcRgn.left, y + rcRgn.top, x+1 + rcRgn.left, y+1 + rcRgn.top);
+				CombineRgn(hrgn, hrgn, hrgnTemp, RGN_XOR);
+				DeleteObject(hrgnTemp);
+			}
+		}
+	}
+	SetWindowRgn(hWnd, hrgn, TRUE);
+
+	SelectObject(hdcMem, hbmpOld);
+	DeleteObject(hbmp);
+	DeleteDC(hdcMem);
+}

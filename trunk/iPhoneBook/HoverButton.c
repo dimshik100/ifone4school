@@ -74,12 +74,9 @@ void deleteHoverButtons()
 
 void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage)
 {
-	if (hoverButton->activeImage == hoverButton->onImage)
-		hoverButton->activeImage = onImage;
-	else
-		hoverButton->activeImage = offImage;
 	hoverButton->onImage = onImage;
 	hoverButton->offImage = offImage;
+	hoverButton->activeImage = offImage;
 	// Force redraw of the button
 	invalidateButtonRect(hoverButton);
 }
@@ -95,9 +92,9 @@ void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption)
 		free(hoverButton->caption);
 	if (caption)
 	{
-		hoverButton->caption = _tcsdup(caption);
-		//hoverButton->caption = (TCHAR*)malloc(sizeof(TCHAR)*(_tcslen(caption)+1));
-		//_tcscpy_s(hoverButton->caption, _tcslen(caption)+1, caption);
+		//hoverButton->caption = _tcsdup(caption);
+		hoverButton->caption = (TCHAR*)malloc(sizeof(TCHAR)*(_tcslen(caption)+1));
+		_tcscpy_s(hoverButton->caption, _tcslen(caption)+1, caption);
 	}
 	else
 		hoverButton->caption = NULL;
@@ -147,6 +144,7 @@ void lockHoverButtonImage(HoverButton *hoverButton, int enable)
 		hoverButton->isPushed = FALSE;
 		hoverButton->isHovering = FALSE;
 	}
+	invalidateButtonRect(hoverButton);
 }
 
 void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable)

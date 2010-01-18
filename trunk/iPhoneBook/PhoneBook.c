@@ -473,6 +473,27 @@ void encryptDecryptCredentials(TCHAR *dst, TCHAR *src, int Len)
 		dst[i] = src[i] ^ key;
 }
 
+/*
+***************************Extension functions***************************
+*/
+
+// Adds a contact to local list if one is loaded.
+int addContactToLocalList(Contact *contact)
+{
+	int ret = FALSE;
+	Contact *newContact;
+	DynamicListC list = *getCurrentContactList(FALSE);
+	if (list)
+	{
+		newContact = (Contact*)malloc(sizeof(Contact));
+		dupContact(newContact, contact);
+		ret = listInsertAfterEnd(list, &newContact);
+	}
+	return ret;
+}
+
+// Deletes the current list from memory. 
+// This forces getContactListInitiated() to return the list from the file.
 void freeContactListLocal()
 {
 	DynamicListC *contactListPtr = getCurrentContactList(FALSE);
@@ -480,35 +501,19 @@ void freeContactListLocal()
 		listFree(contactListPtr);
 }
 
-// Updates the linked list the same way we update the file physically.
-void deleteFromContactListLocal(Contact *contact)
-{
-	DynamicListC contactList = getCurrentContactList(FALSE);
-	if (contactList)
-	{
-		// Save current index.
-		int index = contact->index;
-		// Get last item.
-		Contact *last = listSelectLast(contactList);
-		// Replace content of last item with the one we're deleting
-		dupContact(contact, last);
-		// Delete last node
-		listDeleteNode(contactList, last);
-		// Give proper index to item
-		contact->index = index;
-	}
-}
-
+// Retrieves the list currently held in memory.
 DynamicListC getContactListLocal()
 {
 	return *getCurrentContactList(FALSE);
 }
 
+// Retrieves the list from database.
 DynamicListC getContactListFromFile()
 {
 	return *getCurrentContactList(TRUE);
 }
 
+// Retrieves an initiated list, with memory list having the higher priority.
 DynamicListC getContactListInitiated()
 {
 	DynamicListC list = *getCurrentContactList(FALSE);
@@ -517,6 +522,7 @@ DynamicListC getContactListInitiated()
 	return list;
 }
 
+// Local function that actually does the work.
 DynamicListC *getCurrentContactList(int fromFile)
 {
 	static DynamicListC contactList = NULL;

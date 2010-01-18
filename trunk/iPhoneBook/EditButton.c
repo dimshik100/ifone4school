@@ -89,12 +89,12 @@ void getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length
 void showEditButtonEdit(EditButton *editButton, int show)
 {
 	editButton->inEditMode = show;
+	lockHoverButtonImage(editButton->mainButton, show);
 	show = (show) ? (SW_SHOW) : (SW_HIDE);
 	ShowWindow(editButton->okButton->hButton, show);
 	ShowWindow(editButton->cancelButton->hButton, show);
 	ShowWindow(editButton->hEdit, show);
-	lockHoverButtonImage(editButton->mainButton, show);
-	if (show)
+	if (show == SW_SHOW)
 	{
 		setHoverButtonStateImages(editButton->mainButton, editButton->onImage, editButton->onImage);
 		SetFocus(editButton->hEdit);

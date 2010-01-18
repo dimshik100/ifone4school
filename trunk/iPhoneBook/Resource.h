@@ -22,6 +22,8 @@
 #define IDB_END_CALL_OFF                135
 #define IDB_END_CALL_ON                 136
 #define IDB_MAIN_BG_CALL                137
+#define IDB_BITMAP1                     138
+#define IDB_IPHONE_BG_MASK              138
 #define IDB_ON                          202
 #define IDB_OFF                         203
 #define IDB_IFONE_BG                    210
@@ -80,7 +82,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        138
+#define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110
