@@ -20,6 +20,7 @@
 #define TIMER_ID 10000
 #define CLOCK_TIMER_ID TIMER_ID + 1
 #define	PWRBTN_TIMER_ID TIMER_ID + 2
+#define END_CALL_TIMER_ID TIMER_ID + 3
 
 #define CONTROL_ID 20
 #define BUTTON_ID_PWR				(CONTROL_ID + 0)
@@ -70,6 +71,7 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 VOID CALLBACK		ClockTimerProc(HWND, UINT, UINT_PTR, DWORD);
+VOID CALLBACK		EndCallTimerProc(HWND, UINT, UINT_PTR, DWORD);
 LRESULT CALLBACK	ContainerProc(HWND, UINT, WPARAM, LPARAM);
 void CALLBACK		skypeCallStatusCallback(SkypeCallObject *skypeCallObject);
 void CALLBACK		skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus);
@@ -232,75 +234,62 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 	if (skypeCallObject && skypeCallObject->object == OBJECT_CALL)
 	{
 		TCHAR str[256] = {0};
+		TCHAR statusStr[50] = {0}, strDuration[25] = {0};
 
-		//if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
-		//	strPos = _stprintf_s(str, 256, TEXT("Incoming call...\n"));
-		//else if (skypeCallObject->type == CALLTYPE_OUTGOING_P2P || skypeCallObject->type == CALLTYPE_OUTGOING_PSTN)
-		//	strPos = _stprintf_s(str, 256, TEXT("Outgoing call...\n"));
-		//strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Call ID: %d\n"), skypeCallObject->callId);
-		//if (skypeCallObject->partnerHandle)
-		//	strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Partner:\n\t%s\n"), skypeCallObject->partnerHandle);
-		//if (skypeCallObject->partnerDisplayName)
-		//	strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Display name:\n\t%s\n"), skypeCallObject->partnerDisplayName);
-		//	strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Duration: %02dh:%02dm:%02ds\n"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
-		//	strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Status: %d\n"), skypeCallObject->status);
-		//	strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Property: %d\n"), skypeCallObject->property);
+		switch (skypeCallObject->status)
+		{
+		case CALLSTATUS_ROUTING:
+		case CALLSTATUS_RINGING:
+			{
+				screenMode = SCREEN_CALL_MODE;
+				showChildContainers(FALSE);
+				enableChildContainers(FALSE);
+				EnableWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), TRUE);
+				ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
+				ShowWindow(hwndContainerMainButtons, SW_SHOW);
+				ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
+				if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
+					_tcscpy_s(statusStr, 50, TEXT("Incoming call"));
+				else
+					_tcscpy_s(statusStr, 50, TEXT("Calling..."));
+			}
+			break;
+		case CALLSTATUS_IN_PROGRESS:
+			_tcscpy_s(statusStr, 50, TEXT("Call online"));
+			break;
+		case CALLSTATUS_FINISHED:
+			_tcscpy_s(statusStr, 50, TEXT("Call ended"));
+			_stprintf_s(strDuration, 25, TEXT("Duration: %02d:%02d:%02d"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
+			SetTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID, 5000, EndCallTimerProc);
+			enableChildContainers(TRUE);
+			break;
+		case CALLSTATUS_CANCELLED:
+		case CALLSTATUS_FAILED:
+		case CALLSTATUS_MISSED:
+		case CALLSTATUS_REFUSED:
+			_tcscpy_s(statusStr, 50, TEXT("Call ended"));
+			_stprintf_s(strDuration, 25, TEXT("Duration: %02d:%02d:%02d"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
+			SetTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID, 5000, EndCallTimerProc);
+			enableChildContainers(TRUE);
+			break;
+		}		
 		switch (skypeCallObject->property)
 		{
 		case CALLPROPERTY_DURATION:
 			//strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Duration update\n"), skypeCallObject->property);
-			_stprintf_s(str, 256, TEXT("Duration: %02d:%02d:%02d\n"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
+			_stprintf_s(strDuration, 25, TEXT("Duration: %02d:%02d:%02d"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
 			break;
 		case CALLPROPERTY_STATUS:
-			//strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Status notification\n"), skypeCallObject->property);
-			{
-				TCHAR statusStr[50];
-				switch (skypeCallObject->status)
-				{
-				case CALLSTATUS_ROUTING:
-				case CALLSTATUS_RINGING:
-					{
-						screenMode = SCREEN_CALL_MODE;
-						showChildContainers(FALSE);
-						enableChildContainers(FALSE);
-						EnableWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), TRUE);
-						ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
-						ShowWindow(hwndContainerMainButtons, SW_SHOW);
-						ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
-						if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
-							_tcscpy_s(statusStr, 50, TEXT("Incoming call"));
-						else
-							_tcscpy_s(statusStr, 50, TEXT("Calling..."));
-					}
-					break;
-				case CALLSTATUS_IN_PROGRESS:
-					_tcscpy_s(statusStr, 50, TEXT("Call online"));
-					break;
-				case CALLSTATUS_FINISHED:
-					_tcscpy_s(statusStr, 50, TEXT("Call ended"));
-					// Set timer to return back to previous window, for now return to main.
-						enableChildContainers(TRUE);
-					SendMessage(hwndMain, WM_COMMAND, (LPARAM)MAKELONG(BUTTON_ID_PWR, HOVER_BUTTON_LMOUSE_UP), 0);
-					break;
-				case CALLSTATUS_CANCELLED:
-				case CALLSTATUS_FAILED:
-				case CALLSTATUS_MISSED:
-				case CALLSTATUS_REFUSED:
-					_tcscpy_s(statusStr, 50, TEXT("Call ended"));
-					// Set timer to return back to previous window, for now return to main.
-						enableChildContainers(TRUE);
-					SendMessage(hwndMain, WM_COMMAND, (LPARAM)MAKELONG(BUTTON_ID_PWR, HOVER_BUTTON_LMOUSE_UP), 0);
-					break;
-				}				
-				_stprintf_s(str, 256, TEXT("%s\n\n%s\n%s"), statusStr, TEXT("Contact Name Here"), skypeCallObject->partnerDisplayName);
-			}
 			break;
 		default:
 			//strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Other property notification\n"), skypeCallObject->property);
 			break;
 		}
 		//strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("skypeCallObject = 0x%p"), skypeCallObject);
-
+		if (_tcslen(strDuration) > 0)
+			_stprintf_s(str, 256, TEXT("%s\n\n%s\n\n%s\n%s"), statusStr, strDuration, TEXT("Contact Name Here"), skypeCallObject->partnerDisplayName);
+		else
+			_stprintf_s(str, 256, TEXT("%s\n\n%s\n%s"), statusStr, TEXT("Contact Name Here"), skypeCallObject->partnerDisplayName);
 		currentCall = *skypeCallObject;
 		setHoverButtonText(hbContainerCall, str);
 	}
@@ -486,12 +475,33 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			case BUTTON_ID_ALL_CONTACTS:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_CONTACTS)
 				{
+					SetWindowText(hwndSearchBox, TEXT(""));
 					showChildContainers(SW_HIDE);
 					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
 					ShowWindow(hwndContainerContacts, SW_SHOW);
+					ShowWindow(hwndSearchBox, SW_SHOW);
+					ShowWindow(getHoverButtonHwnd(hbAddContact), SW_SHOW);
+					ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_SHOW);
+					ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_SHOW);
 					fillListView(hLV, getContactListInitiated(), NULL);
 					SetFocus(hwndSearchBox);
 					screenMode = SCREEN_CONTACTS;
+				}
+				break;
+			case BUTTON_ID_INFO:
+				break;
+			case BUTTON_ID_BIN:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_TRASH)
+				{
+					showChildContainers(SW_HIDE);
+					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
+					ShowWindow(hwndContainerContacts, SW_SHOW);
+					ShowWindow(hwndSearchBox, SW_HIDE);
+					ShowWindow(getHoverButtonHwnd(hbAddContact), SW_HIDE);
+					ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_HIDE);
+					ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_HIDE);
+					fillListView(hLV, getTrashList(), NULL);
+					screenMode = SCREEN_TRASH;
 				}
 				break;
 			case BUTTON_ID_ADD_CONTACT:
@@ -533,12 +543,14 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				break;
 			case BUTTON_ID_CANCEL_CONTACT:
 				break;
-			case BUTTON_ID_INFO:
-				break;
-			case BUTTON_ID_BIN:
-				break;
 			// Miscellaneous buttons handlers
 			case BUTTON_ID_MISC1:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && (screenMode == SCREEN_CONTACT_INFO || screenMode == SCREEN_CONTACTS))
+				{				
+					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
+					if (contact && _tcslen(contact->skypeName) > 0)
+						call(contact->skypeName);
+				}
 				break;
 			case BUTTON_ID_MISC2:
 				// Go to Single contact info screen
@@ -788,6 +800,14 @@ VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD d
 	}
 }
 
+VOID CALLBACK		EndCallTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dwTime)
+{
+	UNREFERENCED_PARAMETER(hWnd), UNREFERENCED_PARAMETER(message), UNREFERENCED_PARAMETER(idEvent), UNREFERENCED_PARAMETER(dwTime);
+	
+	SendMessage(hwndMain, WM_COMMAND, (LPARAM)MAKELONG(BUTTON_ID_PWR, HOVER_BUTTON_LMOUSE_UP), 0);
+	KillTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID);
+}
+
 void showChildContainers(int nCmdShow)
 {	
 	ShowWindow(getHoverButtonHwnd(hbMainCenterPic), nCmdShow);
@@ -876,14 +896,13 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	tempBtn = createHoverButton(getHoverButtonHwnd(hbContainerCall), hInst, 97, 204, 127, 42, BUTTON_ID_END_CALL, IDB_END_CALL_ON, IDB_END_CALL_OFF, NULL);
 
 
-
 	hwndContainerContacts = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN/* | WS_VISIBLE*/, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
 	SetWindowLong(hwndContainerContacts, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 	// Create an Custom-Drawn list view control - see ListView.cpp for details.
 	hLV = createListView(hwndContainerContacts, hInst, 0, 88, 320, 306);
 	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 0, 320, 44, 0, IDB_CONTACT_WND_APP_NAME, IDB_CONTACT_WND_APP_NAME, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
-	/*Add new contact button*/	tempBtn = createHoverButton(getHoverButtonHwnd(tempBtn), hInstance, 7, 7, 50, 30, BUTTON_ID_ADD_CONTACT, IDB_END_CALL_ON, IDB_END_CALL_OFF, NULL);
+	hbAddContact = createHoverButton(getHoverButtonHwnd(tempBtn), hInstance, 7, 7, 50, 30, BUTTON_ID_ADD_CONTACT, IDB_END_CALL_ON, IDB_END_CALL_OFF, NULL);
 	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 44, 320, 44, 0, IDB_CONTACT_WND_SEARCH, IDB_CONTACT_WND_SEARCH, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
 	EnableWindow(tempBtn->hButton, FALSE);
