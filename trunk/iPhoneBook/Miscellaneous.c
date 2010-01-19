@@ -61,6 +61,18 @@ void invalidateChildWindows(HWND hWnd, BOOL bErase)
 	EnumChildWindows(hWnd, invalidateChildWindowsProc, (LPARAM)bErase);
 }
 
+BOOL CALLBACK		updateChildWindowsProc(HWND hWnd, LPARAM lParam)
+{
+	if (GetParent(hWnd) == (HWND)lParam)
+		UpdateWindow(hWnd);
+	return TRUE;
+}
+
+void updateChildWindows(HWND hWnd)
+{
+	EnumChildWindows(hWnd, invalidateChildWindowsProc, (LPARAM)hWnd);
+}
+
 BOOL CALLBACK		showChildWindowsEnumProc(HWND hWnd, LPARAM lParam)
 {
 	ShowWindow(hWnd, (int)lParam);
@@ -145,6 +157,15 @@ int isOsVista()
 			return FALSE;
 	}
 	return FALSE;
+}
+
+void rectToSize(RECT *rc, SIZE *size)
+{
+	if (rc && size)
+	{
+		size->cx = rc->right - rc->left;
+		size->cy = rc->bottom - rc->top;
+	}
 }
 
 void makeWindowTransparentByMask(HWND hWnd, int mask)

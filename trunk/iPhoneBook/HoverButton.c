@@ -13,6 +13,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND, UINT, WPARAM, LPARAM);
 void invalidateButtonRect(HoverButton *hoverButton);
 void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId);
 BOOL setTrackMouse(HoverButton *hoverButton);
+void paintButton(HWND hWnd, HDC hdc, RECT *rcPaint);
 
 HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height,
 							   int controlId, int onImage, int offImage, TCHAR *caption)
@@ -177,8 +178,6 @@ void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId)
 LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HoverButton *hoverButton;
-	PAINTSTRUCT ps;
-	HDC hdc;
 
 	switch (message)
 	{
@@ -269,55 +268,70 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		break;
 	case WM_PAINT:
 		{
-			HFONT hFontOld;
-			HBITMAP hbmpOld, hbmpImage;
-			HDC hdcMem;
-			RECT rect;
-
+			PAINTSTRUCT ps;
+			HDC hdc;
 			hdc = BeginPaint(hWnd, &ps);
-
-			// Gets the dimensions of the button
-			GetClientRect(hWnd, &rect);
-			// Create a DC in memory, compatible with the button's original DC.
-			hdcMem = CreateCompatibleDC(hdc);
-			// Load the selected image from the resource file.
-			hbmpImage = CreateCompatibleBitmap(hdc, rect.right, rect.bottom);
-			// Select the image into the DC. Keep a reference to the old bitmap.
-			hbmpOld = (HBITMAP)SelectObject(hdcMem, hbmpImage);
-
-			hoverButton = findButton(0, hWnd);
-			setHoverButtonImage(hoverButton, hdcMem, hoverButton->activeImage);
-			if (hoverButton->caption)
-			{				
-				RECT rcText = {0};
-				SetBkMode(hdcMem, TRANSPARENT);
-				SetTextColor(hdcMem, hoverButton->color);
-				hFontOld = (HFONT)SelectObject(hdcMem, hoverButton->hFont);
-
-				DrawText(hdcMem, hoverButton->caption, (int)_tcslen(hoverButton->caption), &rcText, DT_CALCRECT);
-				rcText.left = (hoverButton->buttonRect.right - hoverButton->buttonRect.left - rcText.right) /2 ;
-				rcText.top = (hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - rcText.bottom) /2 ;
-				rcText.right = rcText.right + rcText.left;
-				rcText.bottom = rcText.bottom + rcText.top;
-				DrawText(hdcMem, hoverButton->caption, (int)_tcslen(hoverButton->caption), &rcText, DT_WORDBREAK | DT_EXPANDTABS | DT_CENTER);
-				SelectObject(hdcMem, hFontOld);
-			}
-			// Copies the bitmap from the memory DC into the buttons DC 
-			BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top, hdcMem, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
-			//BitBlt(hdc, 0, 0, rect.right, rect.bottom, hdcMem, 0, 0, SRCCOPY);
-			// Select the original memory DC's bitmap.
-			SelectObject(hdcMem, hbmpOld);
-			// Free resources.
-			DeleteDC(hdcMem);
-			DeleteObject(hbmpImage);
-
+			paintButton(hWnd, hdc, &ps.rcPaint);
 			EndPaint(hWnd, &ps);
-
 			return FALSE;
 		}
 		break;
+	case WM_PRINT:
+	case WM_PRINTCLIENT:
+		if (lParam & PRF_CLIENT)
+		{
+			RECT rcPaint;
+			GetClientRect(hWnd, &rcPaint);
+			paintButton(hWnd, (HDC)wParam, &rcPaint);
+		}
+		return 0;
+		break;
 	}
 	return CallWindowProc(wndDefHoverProc, hWnd, message, wParam, lParam);
+}
+
+void paintButton(HWND hWnd, HDC hdc, RECT *rcPaint)
+{
+	HoverButton *hoverButton;
+	HFONT hFontOld;
+	HBITMAP hbmpOld, hbmpImage;
+	HDC hdcMem;
+	RECT rect;
+
+	// Gets the dimensions of the button
+	GetClientRect(hWnd, &rect);
+	// Create a DC in memory, compatible with the button's original DC.
+	hdcMem = CreateCompatibleDC(hdc);
+	// Load the selected image from the resource file.
+	hbmpImage = CreateCompatibleBitmap(hdc, rect.right, rect.bottom);
+	// Select the image into the DC. Keep a reference to the old bitmap.
+	hbmpOld = (HBITMAP)SelectObject(hdcMem, hbmpImage);
+
+	hoverButton = findButton(0, hWnd);
+	setHoverButtonImage(hoverButton, hdcMem, hoverButton->activeImage);
+	if (hoverButton->caption)
+	{				
+		RECT rcText = {0};
+		SetBkMode(hdcMem, TRANSPARENT);
+		SetTextColor(hdcMem, hoverButton->color);
+		hFontOld = (HFONT)SelectObject(hdcMem, hoverButton->hFont);
+
+		DrawText(hdcMem, hoverButton->caption, (int)_tcslen(hoverButton->caption), &rcText, DT_CALCRECT);
+		rcText.left = (hoverButton->buttonRect.right - hoverButton->buttonRect.left - rcText.right) /2 ;
+		rcText.top = (hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - rcText.bottom) /2 ;
+		rcText.right = rcText.right + rcText.left;
+		rcText.bottom = rcText.bottom + rcText.top;
+		DrawText(hdcMem, hoverButton->caption, (int)_tcslen(hoverButton->caption), &rcText, DT_WORDBREAK | DT_EXPANDTABS | DT_CENTER);
+		SelectObject(hdcMem, hFontOld);
+	}
+	// Copies the bitmap from the memory DC into the buttons DC 
+	BitBlt(hdc, rcPaint->left, rcPaint->top, rcPaint->right - rcPaint->left, rcPaint->bottom - rcPaint->top, hdcMem, rcPaint->left, rcPaint->top, SRCCOPY);
+	//BitBlt(hdc, 0, 0, rect.right, rect.bottom, hdcMem, 0, 0, SRCCOPY);
+	// Select the original memory DC's bitmap.
+	SelectObject(hdcMem, hbmpOld);
+	// Free resources.
+	DeleteDC(hdcMem);
+	DeleteObject(hbmpImage);
 }
 
 HoverButton *findButton(int cId, HWND hWnd)
