@@ -51,7 +51,9 @@
 #define BUTTON_ID_EDIT_CONTACT		(CONTROL_ID + 25)
 #define BUTTON_ID_EDIT_SAVE_CONTACT	(CONTROL_ID + 26)
 #define BUTTON_ID_ADD_CONTACT		(CONTROL_ID + 27)
-#define BUTTON_ID_CANCEL_CONTACT	(CONTROL_ID + 30)
+#define BUTTON_ID_CANCEL_CONTACT	(CONTROL_ID + 28)
+#define BUTTON_ID_EMPTY_TRASH		(CONTROL_ID + 29)
+#define BUTTON_ID_REOVER_CONTACT	(CONTROL_ID + 30)
 #define LV_CONTACTS_ID				(CONTROL_ID + 31)
 #define EDIT_ID_SEARCH				(CONTROL_ID + 32)
 
@@ -87,7 +89,7 @@ void saveContactDetails(Contact *contact);
 HoverButton 
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton, *hbContainerCall,
 		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo, *hbAllContacts, *hbEditSaveContact,
-		*hbAddContact;
+		*hbAddContact, *hbSearchContactBg;
 
 EditButton *ebContactInfo[11];
 	/* 
@@ -588,6 +590,17 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					enableChildContainers(TRUE);
 				}
 				break;
+			case BUTTON_ID_EMPTY_TRASH:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
+					// Are you sure dialog here
+					emptyTrashList();
+					// Return to main screen
+					SendMessage(hwndMain, WM_COMMAND, (LPARAM)MAKELONG(BUTTON_ID_PWR, HOVER_BUTTON_LMOUSE_UP), 0);
+				}
+				break;
+			case BUTTON_ID_REOVER_CONTACT:
+				break;
 			case BUTTON_ID_END_CALL: // End current call.
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
@@ -717,9 +730,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_DESTROY:		
-		unloadCustomFont(TEXT("LED_REAL.TTF"));
 		deleteHoverButtons();
 		disconnectSkype(hInst);
+		unloadCustomFont(TEXT("AtomicClockRadio.ttf"));
 		PostQuitMessage(0);
 		break;
 	case WM_CREATE:
@@ -730,11 +743,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			connectSkype(hInst);
 			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);			
 			initListViewColumns(hLV);
-
-			// Custom font
-			{
-				loadCustomFont(TEXT("LED_REAL.TTF"));
-			}
+			loadCustomFont(TEXT("AtomicClockRadio.ttf"));
 		}
 		break;
 	default:
@@ -815,24 +824,40 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
 		break;
 	case SCREEN_CONTACTS:
-	case SCREEN_TRASH:
-		if (screen == SCREEN_CONTACTS)
+		ShowWindow(hwndSearchBox, SW_SHOW);
+		ShowWindow(getHoverButtonHwnd(hbSearchContactBg), SW_SHOW);
+		ShowWindow(getHoverButtonHwnd(hbAddContact), SW_SHOW);
+		ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_SHOW);
+		ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_SHOW);
 		{
-			ShowWindow(hwndSearchBox, SW_SHOW);
-			ShowWindow(getHoverButtonHwnd(hbAddContact), SW_SHOW);
-			ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_SHOW);
-			ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_SHOW);
+			POINT pt;
+			MoveWindow(hLV, 0, 88, 320, 306, TRUE);
+			getChildInParentOffset(hwndContainerContacts, &pt);
+			MoveWindow(hwndContainerContacts, pt.x, pt.y, 320, 394, TRUE);
+			AnimateWindow(hwndContainerContacts, 400, AW_ACTIVATE | AW_HOR_NEGATIVE);
 		}
-		else
-		{
-			ShowWindow(hwndSearchBox, SW_HIDE);
-			ShowWindow(getHoverButtonHwnd(hbAddContact), SW_HIDE);
-			ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_HIDE);
-			ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_HIDE);
-		}
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
+		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		AnimateWindow(hwndContainerMiscButtons, 150, AW_ACTIVATE | AW_VER_POSITIVE);
 		ShowWindow(hwndContainerMainButtons, SW_HIDE);
-		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
-		AnimateWindow(hwndContainerContacts, 400, AW_ACTIVATE | AW_HOR_NEGATIVE);
+		break;
+	case SCREEN_TRASH:
+		ShowWindow(hwndSearchBox, SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbSearchContactBg), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbAddContact), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_HIDE);
+		ShowWindow(hwndContainerMainButtons, SW_HIDE);
+		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
+		{
+			POINT pt;
+			MoveWindow(hLV, 0, 44, 320, 416, TRUE);
+			getChildInParentOffset(hwndContainerContacts, &pt);
+			MoveWindow(hwndContainerContacts, pt.x, pt.y, 320, 460, TRUE);
+			AnimateWindow(hwndContainerContacts, 400, AW_ACTIVATE | AW_HOR_NEGATIVE);
+		}
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
 		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
@@ -907,7 +932,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hbMainUnderDateBg = createHoverButton(hWnd, hInstance, 67, 156, 320, 97, 0, IDB_MAIN_WND_UNDER_DATE_BG, IDB_MAIN_WND_UNDER_DATE_BG, NULL);
 	lockHoverButtonImage(hbMainUnderDateBg, TRUE);
 	setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
-	setHoverButtonFont(hbMainUnderDateBg, TEXT("LED Real"), 36);
+	setHoverButtonFont(hbMainUnderDateBg, TEXT("Atomic Clock Radio"), 36);
 	ClockTimerProc(NULL, 0, 0, 0); // Draw clock.
 	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 271, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
@@ -965,7 +990,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 0, 320, 44, 0, IDB_CONTACT_WND_APP_NAME, IDB_CONTACT_WND_APP_NAME, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
 	hbAddContact = createHoverButton(getHoverButtonHwnd(tempBtn), hInstance, 7, 7, 50, 30, BUTTON_ID_ADD_CONTACT, IDB_END_CALL_ON, IDB_END_CALL_OFF, NULL);
-	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 44, 320, 44, 0, IDB_CONTACT_WND_SEARCH, IDB_CONTACT_WND_SEARCH, NULL);
+	hbSearchContactBg = createHoverButton(hwndContainerContacts, hInstance, 0, 44, 320, 44, 0, IDB_CONTACT_WND_SEARCH, IDB_CONTACT_WND_SEARCH, NULL);
 	lockHoverButtonImage(tempBtn, TRUE);
 	EnableWindow(tempBtn->hButton, FALSE);
 	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 35, 56, 265, 23, hwndContainerContacts, (HMENU)EDIT_ID_SEARCH, hInstance, NULL);
