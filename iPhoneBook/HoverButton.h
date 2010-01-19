@@ -37,4 +37,4 @@ void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable);
 void setDefaultHoverButtonProc(WNDPROC wndProc);
 HWND getHoverButtonHwnd(HoverButton *hoverButton);
 void deleteHoverButtons();
-HoverButton *findButton(int cId, HWND hWnd);
+HoverButton *findHoverButton(int cId, HWND hWnd);

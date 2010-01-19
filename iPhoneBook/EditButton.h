@@ -12,9 +12,11 @@ typedef struct _EditButton
 	HWND hParent;
 	HINSTANCE hInstance;
 	RECT editRect;
+	int isLocked;
 	int inEditMode;
 	int onImage;
 	int offImage;
+	int cId;
 
 }EditButton;
 
@@ -31,3 +33,5 @@ void showEditButtonEdit(EditButton *editButton, int show);
 void lockEditButton(EditButton *editButton, int enable);
 HWND getEditButtonHwnd(EditButton *editButton);
 int getEditButtonControlId(int cId);
+void deleteEditButtons();
+EditButton *findEditButton(int cId, HWND hWnd);

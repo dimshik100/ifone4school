@@ -24,10 +24,16 @@
 #define IDB_MAIN_BG_CALL                137
 #define IDB_IPHONE_BG_MASK              138
 #define IDB_CONTACT_ADD                 139
+#define IDB_CONTACT_BUTTON_ADD          139
 #define IDB_CONTACT_EDIT_DONE           140
 #define IDB_EMPTY_TRASH                 141
+#define IDB_TRASH_BUTTON_EMPTY          141
 #define IDB_BITMAP4                     142
 #define IDB_RECOVER                     142
+#define IDB_TRASH_BUTTON_RECOVER        142
+#define IDB_TRASH_WND_TITLE             143
+#define IDB_CONTACT_ADD_WND_APP_NAME    144
+#define IDB_CONTACT_EDIT_WND_APP_NAME   145
 #define IDB_ON                          202
 #define IDB_OFF                         203
 #define IDB_IFONE_BG                    210
@@ -86,7 +92,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        143
+#define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110
