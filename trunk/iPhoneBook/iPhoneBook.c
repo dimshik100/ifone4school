@@ -56,6 +56,10 @@
 #define BUTTON_ID_REOVER_CONTACT	(CONTROL_ID + 30)
 #define LV_CONTACTS_ID				(CONTROL_ID + 31)
 #define EDIT_ID_SEARCH				(CONTROL_ID + 32)
+#define BUTTON_ID_GO_TO_WEBSITE		(CONTROL_ID + 33)
+#define BUTTON_ID_SEND_EMAIL		(CONTROL_ID + 34)
+#define BUTTON_ID_SEE_ON_MAP		(CONTROL_ID + 35)
+#define BUTTON_ID_SKYPE_HANDLE		(CONTROL_ID + 36)
 
 typedef enum {	SCREEN_MAIN, SCREEN_CONTACTS, SCREEN_MEM_INFO, SCREEN_TRASH, SCREEN_CALL_MODE, 
 				SCREEN_CONTACT_INFO, SCREEN_CONTACT_ADD, SCREEN_CONTACT_EDIT, SCREEN_CLOCK }
@@ -74,6 +78,7 @@ INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 VOID CALLBACK		ClockTimerProc(HWND, UINT, UINT_PTR, DWORD);
 VOID CALLBACK		EndCallTimerProc(HWND, UINT, UINT_PTR, DWORD);
+LRESULT CALLBACK	TransparentLabelProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK	ContainerProc(HWND, UINT, WPARAM, LPARAM);
 void CALLBACK		skypeCallStatusCallback(SkypeCallObject *skypeCallObject);
 void CALLBACK		skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus);
@@ -81,7 +86,7 @@ void CALLBACK		skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStat
 void createGUI(HWND hWnd, HINSTANCE hInstance);
 void showChildContainers(ScreenMode screen);
 void enableChildContainers(BOOL value);
-void fillContactDetails(Contact *contact);
+void fillContactDetails(Contact *contact, int inEditMode);
 void fillEditContactDetails(Contact *contact);
 void saveContactDetails(Contact *contact);
 
@@ -89,9 +94,11 @@ void saveContactDetails(Contact *contact);
 HoverButton 
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton, *hbContainerCall,
 		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo, *hbAllContacts, *hbEditSaveContact,
-		*hbAddContact, *hbSearchContactBg;
+		*hbAddContact, *hbContactsSearchBg, *hbContactsTitleBg, *hbContactInfoTitleBg,
+		*hbEmail, *hbGoogleMap, *hbSkypeHandle, *hbWebsite, *hbClock;
 
-EditButton *ebContactInfo[11];
+HWND		hlblContactInfo[11];
+EditButton	*ebContactInfo[11];
 	/* 
 	0- First Name
 	1- Last Name
@@ -108,7 +115,7 @@ EditButton *ebContactInfo[11];
 HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts, hwndContainerContactDetails;
 HWND hwndSearchBox, hwndConfirmDialog, hwndMain, hwndScrollContainer;
 HWND hLV;
-WNDPROC defContainerProc;
+WNDPROC defContainerProc, defTransparentLabelProc;
 HFONT digitalClockFont;
 TCHAR digitalClockFontPath[MAX_PATH];
 const RECT ifoneScreenRect = { 67, 136, 386, 615 };
@@ -337,90 +344,142 @@ void CALLBACK skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatu
 	}
 }
 
-void fillContactDetails(Contact *contact)
-{
-	int fieldCount = 3;
-	int i;
-	SIZE size = { 320, 350 }, virtSize;
-	
-	// Make all fields read-only
-	for (i = 0; i < 11; i++)
-	{
-		showEditButtonEdit(ebContactInfo[i], FALSE);
-		lockEditButton(ebContactInfo[i], TRUE);
-	}
-
-	setEditButtonText(ebContactInfo[0], contact->firstName);
-	setEditButtonText(ebContactInfo[1], contact->lastName);
-	setEditButtonText(ebContactInfo[2], contact->phone);
-	if (_tcslen(contact->skypeName) > 0)
-		setEditButtonText(ebContactInfo[fieldCount++], contact->skypeName);
-	if (_tcslen(contact->email) > 0)
-		setEditButtonText(ebContactInfo[fieldCount++], contact->email);
-	if (_tcslen(contact->webSite) > 0)
-		setEditButtonText(ebContactInfo[fieldCount++], contact->webSite);
-	if (contact->age > 0)
-	{
-		TCHAR ageStr[20];
-		_stprintf_s(ageStr, 20, TEXT("%d"), contact->age);
-		setEditButtonText(ebContactInfo[fieldCount++], ageStr);
-	}
-	if (_tcslen(contact->address.country) > 0)
-		setEditButtonText(ebContactInfo[fieldCount++], contact->address.country);
-	if (_tcslen(contact->address.city) > 0)
-		setEditButtonText(ebContactInfo[fieldCount++], contact->address.city);
-	if (_tcslen(contact->address.street) > 0)
-		setEditButtonText(ebContactInfo[fieldCount++], contact->address.street);
-	if (_tcslen(contact->address.number) > 0)
-		setEditButtonText(ebContactInfo[fieldCount++], contact->address.number);
-
-	for (i = 0; i < fieldCount; i++)
-		ShowWindow(getEditButtonHwnd(ebContactInfo[i]), SW_SHOW);
-	for (i = fieldCount; i< 11; i++)
-		ShowWindow(getEditButtonHwnd(ebContactInfo[i]), SW_HIDE);
-
-	// Calculate and set new scroll range for the contact details container.
-	virtSize.cy = (64 * fieldCount) + (350 % 64);
-	virtSize.cx = 320 - GetSystemMetrics(SM_CXVSCROLL);
-	setScrollContainerSize(hwndScrollContainer, &size, &virtSize);
-}
-
-void fillEditContactDetails(Contact *contact)
+void fillContactDetails(Contact *contact, int inEditMode)
 {
 	int fieldCount = 0;
 	int i;
 	SIZE size = { 320, 350 }, virtSize;
+	POINT pt;
+	
+	virtSize.cx = 320 - GetSystemMetrics(SM_CXVSCROLL);
+	// Initiate fields
+	for (i = 10; i >= 0; i--)	// Go in oposite direction so that the 
+	{							// last editbutton to be set is the first in the array
+		getChildInParentOffset(getEditButtonHwnd(ebContactInfo[i]), &pt);
+		MoveWindow(getEditButtonHwnd(ebContactInfo[i]), pt.x, pt.y, virtSize.cx, 44, FALSE);
+		if (inEditMode)
+		{
+			lockEditButton(ebContactInfo[i], FALSE);
+			showEditButtonEdit(ebContactInfo[i], TRUE);
+		}
+		else
+		{
+			showEditButtonEdit(ebContactInfo[i], FALSE);
+			lockEditButton(ebContactInfo[i], TRUE);
+		}
+	}
 
-	// Display and make all fields read/write.
-	for (i = 0; i < 11; i++)
+	ShowWindow(getHoverButtonHwnd(hbSkypeHandle), SW_HIDE);
+	ShowWindow(getHoverButtonHwnd(hbEmail), SW_HIDE);
+	ShowWindow(getHoverButtonHwnd(hbGoogleMap), SW_HIDE);
+	ShowWindow(getHoverButtonHwnd(hbWebsite), SW_HIDE);
+
+	setEditButtonText(ebContactInfo[fieldCount++], contact->firstName);	//TEXT("First name")
+	setEditButtonText(ebContactInfo[fieldCount++], contact->lastName);	//TEXT("Last name")
+	setEditButtonText(ebContactInfo[fieldCount++], contact->phone);		//TEXT("Phone number")
+	if (_tcslen(contact->skypeName) > 0 || inEditMode)
 	{
-		lockEditButton(ebContactInfo[i], FALSE);
+		if (!inEditMode)
+		{
+			getChildInParentOffset(getEditButtonHwnd(ebContactInfo[fieldCount]), &pt);
+			MoveWindow(getEditButtonHwnd(ebContactInfo[fieldCount]), pt.x, pt.y, virtSize.cx - 44, 44, FALSE);
+			MoveWindow(getHoverButtonHwnd(hbSkypeHandle), virtSize.cx - 43, pt.y + 1, 42, 42, FALSE);
+			ShowWindow(getHoverButtonHwnd(hbSkypeHandle), SW_SHOW);
+		}
+
+		SetWindowText(hlblContactInfo[fieldCount], TEXT("Skype handle"));
+		setEditButtonText(ebContactInfo[fieldCount++], contact->skypeName);
+	}
+	if (_tcslen(contact->email) > 0 || inEditMode)
+	{
+		if (!inEditMode)
+		{
+			getChildInParentOffset(getEditButtonHwnd(ebContactInfo[fieldCount]), &pt);
+			MoveWindow(getEditButtonHwnd(ebContactInfo[fieldCount]), pt.x, pt.y, virtSize.cx - 44, 44, FALSE);
+			MoveWindow(getHoverButtonHwnd(hbEmail), virtSize.cx - 43, pt.y + 1, 42, 42, FALSE);
+			ShowWindow(getHoverButtonHwnd(hbEmail), SW_SHOW);
+		}
+
+		SetWindowText(hlblContactInfo[fieldCount], TEXT("E-mail"));
+		setEditButtonText(ebContactInfo[fieldCount++], contact->email);
+	}
+	if (_tcslen(contact->webSite) > 0 || inEditMode)
+	{
+		if (!inEditMode)
+		{
+			getChildInParentOffset(getEditButtonHwnd(ebContactInfo[fieldCount]), &pt);
+			MoveWindow(getEditButtonHwnd(ebContactInfo[fieldCount]), pt.x, pt.y, virtSize.cx - 44, 44, FALSE);
+			MoveWindow(getHoverButtonHwnd(hbWebsite), virtSize.cx - 43, pt.y + 1, 42, 42, FALSE);
+			ShowWindow(getHoverButtonHwnd(hbWebsite), SW_SHOW);
+		}
+
+		SetWindowText(hlblContactInfo[fieldCount], TEXT("Web site"));
+		setEditButtonText(ebContactInfo[fieldCount++], contact->webSite);
+	}
+	if (contact->age > 0 || inEditMode)
+	{
+		SetWindowText(hlblContactInfo[fieldCount], TEXT("Age"));
+		if (!inEditMode)
+		{
+			TCHAR ageStr[20];
+			_stprintf_s(ageStr, 20, TEXT("%d"), contact->age);
+			setEditButtonText(ebContactInfo[fieldCount++], ageStr);
+		}
+		else
+			setEditButtonText(ebContactInfo[fieldCount++], TEXT(""));
+	}
+	if (_tcslen(contact->address.country) > 0 || inEditMode)
+	{
+		if (!inEditMode)
+		{
+			getChildInParentOffset(getEditButtonHwnd(ebContactInfo[fieldCount]), &pt);
+			MoveWindow(getEditButtonHwnd(ebContactInfo[fieldCount]), pt.x, pt.y, virtSize.cx - 44, 44, FALSE);
+			MoveWindow(getHoverButtonHwnd(hbGoogleMap), virtSize.cx - 43, pt.y + 1, 42, 42, FALSE);
+			ShowWindow(getHoverButtonHwnd(hbGoogleMap), SW_SHOW);
+		}
+
+		SetWindowText(hlblContactInfo[fieldCount], TEXT("Country"));
+		setEditButtonText(ebContactInfo[fieldCount++], contact->address.country);
+	}
+	if (_tcslen(contact->address.city) > 0 || inEditMode)
+	{
+		if (!inEditMode && !ShowWindow(getHoverButtonHwnd(hbGoogleMap), SW_SHOW))
+		{
+			getChildInParentOffset(getEditButtonHwnd(ebContactInfo[fieldCount]), &pt);
+			MoveWindow(getEditButtonHwnd(ebContactInfo[fieldCount]), pt.x, pt.y, virtSize.cx - 44, 44, FALSE);
+			MoveWindow(getHoverButtonHwnd(hbGoogleMap), virtSize.cx - 43, pt.y + 1, 42, 42, FALSE);
+		}
+
+		SetWindowText(hlblContactInfo[fieldCount], TEXT("City"));
+		setEditButtonText(ebContactInfo[fieldCount++], contact->address.city);
+	}
+	if (_tcslen(contact->address.street) > 0 || inEditMode)
+	{
+		SetWindowText(hlblContactInfo[fieldCount], TEXT("Street"));
+		setEditButtonText(ebContactInfo[fieldCount++], contact->address.street);
+	}
+	if (_tcslen(contact->address.number) > 0 || inEditMode)
+	{
+		SetWindowText(hlblContactInfo[fieldCount], TEXT("Number"));
+		setEditButtonText(ebContactInfo[fieldCount++], contact->address.number);
+	}
+
+	for (i = 0; i < fieldCount; i++)
+	{
 		ShowWindow(getEditButtonHwnd(ebContactInfo[i]), SW_SHOW);
+		ShowWindow(hlblContactInfo[i], SW_SHOW);
 	}
-
-	setEditButtonText(ebContactInfo[fieldCount++], contact->firstName);
-	setEditButtonText(ebContactInfo[fieldCount++], contact->lastName);
-	setEditButtonText(ebContactInfo[fieldCount++], contact->phone);
-	setEditButtonText(ebContactInfo[fieldCount++], contact->skypeName);
-	setEditButtonText(ebContactInfo[fieldCount++], contact->email);
-	setEditButtonText(ebContactInfo[fieldCount++], contact->webSite);
-	if (contact->age > 0)
+	for (i = fieldCount; i< 11; i++)
 	{
-		TCHAR ageStr[20];
-		_stprintf_s(ageStr, 20, TEXT("%d"), contact->age);
-		setEditButtonText(ebContactInfo[fieldCount++], ageStr);
+		ShowWindow(getEditButtonHwnd(ebContactInfo[i]), SW_HIDE);
+		ShowWindow(hlblContactInfo[i], SW_HIDE);
 	}
-	else
-		setEditButtonText(ebContactInfo[fieldCount++], TEXT(""));
-	setEditButtonText(ebContactInfo[fieldCount++], contact->address.country);
-	setEditButtonText(ebContactInfo[fieldCount++], contact->address.city);
-	setEditButtonText(ebContactInfo[fieldCount++], contact->address.street);
-	setEditButtonText(ebContactInfo[fieldCount++], contact->address.number);
 
 	// Calculate and set new scroll range for the contact details container.
 	virtSize.cy = (64 * fieldCount) + (350 % 64);
 	virtSize.cx = 320 - GetSystemMetrics(SM_CXVSCROLL);
 	setScrollContainerSize(hwndScrollContainer, &size, &virtSize);
+	InvalidateRect(hwndScrollContainer, NULL, FALSE);
 }
 
 void saveContactDetails(Contact *contact)
@@ -454,6 +513,14 @@ void saveContactDetails(Contact *contact)
 //
 //
 
+LRESULT CALLBACK TransparentLabelProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if (message == WM_ERASEBKGND)
+		return TRUE;
+
+	return CallWindowProc(defTransparentLabelProc, hWnd, message, wParam, lParam);
+}
+
 LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -468,21 +535,22 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			case BUTTON_ID_CLOCK:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_CLOCK)
 				{
-					if (isOsVista())
-					{
-					// If we support transparent confirm dialog, we must set it's position
-					// to be centered on the ifonebook screen
-						POINT pt = {0, 0};
-						ClientToScreen(GetParent(hWnd), &pt);
-						MoveWindow(hwndConfirmDialog, 
-							pt.x + ifoneScreenRect.left + (ifoneScreenRect.right - ifoneScreenRect.left - 277) / 2,
-							pt.y + ifoneScreenRect.top + (ifoneScreenRect.bottom - ifoneScreenRect.top - 103) / 2,
-							277, 103, TRUE);
-					}
-					ShowWindow(hwndConfirmDialog, SW_SHOW);
-					isConfirmOn = TRUE;
-					enableChildContainers(FALSE);
-					screenMode = SCREEN_CLOCK;
+					showChildContainers(SCREEN_CLOCK);
+					//if (isOsVista())
+					//{
+					//// If we support transparent confirm dialog, we must set it's position
+					//// to be centered on the ifonebook screen
+					//	POINT pt = {0, 0};
+					//	ClientToScreen(GetParent(hWnd), &pt);
+					//	MoveWindow(hwndConfirmDialog, 
+					//		pt.x + ifoneScreenRect.left + (ifoneScreenRect.right - ifoneScreenRect.left - 277) / 2,
+					//		pt.y + ifoneScreenRect.top + (ifoneScreenRect.bottom - ifoneScreenRect.top - 103) / 2,
+					//		277, 103, TRUE);
+					//}
+					//ShowWindow(hwndConfirmDialog, SW_SHOW);
+					//isConfirmOn = TRUE;
+					//enableChildContainers(FALSE);
+					//screenMode = SCREEN_CLOCK;
 				}
 				break;
 			// View all contacts button(s) handler
@@ -511,7 +579,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					Contact contact = {0};
 					// Replace to "Save" image.
 					setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS);
-					fillEditContactDetails(&contact);
+					fillContactDetails(&contact, TRUE);
 					showChildContainers(SCREEN_CONTACT_ADD);
 				}
 				break;
@@ -523,9 +591,10 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
 					setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT);
 					saveContactDetails(contact);
-					fillContactDetails(contact);
+					fillContactDetails(contact, FALSE);
 					editContact(contact);
 					showChildContainers(SCREEN_CONTACT_INFO);
+					SetFocus(hwndScrollContainer);
 				}				
 				else if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_CONTACT_INFO)
 					// Edit a contact
@@ -559,8 +628,9 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					if (contact)
 					{
 						setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT);
-						fillContactDetails(contact);
+						fillContactDetails(contact, FALSE);
 						showChildContainers(SCREEN_CONTACT_INFO);
+						SetFocus(hwndScrollContainer);
 					}
 				}
 				break;
@@ -573,7 +643,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					{
 						// Replace to "Save" image.
 						setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS);
-						fillEditContactDetails(contact);
+						fillContactDetails(contact, TRUE);
 						showChildContainers(SCREEN_CONTACT_EDIT);
 					}
 				}
@@ -731,6 +801,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_DESTROY:		
 		deleteHoverButtons();
+		deleteEditButtons();
 		disconnectSkype(hInst);
 		unloadCustomFont(TEXT("AtomicClockRadio.ttf"));
 		PostQuitMessage(0);
@@ -790,8 +861,13 @@ VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD d
 			if (_tcslen(str) > 0)
 				setHoverButtonText(hbTopBarSkype, NULL);
 		}
-		else
+		else if (screenMode != SCREEN_CLOCK)
 			setHoverButtonText(hbTopBarSkype, str);
+		else
+		{
+			_tcsftime(str, 1000, TEXT("%H:%M:%S\n%a\n%b %d\n%Y"), &today);
+			setHoverButtonText(hbClock, str);
+		}
 	}
 }
 
@@ -811,21 +887,17 @@ void showChildContainers(ScreenMode screen)
 	case SCREEN_MAIN:
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
 		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
-		//ShowWindow(hwndContainerMainButtons, SW_SHOW);
-		
-		//{
-		//	HWND hw = getHoverButtonHwnd(hbMainCenterPic);
-		//	animateMultipleWindows(&hw, 1, 2000, AW_CENTER | AW_ACTIVATE);
-		//}
 		AnimateWindow(hwndContainerMainButtons, 100, AW_VER_NEGATIVE | AW_ACTIVATE);
 		AnimateWindow(getHoverButtonHwnd(hbMainCenterPic), 200, AW_CENTER | AW_ACTIVATE);
 		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbClock), SW_HIDE);
 		break;
 	case SCREEN_CONTACTS:
+		setHoverButtonStateImages(hbContactsTitleBg, IDB_CONTACT_WND_APP_NAME, IDB_CONTACT_WND_APP_NAME);
 		ShowWindow(hwndSearchBox, SW_SHOW);
-		ShowWindow(getHoverButtonHwnd(hbSearchContactBg), SW_SHOW);
+		ShowWindow(getHoverButtonHwnd(hbContactsSearchBg), SW_SHOW);
 		ShowWindow(getHoverButtonHwnd(hbAddContact), SW_SHOW);
 		ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_SHOW);
 		ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_SHOW);
@@ -842,10 +914,12 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
 		AnimateWindow(hwndContainerMiscButtons, 150, AW_ACTIVATE | AW_VER_POSITIVE);
 		ShowWindow(hwndContainerMainButtons, SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbClock), SW_HIDE);
 		break;
 	case SCREEN_TRASH:
+		setHoverButtonStateImages(hbContactsTitleBg, IDB_TRASH_WND_TITLE, IDB_TRASH_WND_TITLE);
 		ShowWindow(hwndSearchBox, SW_HIDE);
-		ShowWindow(getHoverButtonHwnd(hbSearchContactBg), SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbContactsSearchBg), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbAddContact), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_HIDE);
@@ -862,6 +936,7 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
 		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbClock), SW_HIDE);
 		break;
 	case SCREEN_MEM_INFO:
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
@@ -871,20 +946,41 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbClock), SW_HIDE);
 		break;
 	case SCREEN_CALL_MODE:
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
 		ShowWindow(hwndContainerMainButtons, SW_SHOW);
 		setHoverButtonText(hbContainerCall, NULL);
 		AnimateWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), 100, AW_CENTER | AW_ACTIVATE);
+		InvalidateRect(GetParent(getHoverButtonHwnd(hbContainerCall)), NULL, FALSE);
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
 		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		// Force redraw the control (AnimateWindow, improperly renders children of HoverButton control).
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
+		ShowWindow(getHoverButtonHwnd(hbClock), SW_HIDE);
 		break;
 	case SCREEN_CONTACT_INFO:
 	case SCREEN_CONTACT_ADD:
 	case SCREEN_CONTACT_EDIT:
+		if (screen == SCREEN_CONTACT_INFO)
+		{
+			setHoverButtonStateImages(hbContactInfoTitleBg, IDB_CONTACT_INFO_WND_APP_NAME, IDB_CONTACT_INFO_WND_APP_NAME);
+			setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT);
+		}
+		else if (screen == SCREEN_CONTACT_ADD)
+		{
+			setHoverButtonStateImages(hbContactInfoTitleBg, IDB_CONTACT_ADD_WND_APP_NAME, IDB_CONTACT_ADD_WND_APP_NAME);
+			setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_EDIT_DONE, IDB_CONTACT_EDIT_DONE);
+		}
+		else if (screen == SCREEN_CONTACT_EDIT)
+		{
+			setHoverButtonStateImages(hbContactInfoTitleBg, IDB_CONTACT_EDIT_WND_APP_NAME, IDB_CONTACT_EDIT_WND_APP_NAME);
+			setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_EDIT_DONE, IDB_CONTACT_EDIT_DONE);
+		}
 		AnimateWindow(hwndContainerContactDetails, 400, AW_ACTIVATE | AW_HOR_POSITIVE);
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
@@ -892,15 +988,17 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(hwndContainerMainButtons, SW_HIDE);
 		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
+		ShowWindow(getHoverButtonHwnd(hbClock), SW_HIDE);
 		break;
 	case SCREEN_CLOCK:
-		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
-		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
-		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
-		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
 		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
+		AnimateWindow(getHoverButtonHwnd(hbMainUnderDateBg), 100, AW_HIDE | AW_VER_POSITIVE);
+		AnimateWindow(getHoverButtonHwnd(hbMainCenterPic), 100, AW_HIDE | AW_VER_POSITIVE);
+		AnimateWindow(hwndContainerMainButtons, 100, AW_HIDE | AW_VER_POSITIVE);
+		AnimateWindow(getHoverButtonHwnd(hbClock), 200, AW_ACTIVATE | AW_CENTER);
 		break;
 	}
 	screenMode = screen;
@@ -932,12 +1030,17 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hbMainUnderDateBg = createHoverButton(hWnd, hInstance, 67, 156, 320, 97, 0, IDB_MAIN_WND_UNDER_DATE_BG, IDB_MAIN_WND_UNDER_DATE_BG, NULL);
 	lockHoverButtonImage(hbMainUnderDateBg, TRUE);
 	setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
-	setHoverButtonFont(hbMainUnderDateBg, TEXT("Atomic Clock Radio"), 36);
+	setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
 	ClockTimerProc(NULL, 0, 0, 0); // Draw clock.
 	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 271, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
 	hbExitButton = createHoverButton(hWnd, hInstance, 193, 634, 69, 69, BUTTON_ID_PWR, IDB_EXIT_BUTTON_ON, IDB_EXIT_BUTTON_OFF, NULL);
 	setHoverButtonAsPushButton(hbExitButton, TRUE);
+	hbClock = createHoverButton(hWnd, hInstance, 67, 156, 320, 460, 0, IDB_CLOCK_BG, IDB_CLOCK_BG, NULL);
+	lockHoverButtonImage(hbClock, TRUE);
+	setHoverButtonTextColor(hbClock, RGB(255, 255, 255));
+	setHoverButtonFont(hbClock, TEXT("Atomic Clock Radio"), 40);
+	ShowWindow(getHoverButtonHwnd(hbClock), SW_HIDE);
 	hwndContainerMainButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
 	defContainerProc = (WNDPROC)SetWindowLong(hwndContainerMainButtons, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 
@@ -987,12 +1090,12 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	SetWindowLong(hwndContainerContacts, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 	// Create an Custom-Drawn list view control - see ListView.cpp for details.
 	hLV = createListView(hwndContainerContacts, hInst, 0, 88, 320, 306);
-	tempBtn = createHoverButton(hwndContainerContacts, hInstance, 0, 0, 320, 44, 0, IDB_CONTACT_WND_APP_NAME, IDB_CONTACT_WND_APP_NAME, NULL);
-	lockHoverButtonImage(tempBtn, TRUE);
-	hbAddContact = createHoverButton(getHoverButtonHwnd(tempBtn), hInstance, 7, 7, 50, 30, BUTTON_ID_ADD_CONTACT, IDB_END_CALL_ON, IDB_END_CALL_OFF, NULL);
-	hbSearchContactBg = createHoverButton(hwndContainerContacts, hInstance, 0, 44, 320, 44, 0, IDB_CONTACT_WND_SEARCH, IDB_CONTACT_WND_SEARCH, NULL);
-	lockHoverButtonImage(tempBtn, TRUE);
-	EnableWindow(tempBtn->hButton, FALSE);
+	hbContactsTitleBg = createHoverButton(hwndContainerContacts, hInstance, 0, 0, 320, 44, 0, IDB_CONTACT_WND_APP_NAME, IDB_CONTACT_WND_APP_NAME, NULL);
+	lockHoverButtonImage(hbContactsTitleBg, TRUE);
+	hbAddContact = createHoverButton(getHoverButtonHwnd(hbContactsTitleBg), hInstance, 254, 7, 50, 30, BUTTON_ID_ADD_CONTACT, IDB_CONTACT_ADD, IDB_CONTACT_ADD, NULL);
+	hbContactsSearchBg = createHoverButton(hwndContainerContacts, hInstance, 0, 44, 320, 44, 0, IDB_CONTACT_WND_SEARCH, IDB_CONTACT_WND_SEARCH, NULL);
+	lockHoverButtonImage(hbContactsSearchBg, TRUE);
+	EnableWindow(hbContactsSearchBg->hButton, FALSE);
 	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 35, 56, 265, 23, hwndContainerContacts, (HMENU)EDIT_ID_SEARCH, hInstance, NULL);
 	
 	// confirm dialog
@@ -1022,54 +1125,80 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 
 	//createClock(hWnd, hInstance, 450, 0, 320, 480, 0, IDB_CLOCK_WND_BG);
 
-
 	{
 		// create contact details 
 		// reference http://www.codeproject.com/KB/dialog/scroll_dialog.aspx
-		hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_CONTACT_INFO_WND_APP_NAME));
-		hwndContainerContactDetails = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN /*| WS_VISIBLE*/ | SS_BITMAP, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
-		SendMessage(hwndContainerContactDetails, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
+		hwndContainerContactDetails = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
 		SetWindowLong(hwndContainerContactDetails, GWL_WNDPROC, (LONG_PTR)ContainerProc);
+		hbContactInfoTitleBg = createHoverButton(hwndContainerContactDetails, hInstance, 0, 0, 320, 44, 0, IDB_CONTACT_INFO_WND_APP_NAME, IDB_CONTACT_INFO_WND_APP_NAME, NULL);
+		lockHoverButtonImage(hbContactInfoTitleBg, TRUE);
 
 		x = 0;
-		y = 20;
+		y = 0;
 		width = 320 - GetSystemMetrics(SM_CXVSCROLL);
 		height = 44;
 
-		hbAllContacts = createHoverButton(hwndContainerContactDetails, hInstance, 13, 7, 91, 30, BUTTON_ID_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, NULL);
-		hbEditSaveContact = createHoverButton(hwndContainerContactDetails, hInstance, 254, 7, 50, 30, BUTTON_ID_EDIT_SAVE_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, NULL);
+		hbAllContacts = createHoverButton(getHoverButtonHwnd(hbContactInfoTitleBg), hInstance, 13, 7, 91, 30, BUTTON_ID_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS, NULL);
+		hbEditSaveContact = createHoverButton(getHoverButtonHwnd(hbContactInfoTitleBg), hInstance, 254, 7, 50, 30, BUTTON_ID_EDIT_SAVE_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT, NULL);
 		// Needed width is 320 pixels - width of vertical scrollbar.
 		// Needed height is 64 pixels (44 button + 20 label) * 11 + 350 % 64 (addition of this fraction gives a nice, uniform effect to the list)
 		hwndScrollContainer = createScrollContainer(hwndContainerContactDetails, hInstance, 0, 0, 44, 320, 350, width, height + 20, 
 			width, ((height + 20) * 11) + (350 % 64), 0, IDB_CONTACT_INFO_WND_BG);
 
-		ebContactInfo[0] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_LAST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Moshe"));
-		y += height+20;
-		ebContactInfo[1] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_FIRST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Cohen"));
-		y += height+20;
-		ebContactInfo[2] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_PHONE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("98765432"));
-		y += height+20;
-		ebContactInfo[3] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_SKYPE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("golom"));
-		y += height+20;
-		ebContactInfo[4] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@b.c"));;
-		y += height+20;
-		ebContactInfo[5] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_WEB, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("www.asdfasdf.com"));
-		y += height+20;
-		ebContactInfo[6] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_AGE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("34"));
-		y += height+20;
-		ebContactInfo[7] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_ADDRESS_CNT, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Israel"));
-		y += height+20;
-		ebContactInfo[8] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_ADDRESS_CTY, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Holon"));
-		y += height+20;
-		ebContactInfo[9] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_ADDRESS_STR, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Golomb"));
-		y += height+20;
-		ebContactInfo[10] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_ADDRESS_NUM, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("52"));
-		y += height+20;
+		hlblContactInfo[0] = CreateWindowEx(0, TEXT("static"), TEXT("First name"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		defTransparentLabelProc = (WNDPROC)SetWindowLong(hlblContactInfo[0], GWL_WNDPROC, (LONG_PTR)TransparentLabelProc);
+		y += 20;
+		ebContactInfo[0] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_LAST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[1] = CreateWindowEx(0, TEXT("static"), TEXT("Last name"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[1] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_FIRST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[2] = CreateWindowEx(0, TEXT("static"), TEXT("Phone number"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[2] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_PHONE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[3] = CreateWindowEx(0, TEXT("static"), TEXT("Skype handle"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[3] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_SKYPE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[4] = CreateWindowEx(0, TEXT("static"), TEXT("E-mail"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[4] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[5] = CreateWindowEx(0, TEXT("static"), TEXT("Web site"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[5] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_WEB, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[6] = CreateWindowEx(0, TEXT("static"), TEXT("Age"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[6] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_AGE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[7] = CreateWindowEx(0, TEXT("static"), TEXT("Country"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[7] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_ADDRESS_CNT, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[8] = CreateWindowEx(0, TEXT("static"), TEXT("City"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[8] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_ADDRESS_CTY, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[9] = CreateWindowEx(0, TEXT("static"), TEXT("Street"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[9] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_ADDRESS_STR, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
+		hlblContactInfo[10] = CreateWindowEx(0, TEXT("static"), TEXT("Number"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
+		y += 20;
+		ebContactInfo[10] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_ADDRESS_NUM, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
+		y += height;
 		for (y = 0; y < 11; y++)
 		{
 			setEditButtonImageStretch(ebContactInfo[y], TRUE);			
 			lockEditButton(ebContactInfo[y], TRUE);
 		}
+		hbEmail = createHoverButton(hwndScrollContainer, hInstance, 0, 0, 42, 42, BUTTON_ID_SEND_EMAIL, IDB_CONTACT_DTL_EMAIL_ON, IDB_CONTACT_DTL_EMAIL_OFF, NULL);
+		hbGoogleMap = createHoverButton(hwndScrollContainer, hInstance, 0, 0, 42, 42, BUTTON_ID_SEE_ON_MAP, IDB_CONTACT_DTL_MAP_ON, IDB_CONTACT_DTL_MAP_OFF, NULL);
+		hbSkypeHandle = createHoverButton(hwndScrollContainer, hInstance, 0, 0, 42, 42, BUTTON_ID_SKYPE_HANDLE, IDB_CONTACT_DTL_SKYPE_ON, IDB_CONTACT_DTL_SKYPE_OFF, NULL);
+		hbWebsite = createHoverButton(hwndScrollContainer, hInstance, 0, 0, 42, 42, BUTTON_ID_GO_TO_WEBSITE, IDB_CONTACT_DTL_WWW_ON, IDB_CONTACT_DTL_WWW_OFF, NULL);
 	}
 
 	//setEditButtonFont(ebContactInfo[0], TEXT("Arial"), 10);	

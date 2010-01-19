@@ -201,7 +201,7 @@ int getScrollPos(HWND hwnd, int scrollBar, UINT code)
 
 void setScrollContainerText(HWND hWnd, TCHAR *caption)
 {
-	HoverButton *hoverButton = findButton(0, hWnd);
+	HoverButton *hoverButton = findHoverButton(0, hWnd);
 	if (hoverButton)
 	{
 		setHoverButtonText(hoverButton, caption);
@@ -210,14 +210,14 @@ void setScrollContainerText(HWND hWnd, TCHAR *caption)
 
 void getScrollContainerText(HWND hWnd, TCHAR *destination, size_t length)
 {
-	HoverButton *hoverButton = findButton(0, hWnd);
+	HoverButton *hoverButton = findHoverButton(0, hWnd);
 	if (hoverButton)
 		getHoverButtonText(hoverButton, destination, length);
 }
 
 void setScrollContainerImage(HWND hWnd, int imgImage)
 {
-	HoverButton *hoverButton = findButton(0, hWnd);
+	HoverButton *hoverButton = findHoverButton(0, hWnd);
 	if (hoverButton)
 	{
 		setHoverButtonStateImages(hoverButton, imgImage, imgImage);
@@ -226,7 +226,7 @@ void setScrollContainerImage(HWND hWnd, int imgImage)
 
 void setScrollContainerImageStretch(HWND hWnd, int enable)
 {
-	HoverButton *hoverButton = findButton(0, hWnd);
+	HoverButton *hoverButton = findHoverButton(0, hWnd);
 	if (hoverButton)
 	{
 		setHoverButtonImageStretch(hoverButton, enable);
@@ -235,7 +235,7 @@ void setScrollContainerImageStretch(HWND hWnd, int enable)
 
 void setScrollContainerFont(HWND hWnd, TCHAR *fontName, int fontSize)
 {
-	HoverButton *hoverButton = findButton(0, hWnd);
+	HoverButton *hoverButton = findHoverButton(0, hWnd);
 	if (hoverButton)
 	{
 		setHoverButtonFont(hoverButton, fontName, fontSize);
@@ -244,7 +244,7 @@ void setScrollContainerFont(HWND hWnd, TCHAR *fontName, int fontSize)
 
 HFONT getScrollContainerFont(HWND hWnd)
 {
-	HoverButton *hoverButton = findButton(0, hWnd);
+	HoverButton *hoverButton = findHoverButton(0, hWnd);
 	HFONT hFont = NULL;
 	if (hoverButton)
 	{
@@ -255,7 +255,7 @@ HFONT getScrollContainerFont(HWND hWnd)
 
 void setScrollContainerTextColor(HWND hWnd, COLORREF color)
 {
-	HoverButton *hoverButton = findButton(0, hWnd);
+	HoverButton *hoverButton = findHoverButton(0, hWnd);
 	if (hoverButton)
 	{
 		setHoverButtonTextColor(hoverButton, color);

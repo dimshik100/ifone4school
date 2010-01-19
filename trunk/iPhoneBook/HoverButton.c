@@ -1,10 +1,7 @@
 #include "StdAfx.h"
 #include "HoverButton.h"
 #include "Miscellaneous.h"
-
-#define MAX_BUTTONS 200
-HoverButton *hoverButtons[MAX_BUTTONS];
-int hoverButtonCounter = 0;
+#include "DynamicListC.h"
 
 WNDPROC wndDefHoverBtnProc = NULL;
 WNDPROC wndDefHoverProc = NULL;
@@ -15,36 +12,37 @@ void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId);
 BOOL setTrackMouse(HoverButton *hoverButton);
 void paintButton(HWND hWnd, HDC hdc, RECT *rcPaint);
 
+DynamicListC hoverButtonList = NULL;
+
 HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height,
 							   int controlId, int onImage, int offImage, TCHAR *caption)
 {
-	HoverButton *newHoverButton = NULL;
+	HoverButton *newHoverButton = (HoverButton*)calloc(1, sizeof(HoverButton));
 
-	if (hoverButtonCounter < MAX_BUTTONS)
-	{
-		newHoverButton = (HoverButton*)calloc(1, sizeof(HoverButton));
-		newHoverButton->onImage = onImage;
-		newHoverButton->offImage = offImage;
-		newHoverButton->activeImage = offImage;
-		newHoverButton->imgStretch = FALSE;
-		newHoverButton->cId = controlId;
-		newHoverButton->hInstance = hInstance;
-		newHoverButton->buttonRect.left = x;
-		newHoverButton->buttonRect.right = x + width;
-		newHoverButton->buttonRect.top = y;
-		newHoverButton->buttonRect.bottom = y + height;
-		newHoverButton->hButton = CreateWindowEx(0, TEXT("button"), NULL, WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | BS_OWNERDRAW, x, y, width, height,
-			hWndParent, (HMENU)controlId, hInstance, NULL);
-		if (caption)
-			newHoverButton->caption = _tcsdup(caption);
-		newHoverButton->hFont = NULL;
-		newHoverButton->color = GetSysColor(COLOR_BTNTEXT); // Get the default color for button text
+	if (!hoverButtonList)
+		listInit(&hoverButtonList);
 
-		/// !!! Apply new window procedure to control !!! ///
-		wndDefHoverProc = (WNDPROC)SetWindowLong(newHoverButton->hButton, GWL_WNDPROC, (LONG_PTR)HoverBtnProc);
+	listInsertAfterEnd(hoverButtonList, &newHoverButton);
 
-		hoverButtons[hoverButtonCounter++] = newHoverButton;
-	}
+	newHoverButton->onImage = onImage;
+	newHoverButton->offImage = offImage;
+	newHoverButton->activeImage = offImage;
+	newHoverButton->imgStretch = FALSE;
+	newHoverButton->cId = controlId;
+	newHoverButton->hInstance = hInstance;
+	newHoverButton->buttonRect.left = x;
+	newHoverButton->buttonRect.right = x + width;
+	newHoverButton->buttonRect.top = y;
+	newHoverButton->buttonRect.bottom = y + height;
+	newHoverButton->hButton = CreateWindowEx(0, TEXT("button"), NULL, WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN | BS_OWNERDRAW, x, y, width, height,
+		hWndParent, (HMENU)controlId, hInstance, NULL);
+	if (caption)
+		newHoverButton->caption = _tcsdup(caption);
+	newHoverButton->hFont = NULL;
+	newHoverButton->color = GetSysColor(COLOR_BTNTEXT); // Get the default color for button text
+
+	/// !!! Apply new window procedure to control !!! ///
+	wndDefHoverProc = (WNDPROC)SetWindowLong(newHoverButton->hButton, GWL_WNDPROC, (LONG_PTR)HoverBtnProc);
 
 	return newHoverButton;
 }
@@ -61,16 +59,16 @@ HWND getHoverButtonHwnd(HoverButton *hoverButton)
 
 void deleteHoverButtons()
 {
-	int i;
-	for (i = 0; i < hoverButtonCounter; i++)
+	HoverButton *hoverButton;
+	for (listSelectFirst(hoverButtonList); listSelectCurrent(hoverButtonList); listSelectNext(hoverButtonList, NULL))
 	{
-		if (hoverButtons[i]->hFont)
-			DeleteObject(hoverButtons[i]->hFont);
-		if (hoverButtons[i]->caption)
-			free(hoverButtons[i]->caption);
-		free(hoverButtons[i]);
+		listGetValue(hoverButtonList, NULL, &hoverButton);
+		if (hoverButton->hFont)
+			DeleteObject(hoverButton->hFont);
+		if (hoverButton->caption)
+			free(hoverButton->caption);
 	}
-	hoverButtonCounter = 0;
+	listFree(&hoverButtonList);
 }
 
 void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage)
@@ -185,14 +183,14 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		SendMessage(GetParent(hWnd), WM_COMMAND, wParam, lParam);
 		break;
 	case WM_RBUTTONDOWN:
-		hoverButton = findButton(0, hWnd);
+		hoverButton = findHoverButton(0, hWnd);
 		hoverButton->isPushed = TRUE;
 		if (!hoverButton->isLocked)
 			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_RMOUSE_DOWN), (LPARAM)hWnd);
 		return FALSE;
 		break;
 	case WM_RBUTTONUP:
-		hoverButton = findButton(0, hWnd);
+		hoverButton = findHoverButton(0, hWnd);
 		hoverButton->isPushed = FALSE;
 		if (!hoverButton->isLocked)
 			SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_RMOUSE_UP), (LPARAM)hWnd);
@@ -200,7 +198,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		break;
 	case WM_LBUTTONDOWN:
 		SetFocus(hWnd);
-		hoverButton = findButton(0, hWnd);
+		hoverButton = findHoverButton(0, hWnd);
 		hoverButton->isPushed = TRUE;
 		if (!hoverButton->isLocked)
 		{
@@ -212,7 +210,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		return FALSE;
 		break;
 	case WM_LBUTTONUP:
-		hoverButton = findButton(0, hWnd);
+		hoverButton = findHoverButton(0, hWnd);
 		if (!hoverButton->isLocked)
 		{
 			if (hoverButton->isPushButton)
@@ -229,7 +227,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		break;
 	case WM_MOUSEMOVE:
 		{
-			hoverButton = findButton(0, hWnd);
+			hoverButton = findHoverButton(0, hWnd);
 			// If the hover button is not locked AND
 			// the hover button is not a push button AND is not hovering OR
 			// the hover button is a push button AND the left mouse is down
@@ -249,7 +247,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		break;
 	case WM_MOUSELEAVE:
 		{
-			hoverButton = findButton(0, hWnd);
+			hoverButton = findHoverButton(0, hWnd);
 
 			if (!hoverButton->isLocked)
 			{
@@ -260,6 +258,30 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 					SendMessage(GetParent(hWnd), WM_COMMAND, (WPARAM)MAKELONG(hoverButton->cId, HOVER_BUTTON_MOUSE_DOWN_LEAVE), (LPARAM)hWnd);
 			}
 			return FALSE;
+		}
+		break;
+	case WM_SIZE:
+		{
+			hoverButton = findHoverButton(0, hWnd);
+			if (hoverButton)
+			{
+				hoverButton->buttonRect.right = hoverButton->buttonRect.left + (short)LOWORD(lParam);
+				hoverButton->buttonRect.bottom = hoverButton->buttonRect.top + (short)HIWORD(lParam);
+			}
+		}
+		break;
+	case WM_MOVE:
+		{
+			hoverButton = findHoverButton(0, hWnd);
+			if (hoverButton)
+			{
+				SIZE size;
+				rectToSize(&hoverButton->buttonRect, &size);
+				hoverButton->buttonRect.left = (short)LOWORD(lParam);
+				hoverButton->buttonRect.top = (short)HIWORD(lParam);
+				hoverButton->buttonRect.right = hoverButton->buttonRect.left + size.cx;
+				hoverButton->buttonRect.bottom = hoverButton->buttonRect.top + size.cy;
+			}
 		}
 		break;
 
@@ -307,18 +329,20 @@ void paintButton(HWND hWnd, HDC hdc, RECT *rcPaint)
 	// Select the image into the DC. Keep a reference to the old bitmap.
 	hbmpOld = (HBITMAP)SelectObject(hdcMem, hbmpImage);
 
-	hoverButton = findButton(0, hWnd);
+	hoverButton = findHoverButton(0, hWnd);
 	setHoverButtonImage(hoverButton, hdcMem, hoverButton->activeImage);
 	if (hoverButton->caption)
 	{				
 		RECT rcText = {0};
+		SIZE size;
 		SetBkMode(hdcMem, TRANSPARENT);
 		SetTextColor(hdcMem, hoverButton->color);
 		hFontOld = (HFONT)SelectObject(hdcMem, hoverButton->hFont);
 
 		DrawText(hdcMem, hoverButton->caption, (int)_tcslen(hoverButton->caption), &rcText, DT_CALCRECT);
-		rcText.left = (hoverButton->buttonRect.right - hoverButton->buttonRect.left - rcText.right) /2 ;
-		rcText.top = (hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - rcText.bottom) /2 ;
+		rectToSize(&rcText, &size);
+		rcText.left = ROUND((hoverButton->buttonRect.right - hoverButton->buttonRect.left - rcText.right) / 2.0f);
+		rcText.top = ROUND((hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - rcText.bottom) / 2.0f);
 		rcText.right = rcText.right + rcText.left;
 		rcText.bottom = rcText.bottom + rcText.top;
 		DrawText(hdcMem, hoverButton->caption, (int)_tcslen(hoverButton->caption), &rcText, DT_WORDBREAK | DT_EXPANDTABS | DT_CENTER);
@@ -334,29 +358,48 @@ void paintButton(HWND hWnd, HDC hdc, RECT *rcPaint)
 	DeleteObject(hbmpImage);
 }
 
-HoverButton *findButton(int cId, HWND hWnd)
+HoverButton *findHoverButton(int cId, HWND hWnd)
 {
-	int i;
+	HoverButton *hoverButton = NULL;
 
-	if (cId)
+	if (!hoverButtonList)
+		return hoverButton;
+
+	for (listSelectFirst(hoverButtonList); listSelectCurrent(hoverButtonList); listSelectNext(hoverButtonList, NULL))
 	{
-		for (i = 0; i < hoverButtonCounter; i++)
-		{
-			if (hoverButtons[i]->cId == cId)
-				return hoverButtons[i];
-		}
-	}
-	else if (hWnd)
-	{
-		for (i = 0; i < hoverButtonCounter; i++)
-		{
-			if (hoverButtons[i]->hButton == hWnd)
-				return hoverButtons[i];
-		}
+		listGetValue(hoverButtonList, NULL, &hoverButton);
+		if (hWnd && hoverButton->hButton == hWnd)
+			return hoverButton;
+		else if (cId && hoverButton->cId == cId)
+			return hoverButton;
 	}
 
-	return NULL;
+	return hoverButton;
 }
+//{
+//	
+//	listFree(&hoverButtonList);
+//	int i;
+//
+//	if (cId)
+//	{
+//		for (i = 0; i < hoverButtonCounter; i++)
+//		{
+//			if (hoverButtons[i]->cId == cId)
+//				return hoverButtons[i];
+//		}
+//	}
+//	else if (hWnd)
+//	{
+//		for (i = 0; i < hoverButtonCounter; i++)
+//		{
+//			if (hoverButtons[i]->hButton == hWnd)
+//				return hoverButtons[i];
+//		}
+//	}
+//
+//	return NULL;
+//}
 
 void invalidateButtonRect(HoverButton *hoverButton)
 {

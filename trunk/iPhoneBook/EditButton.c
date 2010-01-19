@@ -2,6 +2,7 @@
 #include "EditButton.h"
 #include "resource.h"
 #include "Miscellaneous.h"
+#include "DynamicListC.h"
 
 #define EDIT_BUTTON_CTL_ID	5000
 #define FUNC_BUTTON_SIZE	20
@@ -12,18 +13,26 @@ WNDPROC wndDefEditProc = NULL;
 LRESULT CALLBACK	EditBtnProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK		FindEditInEditButtonProc(HWND hwnd, LPARAM lParam);
 
+DynamicListC editButtonList = NULL;
+
 EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 							   int width, int height, int controlId, int onImage, int offImage, TCHAR *caption)
 {
 	EditButton *newEditButton = (EditButton*)calloc(1, sizeof(EditButton));
 	controlId = EDIT_BUTTON_CTL_ID + (controlId * 10);
 
-	newEditButton->editRect.left = x + 5;
-	newEditButton->editRect.right = (x + width) - 35; //15 = 5 from left, 10 from right, another 20 is for the ok/cancel buttons
-	newEditButton->editRect.top = y + 5;
-	newEditButton->editRect.bottom = (y + height) - 10; //10 = 5 from top and 5 from bottom
+	if (!editButtonList)
+		listInit(&editButtonList);
+
+	listInsertAfterEnd(editButtonList, &newEditButton);
+
+	newEditButton->editRect.left = 5;
+	newEditButton->editRect.right = width - 35; //15 = 5 from left, 10 from right, another 20 is for the ok/cancel buttons
+	newEditButton->editRect.top = 5;
+	newEditButton->editRect.bottom = height - 10; //10 = 5 from top and 5 from bottom
 	newEditButton->onImage = onImage;
 	newEditButton->offImage = offImage;
+	newEditButton->cId = getEditButtonControlId(controlId);
 
 	newEditButton->hInstance = hInstance;
 	newEditButton->mainButton = createHoverButton(hWndParent, hInstance, x, y, width, height, controlId, onImage, offImage, caption);
@@ -45,6 +54,8 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 void setEditButtonText(EditButton *editButton, TCHAR *caption)
 {
 	setHoverButtonText(editButton->mainButton, caption);
+	SetWindowText(editButton->hEdit, caption);
+	SendMessage(editButton->hEdit, EM_SETSEL, (WPARAM)0, (LPARAM)_tcslen(caption));
 }
 
 void setEditButtonStateImages(EditButton *editButton, int onImage, int offImage)
@@ -90,13 +101,18 @@ void showEditButtonEdit(EditButton *editButton, int show)
 {
 	editButton->inEditMode = show;
 	lockHoverButtonImage(editButton->mainButton, show);
+	editButton->isLocked = show;
 	show = (show) ? (SW_SHOW) : (SW_HIDE);
 	ShowWindow(editButton->okButton->hButton, show);
 	ShowWindow(editButton->cancelButton->hButton, show);
 	ShowWindow(editButton->hEdit, show);
 	if (show == SW_SHOW)
 	{
+		TCHAR string[256];
 		setHoverButtonStateImages(editButton->mainButton, editButton->onImage, editButton->onImage);
+		getHoverButtonText(editButton->mainButton, string, 256);
+		SetWindowText(editButton->hEdit, string);
+		SendMessage(editButton->hEdit, EM_SETSEL, (WPARAM)0, (LPARAM)_tcslen(string));
 		SetFocus(editButton->hEdit);
 	}
 	else
@@ -105,6 +121,7 @@ void showEditButtonEdit(EditButton *editButton, int show)
 
 void lockEditButton(EditButton *editButton, int enable)
 {
+	editButton->isLocked = enable;
 	lockHoverButtonImage(editButton->mainButton, enable);
 }
 
@@ -115,14 +132,13 @@ HWND getEditButtonHwnd(EditButton *editButton)
 
 int getEditButtonControlId(int cId)
 {
-	if (cId < 5010)
-		return cId;
-	else
-		return ((cId - EDIT_BUTTON_CTL_ID) / 10);
+	return (cId < 5010) ? cId : ((cId - EDIT_BUTTON_CTL_ID) / 10);
 }
 
 LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	EditButton *editButton;
+
 	switch (message)
 	{
 	case WM_COMMAND:
@@ -131,52 +147,58 @@ LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 			int wmEvent = HIWORD(wParam);
 			if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
 			{
-				HoverButton *hoverButton = findButton(0, hWnd);
-				if (hoverButton)
-					lockHoverButtonImage(hoverButton, FALSE);
-				showChildWindows(hWnd, SW_HIDE);
+				editButton = findEditButton(0, hWnd);
+				showEditButtonEdit(editButton, FALSE);
 			}
 			if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP)
 			{
-				HoverButton *hoverButton = findButton(0, hWnd);
-				if (hoverButton)
-				{
-					TCHAR string[256];
-					HWND hwndEdit = NULL;
-					EnumChildWindows(hWnd, FindEditInEditButtonProc, (LPARAM)&hwndEdit);
-					hoverButton = findButton(0, hWnd);
-					if (hwndEdit && hoverButton)
-					{
-						GetWindowText(hwndEdit, string, 256);
-						setHoverButtonText(hoverButton, string);
-					}
-					lockHoverButtonImage(hoverButton, FALSE);
-				}
-				showChildWindows(hWnd, SW_HIDE);
+				TCHAR string[256];
+				editButton = findEditButton(0, hWnd);
+				GetWindowText(editButton->hEdit, string, 256);
+				setHoverButtonText(editButton->mainButton, string);
+				showEditButtonEdit(editButton, FALSE);
 			}
 		}
 		break;
 	case WM_LBUTTONUP:
 		{
-			HoverButton *hoverButton = findButton(0, hWnd);
-			if (hoverButton && !hoverButton->isLocked)
-			{
-				HWND hwndEdit = NULL;
-				EnumChildWindows(hWnd, FindEditInEditButtonProc, (LPARAM)&hwndEdit);
-				if (hwndEdit)
-				{
-					TCHAR string[256];
-					getHoverButtonText(hoverButton, string, 256);
-					SetWindowText(hwndEdit, string);
-					SendMessage(hwndEdit, EM_SETSEL, (WPARAM)0, (LPARAM)_tcslen(string));
-				}
-				lockHoverButtonImage(hoverButton, TRUE);
-				showChildWindows(hWnd, SW_SHOW);
-			}
+			editButton = findEditButton(0, hWnd);
+			if (!editButton->isLocked)
+				showEditButtonEdit(editButton, TRUE);
+
+			//HoverButton *hoverButton = findHoverButton(0, hWnd);
+			//if (hoverButton && !hoverButton->isLocked)
+			//{
+			//	HWND hwndEdit = NULL;
+			//	EnumChildWindows(hWnd, FindEditInEditButtonProc, (LPARAM)&hwndEdit);
+			//	if (hwndEdit)
+			//	{
+			//		TCHAR string[256];
+			//		getHoverButtonText(hoverButton, string, 256);
+			//		SetWindowText(hwndEdit, string);
+			//		SendMessage(hwndEdit, EM_SETSEL, (WPARAM)0, (LPARAM)_tcslen(string));
+			//	}
+			//	lockHoverButtonImage(hoverButton, TRUE);
+			//	showChildWindows(hWnd, SW_SHOW);
+			//}
 		}
 		break;
 	case WM_PAINT:
 		invalidateChildWindows(hWnd, TRUE);
+		break;
+	case WM_SIZE:
+		{
+			editButton = findEditButton(0, hWnd);
+			if (editButton)
+			{
+				SetWindowPos(editButton->hEdit, NULL, 0, 0, LOWORD(lParam) - 35, HIWORD(lParam) - 10, SWP_NOMOVE);
+				editButton->editRect.bottom = HIWORD(lParam) - 5;
+				editButton->editRect.right = LOWORD(lParam) - 30;
+				SetWindowPos(getHoverButtonHwnd(editButton->okButton), NULL, LOWORD(lParam) - 25, 5, 0, 0, SWP_NOSIZE);
+				SetWindowPos(getHoverButtonHwnd(editButton->cancelButton), NULL, LOWORD(lParam) - 25, 22, 0, 0, SWP_NOSIZE);
+				//invalidateButtonRect(editButton->mainButton);
+			}
+		}
 		break;
 	}
 
@@ -193,4 +215,28 @@ BOOL CALLBACK FindEditInEditButtonProc(HWND hWnd, LPARAM lParam)
 		return FALSE;
 	}
 	return TRUE;
+}
+
+void deleteEditButtons()
+{
+	listFree(&editButtonList);
+}
+
+EditButton *findEditButton(int cId, HWND hWnd)
+{
+	EditButton *editButton = NULL;
+
+	if (!editButtonList)
+		return editButton;
+
+	for (listSelectFirst(editButtonList); listSelectCurrent(editButtonList); listSelectNext(editButtonList, NULL))
+	{
+		listGetValue(editButtonList, NULL, &editButton);
+		if (hWnd && getHoverButtonHwnd(editButton->mainButton) == hWnd)
+			return editButton;
+		else if (cId && editButton->cId == cId)
+			return editButton;
+	}
+
+	return editButton;
 }

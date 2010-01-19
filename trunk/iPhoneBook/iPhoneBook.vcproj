@@ -360,6 +360,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\imgs\edit_contact_wnd_app_name_bg.bmp"
+				>
+			</File>
+			<File
 				RelativePath=".\imgs\email_off.bmp"
 				>
 			</File>
@@ -468,6 +472,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\imgs\new_contact_wnd_app_name_bg.bmp"
+				>
+			</File>
+			<File
 				RelativePath=".\imgs\off.bmp"
 				>
 			</File>
@@ -505,6 +513,10 @@
 			</File>
 			<File
 				RelativePath=".\imgs\top_bar_skype_on.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\imgs\trash_wnd_app_name_bg.bmp"
 				>
 			</File>
 			<File
