@@ -108,7 +108,6 @@ HWND hwndSearchBox, hwndConfirmDialog, hwndMain, hwndScrollContainer;
 HWND hLV;
 WNDPROC defContainerProc;
 const RECT ifoneScreenRect = { 67, 136, 386, 615 };
-DynamicListC contactList = NULL;
 ScreenMode screenMode = SCREEN_MAIN;
 int isConfirmOn = FALSE;
 SkypeCallObject currentCall;
@@ -221,7 +220,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	{
 		return FALSE;
 	}
-	//makeWindowTransparentByMask(hWnd, IDB_IPHONE_BG_MASK);
+	makeWindowTransparentByMask(hWnd, IDB_IPHONE_BG_MASK);
 
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
@@ -234,20 +233,17 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 	if (skypeCallObject && skypeCallObject->object == OBJECT_CALL)
 	{
 		TCHAR str[256] = {0};
-		TCHAR statusStr[50] = {0}, strDuration[25] = {0};
+		TCHAR statusStr[50] = {0}, strDuration[25] = {0}, strContactName[MAX_FNAME+MAX_LNAME];
+		DynamicListC contactList;
 
 		switch (skypeCallObject->status)
 		{
 		case CALLSTATUS_ROUTING:
 		case CALLSTATUS_RINGING:
 			{
-				screenMode = SCREEN_CALL_MODE;
-				showChildContainers(FALSE);
+				showChildContainers(SCREEN_CALL_MODE);
 				enableChildContainers(FALSE);
 				EnableWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), TRUE);
-				ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
-				ShowWindow(hwndContainerMainButtons, SW_SHOW);
-				ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
 				if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
 					_tcscpy_s(statusStr, 50, TEXT("Incoming call"));
 				else
@@ -261,7 +257,6 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 			_tcscpy_s(statusStr, 50, TEXT("Call ended"));
 			_stprintf_s(strDuration, 25, TEXT("Duration: %02d:%02d:%02d"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
 			SetTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID, 5000, EndCallTimerProc);
-			enableChildContainers(TRUE);
 			break;
 		case CALLSTATUS_CANCELLED:
 		case CALLSTATUS_FAILED:
@@ -270,13 +265,11 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 			_tcscpy_s(statusStr, 50, TEXT("Call ended"));
 			_stprintf_s(strDuration, 25, TEXT("Duration: %02d:%02d:%02d"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
 			SetTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID, 5000, EndCallTimerProc);
-			enableChildContainers(TRUE);
 			break;
 		}		
 		switch (skypeCallObject->property)
 		{
 		case CALLPROPERTY_DURATION:
-			//strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Duration update\n"), skypeCallObject->property);
 			_stprintf_s(strDuration, 25, TEXT("Duration: %02d:%02d:%02d"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
 			break;
 		case CALLPROPERTY_STATUS:
@@ -285,11 +278,29 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 			//strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("Other property notification\n"), skypeCallObject->property);
 			break;
 		}
+
+		contactList = getContactListInitiated();
+		if (contactList)
+		{
+			Contact *contact = NULL;
+			for (listSelectFirst(contactList); listSelectCurrent(contactList); listSelectNext(contactList, NULL))
+			{
+				listGetValue(contactList, NULL, &contact);
+				if (!_tcsicmp(contact->skypeName, skypeCallObject->partnerHandle))
+				{
+					_stprintf_s(strContactName, MAX_FNAME+MAX_LNAME, TEXT("%s %s"), contact->firstName, contact->lastName);
+					break;
+				}
+			}
+			if (_tcslen(strContactName) == 0)
+				_tcscpy_s(strContactName, MAX_FNAME+MAX_LNAME, TEXT("Unknown"));
+		}
+
 		//strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("skypeCallObject = 0x%p"), skypeCallObject);
 		if (_tcslen(strDuration) > 0)
-			_stprintf_s(str, 256, TEXT("%s\n\n%s\n\n%s\n%s"), statusStr, strDuration, TEXT("Contact Name Here"), skypeCallObject->partnerDisplayName);
+			_stprintf_s(str, 256, TEXT("%s\n\n%s\n\n%s\n%s"), statusStr, strDuration, strContactName, skypeCallObject->partnerDisplayName);
 		else
-			_stprintf_s(str, 256, TEXT("%s\n\n%s\n%s"), statusStr, TEXT("Contact Name Here"), skypeCallObject->partnerDisplayName);
+			_stprintf_s(str, 256, TEXT("%s\n\n%s\n%s"), statusStr, strContactName, skypeCallObject->partnerDisplayName);
 		currentCall = *skypeCallObject;
 		setHoverButtonText(hbContainerCall, str);
 	}
@@ -476,16 +487,9 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_CONTACTS)
 				{
 					SetWindowText(hwndSearchBox, TEXT(""));
-					showChildContainers(SW_HIDE);
-					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
-					ShowWindow(hwndContainerContacts, SW_SHOW);
-					ShowWindow(hwndSearchBox, SW_SHOW);
-					ShowWindow(getHoverButtonHwnd(hbAddContact), SW_SHOW);
-					ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_SHOW);
-					ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_SHOW);
 					fillListView(hLV, getContactListInitiated(), NULL);
 					SetFocus(hwndSearchBox);
-					screenMode = SCREEN_CONTACTS;
+					showChildContainers(SCREEN_CONTACTS);
 				}
 				break;
 			case BUTTON_ID_INFO:
@@ -493,15 +497,8 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			case BUTTON_ID_BIN:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_TRASH)
 				{
-					showChildContainers(SW_HIDE);
-					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
-					ShowWindow(hwndContainerContacts, SW_SHOW);
-					ShowWindow(hwndSearchBox, SW_HIDE);
-					ShowWindow(getHoverButtonHwnd(hbAddContact), SW_HIDE);
-					ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_HIDE);
-					ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_HIDE);
 					fillListView(hLV, getTrashList(), NULL);
-					screenMode = SCREEN_TRASH;
+					showChildContainers(SCREEN_TRASH);
 				}
 				break;
 			case BUTTON_ID_ADD_CONTACT:
@@ -511,13 +508,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					// Replace to "Save" image.
 					setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS);
 					fillEditContactDetails(&contact);
-					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
-					ShowWindow(hwndContainerContactDetails, SW_SHOW);
-					AnimateWindow(hwndContainerContacts, 2000, AW_CENTER|AW_HIDE /*| AW_HOR_POSITIVE*/);
-					showChildContainers(SW_HIDE);
-					ShowWindow(hwndContainerMiscButtons, SW_SHOW);
-					ShowWindow(hwndContainerContactDetails, SW_SHOW);
-					screenMode = SCREEN_CONTACT_ADD;
+					showChildContainers(SCREEN_CONTACT_ADD);
 				}
 				break;
 			case BUTTON_ID_EDIT_SAVE_CONTACT:
@@ -528,12 +519,12 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
 					setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT);
 					saveContactDetails(contact);
-					screenMode = SCREEN_CONTACT_INFO;
 					fillContactDetails(contact);
 					editContact(contact);
+					showChildContainers(SCREEN_CONTACT_INFO);
 				}				
 				else if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_CONTACT_INFO)
-					// Return to contact list
+					// Edit a contact
 					SendMessage(hWnd, message, MAKELONG(BUTTON_ID_MISC3, wmEvent), 0);
 				else if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_CONTACT_ADD)
 				{
@@ -565,10 +556,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					{
 						setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT);
 						fillContactDetails(contact);
-						showChildContainers(SW_HIDE);
-						ShowWindow(hwndContainerMiscButtons, SW_SHOW);
-						ShowWindow(hwndContainerContactDetails, SW_SHOW);
-						screenMode = SCREEN_CONTACT_INFO;
+						showChildContainers(SCREEN_CONTACT_INFO);
 					}
 				}
 				break;
@@ -582,10 +570,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						// Replace to "Save" image.
 						setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_ALL_CONTACTS, IDB_CONTACT_INFO_ALL_CONTACTS);
 						fillEditContactDetails(contact);
-						showChildContainers(SW_HIDE);
-						ShowWindow(hwndContainerMiscButtons, SW_SHOW);
-						ShowWindow(hwndContainerContactDetails, SW_SHOW);
-						screenMode = SCREEN_CONTACT_EDIT;
+						showChildContainers(SCREEN_CONTACT_EDIT);
 					}
 				}
 				break;
@@ -667,13 +652,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 			{
 				if (screenMode != SCREEN_MAIN)
-				{
-					showChildContainers(SW_HIDE);
-					ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_SHOW);
-					ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
-					ShowWindow(hwndContainerMainButtons, SW_SHOW);
-				}
+					showChildContainers(SCREEN_MAIN);
 				KillTimer(hWnd, PWRBTN_TIMER_ID);
+				// If timer successfully killed, means the pwr button was manually pressed, so release buttons.
+				if (KillTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID))
+					enableChildContainers(TRUE);
 				screenMode = SCREEN_MAIN;
 			}
 			else if (wmEvent == HOVER_BUTTON_MOUSE_DOWN_LEAVE)
@@ -811,6 +794,7 @@ VOID CALLBACK		EndCallTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD
 {
 	UNREFERENCED_PARAMETER(hWnd), UNREFERENCED_PARAMETER(message), UNREFERENCED_PARAMETER(idEvent), UNREFERENCED_PARAMETER(dwTime);
 	
+	enableChildContainers(TRUE);
 	SendMessage(hwndMain, WM_COMMAND, (LPARAM)MAKELONG(BUTTON_ID_PWR, HOVER_BUTTON_LMOUSE_UP), 0);
 	KillTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID);
 }
@@ -820,21 +804,36 @@ void showChildContainers(ScreenMode screen)
 	switch(screen)
 	{
 	case SCREEN_MAIN:
-		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_SHOW);
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
-		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
-		ShowWindow(hwndContainerMainButtons, SW_SHOW);
 		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
+		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		AnimateWindow(getHoverButtonHwnd(hbMainCenterPic), 200, AW_CENTER | AW_ACTIVATE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
 		break;
 	case SCREEN_CONTACTS:
+	case SCREEN_TRASH:
+		if (screen == SCREEN_CONTACTS)
+		{
+			ShowWindow(hwndSearchBox, SW_SHOW);
+			ShowWindow(getHoverButtonHwnd(hbAddContact), SW_SHOW);
+			ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_SHOW);
+			ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_SHOW);
+		}
+		else
+		{
+			ShowWindow(hwndSearchBox, SW_HIDE);
+			ShowWindow(getHoverButtonHwnd(hbAddContact), SW_HIDE);
+			ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_HIDE);
+			ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_HIDE);
+		}
+		ShowWindow(hwndContainerMainButtons, SW_HIDE);
+		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
+		AnimateWindow(hwndContainerContacts, 400, AW_ACTIVATE | AW_HOR_NEGATIVE);
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
 		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
-		ShowWindow(hwndContainerMainButtons, SW_HIDE);
-		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
-		ShowWindow(hwndContainerContacts, SW_SHOW);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
 		break;
 	case SCREEN_MEM_INFO:
@@ -846,50 +845,26 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(hwndContainerContacts, SW_HIDE);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
 		break;
-	case SCREEN_TRASH:
-		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
-		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
-		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
-		ShowWindow(hwndContainerMainButtons, SW_HIDE);
-		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
-		ShowWindow(hwndContainerContacts, SW_SHOW);
-		ShowWindow(hwndContainerContactDetails, SW_HIDE);
-		break;
 	case SCREEN_CALL_MODE:
-		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
-		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
-		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
+		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
 		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		setHoverButtonText(hbContainerCall, NULL);
+		AnimateWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), 100, AW_CENTER | AW_ACTIVATE);
+		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
 		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
 		break;
 	case SCREEN_CONTACT_INFO:
-		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
-		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
-		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
-		ShowWindow(hwndContainerMainButtons, SW_SHOW);
-		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
-		ShowWindow(hwndContainerContacts, SW_HIDE);
-		ShowWindow(hwndContainerContactDetails, SW_HIDE);
-		break;
 	case SCREEN_CONTACT_ADD:
-		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
-		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
-		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
-		ShowWindow(hwndContainerMainButtons, SW_SHOW);
-		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
-		ShowWindow(hwndContainerContacts, SW_HIDE);
-		ShowWindow(hwndContainerContactDetails, SW_HIDE);
-		break;
 	case SCREEN_CONTACT_EDIT:
+		AnimateWindow(hwndContainerContactDetails, 400, AW_ACTIVATE | AW_HOR_POSITIVE);
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
-		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_SHOW);
-		ShowWindow(hwndContainerMainButtons, SW_SHOW);
-		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
+		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
+		ShowWindow(hwndContainerMainButtons, SW_HIDE);
+		ShowWindow(hwndContainerMiscButtons, SW_SHOW);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
-		ShowWindow(hwndContainerContactDetails, SW_HIDE);
 		break;
 	case SCREEN_CLOCK:
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
@@ -901,6 +876,7 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
 		break;
 	}
+	screenMode = screen;
 }
 
 void enableChildContainers(BOOL value)
@@ -1024,7 +1000,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 		// create contact details 
 		// reference http://www.codeproject.com/KB/dialog/scroll_dialog.aspx
 		hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_CONTACT_INFO_WND_APP_NAME));
-		hwndContainerContactDetails = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN/* | WS_VISIBLE*/ | SS_BITMAP, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
+		hwndContainerContactDetails = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN /*| WS_VISIBLE*/ | SS_BITMAP, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
 		SendMessage(hwndContainerContactDetails, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
 		SetWindowLong(hwndContainerContactDetails, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 
@@ -1048,7 +1024,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 		y += height+20;
 		ebContactInfo[3] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_SKYPE, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("golom"));
 		y += height+20;
-		ebContactInfo[4] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@b.c"));
+		ebContactInfo[4] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_EMAIL, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("a@b.c"));;
 		y += height+20;
 		ebContactInfo[5] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_WEB, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("www.asdfasdf.com"));
 		y += height+20;
