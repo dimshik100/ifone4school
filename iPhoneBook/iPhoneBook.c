@@ -107,6 +107,8 @@ HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts, 
 HWND hwndSearchBox, hwndConfirmDialog, hwndMain, hwndScrollContainer;
 HWND hLV;
 WNDPROC defContainerProc;
+HFONT digitalClockFont;
+TCHAR digitalClockFontPath[MAX_PATH];
 const RECT ifoneScreenRect = { 67, 136, 386, 615 };
 ScreenMode screenMode = SCREEN_MAIN;
 int isConfirmOn = FALSE;
@@ -632,7 +634,6 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	return CallWindowProc(defContainerProc, hWnd, message, wParam, lParam);
 }
 
-EditButton *editBtn;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
@@ -715,30 +716,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			EndPaint(hWnd, &ps);
 		}
 		break;
-	case WM_DESTROY:
+	case WM_DESTROY:		
+		unloadCustomFont(TEXT("LED_REAL.TTF"));
 		deleteHoverButtons();
 		disconnectSkype(hInst);
 		PostQuitMessage(0);
 		break;
 	case WM_CREATE:
 		{
-			HoverButton *btn;
-
 			createGUI(hWnd, hInst);
 			setSkypeCallStatusCallback(skypeCallStatusCallback);
 			setSkypeConnectionStatusCallback(skypeConnectionStatusCallback);
 			connectSkype(hInst);
-			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);
-			btn = createHoverButton(hWnd, hInst, 450, 500, 178, 178, 1, IDB_ON, IDB_OFF, TEXT("Test text"));
-			setHoverButtonTextColor(btn, 255);
-			
-			setHoverButtonFont(createHoverButton(hWnd, hInst, 450+178, 500, 178, 178, 2, IDB_MAIN_WND_CLOCK_ON, IDB_MAIN_WND_CLOCK_OFF, TEXT("abcdefgh")),
-				TEXT("Fixedsys Excelsior 3.01"), 24);
-
-			editBtn = createEditButton(hWnd, hInst, 450, 500+200, 320, 44, 3, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, TEXT("Test text"));
-			setEditButtonFont(editBtn, TEXT("Arial"), 16);
-
+			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);			
 			initListViewColumns(hLV);
+
+			// Custom font
+			{
+				loadCustomFont(TEXT("LED_REAL.TTF"));
+			}
 		}
 		break;
 	default:
@@ -806,7 +802,13 @@ void showChildContainers(ScreenMode screen)
 	case SCREEN_MAIN:
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_SHOW);
 		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
-		ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		//ShowWindow(hwndContainerMainButtons, SW_SHOW);
+		
+		//{
+		//	HWND hw = getHoverButtonHwnd(hbMainCenterPic);
+		//	animateMultipleWindows(&hw, 1, 2000, AW_CENTER | AW_ACTIVATE);
+		//}
+		AnimateWindow(hwndContainerMainButtons, 100, AW_VER_NEGATIVE | AW_ACTIVATE);
 		AnimateWindow(getHoverButtonHwnd(hbMainCenterPic), 200, AW_CENTER | AW_ACTIVATE);
 		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
@@ -905,7 +907,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hbMainUnderDateBg = createHoverButton(hWnd, hInstance, 67, 156, 320, 97, 0, IDB_MAIN_WND_UNDER_DATE_BG, IDB_MAIN_WND_UNDER_DATE_BG, NULL);
 	lockHoverButtonImage(hbMainUnderDateBg, TRUE);
 	setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
-	setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
+	setHoverButtonFont(hbMainUnderDateBg, TEXT("LED Real"), 36);
 	ClockTimerProc(NULL, 0, 0, 0); // Draw clock.
 	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 271, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
 	lockHoverButtonImage(hbMainCenterPic, TRUE);

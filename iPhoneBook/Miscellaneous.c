@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "Miscellaneous.h"
 
-
+DWORD WINAPI		AnimateWindowThreadProc( LPVOID lpParam );
 BOOL CALLBACK		shiftChildWindowsProc(HWND hWnd, LPARAM lParam);
 BOOL CALLBACK		invalidateChildWindowsProc(HWND hWnd, LPARAM lParam);
 BOOL CALLBACK		showChildWindowsEnumProc(HWND hWnd, LPARAM lParam);
@@ -215,4 +215,32 @@ void makeWindowTransparentByMask(HWND hWnd, int mask)
 	SelectObject(hdcMem, hbmpOld);
 	DeleteObject(hbmp);
 	DeleteDC(hdcMem);
+}
+
+LPTSTR getModulePath(LPWCH lpFilename, DWORD nSize)
+{
+	TCHAR *ptrEnd;	
+	GetModuleFileName(NULL, lpFilename, nSize);			
+	ptrEnd = _tcsrchr(lpFilename, TEXT('\\'));
+	if (ptrEnd)
+		*(ptrEnd+1) = TEXT('\0');
+}
+
+
+int loadCustomFont(LPTSTR fontFileName)
+{
+	TCHAR fullPath[MAX_PATH];
+	getModulePath(fullPath, MAX_PATH);
+	_tcscat_s(fullPath, MAX_PATH, fontFileName);
+	CreateScalableFontResource(1, fullPath, fullPath, NULL);
+	return AddFontResourceW(fullPath);
+}
+
+BOOL unloadCustomFont(LPTSTR fontFileName)
+{
+	TCHAR *ptrEnd;
+	TCHAR fullPath[MAX_PATH];
+	getModulePath(fullPath, MAX_PATH);
+	_tcscat_s(fullPath, MAX_PATH, fontFileName);
+	return RemoveFontResource(fullPath);
 }
