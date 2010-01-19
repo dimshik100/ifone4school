@@ -217,7 +217,7 @@ void makeWindowTransparentByMask(HWND hWnd, int mask)
 	DeleteDC(hdcMem);
 }
 
-LPTSTR getModulePath(LPWCH lpFilename, DWORD nSize)
+void getModulePath(LPWCH lpFilename, DWORD nSize)
 {
 	TCHAR *ptrEnd;	
 	GetModuleFileName(NULL, lpFilename, nSize);			
@@ -238,7 +238,6 @@ int loadCustomFont(LPTSTR fontFileName)
 
 BOOL unloadCustomFont(LPTSTR fontFileName)
 {
-	TCHAR *ptrEnd;
 	TCHAR fullPath[MAX_PATH];
 	getModulePath(fullPath, MAX_PATH);
 	_tcscat_s(fullPath, MAX_PATH, fontFileName);

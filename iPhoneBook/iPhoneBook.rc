@@ -199,6 +199,10 @@ IDB_END_CALL_OFF        BITMAP                  "imgs\\end_call_off.bmp"
 IDB_END_CALL_ON         BITMAP                  "imgs\\end_call_on.bmp"
 IDB_MAIN_BG_CALL        BITMAP                  "imgs\\main_bg_call.bmp"
 IDB_IPHONE_BG_MASK      BITMAP                  "imgs\\alpha2.bmp"
+IDB_CONTACT_ADD         BITMAP                  "imgs\\add_contact_button.bmp"
+IDB_CONTACT_EDIT_DONE   BITMAP                  "imgs\\done_button.bmp"
+IDB_EMPTY_TRASH         BITMAP                  "imgs\\empty_trash_button.bmp"
+IDB_RECOVER             BITMAP                  "imgs\\recover_contact_button.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
