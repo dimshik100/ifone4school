@@ -19,6 +19,7 @@ int getMemoryInfoActual(int *count, int *total, TCHAR *dbName);
 long getFileLen(FILE *file);
 void encryptDecryptCredentials(TCHAR *dst, TCHAR *src, int Len);
 DynamicListC *getCurrentContactList(int fromFile);
+DynamicListC *getCurrentTrashList(int fromFile);
 
 int createAccount (TCHAR* user, TCHAR* pass)
 {
@@ -535,4 +536,31 @@ DynamicListC *getCurrentContactList(int fromFile)
 	}
 
 	return &contactList;
+}
+
+void		 freeTrashListLocal()
+{
+	DynamicListC *trashListPtr = getCurrentTrashList(FALSE);
+	if (*trashListPtr)
+		listFree(trashListPtr);
+}
+
+DynamicListC getTrashListFromFile()
+{
+	return *getCurrentTrashList(TRUE);
+}
+
+// Local function that actually does the work.
+DynamicListC *getCurrentTrashList(int fromFile)
+{
+	static DynamicListC trashList = NULL;
+
+	if (fromFile)
+	{	
+		if (trashList)
+			listFree(&trashList);
+		trashList = getTrashList();
+	}
+
+	return &trashList;
 }
