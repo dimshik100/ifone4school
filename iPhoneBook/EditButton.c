@@ -84,15 +84,18 @@ void setEditButtonTextColor(EditButton *editButton, COLORREF color)
 	setHoverButtonTextColor(editButton->mainButton, color);
 }
 
-void getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length)
+void setEditButtonEditStyles(EditButton *editButton, DWORD newStyles)
 {
-	if (editButton->inEditMode)
-	{
-		HWND hwndEdit = NULL;
-		EnumChildWindows(getHoverButtonHwnd(editButton->mainButton), FindEditInEditButtonProc, (LPARAM)&hwndEdit);
-		if (hwndEdit)
-			GetWindowText(hwndEdit, destination, (int)length);
-	}
+	DWORD styles = GetWindowLong(editButton->hEdit, GWL_STYLE) & ~(ES_PASSWORD | ES_NUMBER | ES_READONLY);
+	newStyles &= (ES_PASSWORD | ES_NUMBER | ES_READONLY);
+
+	SetWindowLong(editButton->hEdit, GWL_STYLE, styles | newStyles);
+}
+
+void getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length, int getUnsaved)
+{
+	if (editButton->inEditMode && getUnsaved)
+		GetWindowText(editButton->hEdit, destination, (int)length);
 	else
 		getHoverButtonText(editButton->mainButton, destination, length);
 }
