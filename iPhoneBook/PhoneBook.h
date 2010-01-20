@@ -28,3 +28,5 @@ void		 freeContactListLocal();
 DynamicListC getContactListLocal();
 DynamicListC getContactListFromFile();
 DynamicListC getContactListInitiated();
+void		 freeTrashListLocal();
+DynamicListC getTrashListFromFile();
