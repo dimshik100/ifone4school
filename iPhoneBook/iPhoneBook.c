@@ -971,7 +971,6 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(getHoverButtonHwnd(hbAddContact), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbEditSaveContact), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbAllContacts), SW_HIDE);
-		ShowWindow(hwndContainerMainButtons, SW_HIDE);
 		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
 		{
 			POINT pt;
@@ -980,6 +979,7 @@ void showChildContainers(ScreenMode screen)
 			MoveWindow(hwndContainerContacts, pt.x, pt.y, 320, 460, TRUE);
 			AnimateWindow(hwndContainerContacts, 400, AW_ACTIVATE | AW_HOR_NEGATIVE);
 		}
+		ShowWindow(hwndContainerMainButtons, SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
 		ShowWindow(getHoverButtonHwnd(hbMainUnderDateBg), SW_HIDE);
 		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
