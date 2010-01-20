@@ -23,12 +23,13 @@ typedef struct _EditButton
 EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 							   int width, int height, int controlId, int onImage, int offImage, TCHAR *caption);
 void setEditButtonText(EditButton *editButton, TCHAR *caption);
-void getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length);
+void getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length, int getUnsaved);
 void setEditButtonStateImages(EditButton *editButton, int onImage, int offImage);
 void setEditButtonImageStretch(EditButton *editButton, int enable);
 void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize);
 HFONT getEditButtonFont(EditButton *editButton);
 void setEditButtonTextColor(EditButton *editButton, COLORREF color);
+void setEditButtonEditStyles(EditButton *editButton, DWORD newStyles);
 void showEditButtonEdit(EditButton *editButton, int show);
 void lockEditButton(EditButton *editButton, int enable);
 HWND getEditButtonHwnd(EditButton *editButton);

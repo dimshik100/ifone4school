@@ -3,6 +3,8 @@
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' "\ 
 "version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
+#pragma comment(lib, "shell32.lib.lib")
+
 #include "stdafx.h"
 #include "iPhoneBook.h"
 #include "ListView.h"
@@ -14,6 +16,7 @@
 #include "PhoneBook.h"
 #include "Miscellaneous.h"
 #include "SkypeAPI.h"
+#include "shellapi.h"
 #include <commctrl.h>
 
 #define MAX_LOADSTRING 100
@@ -51,15 +54,14 @@
 #define BUTTON_ID_EDIT_CONTACT		(CONTROL_ID + 25)
 #define BUTTON_ID_EDIT_SAVE_CONTACT	(CONTROL_ID + 26)
 #define BUTTON_ID_ADD_CONTACT		(CONTROL_ID + 27)
-#define BUTTON_ID_CANCEL_CONTACT	(CONTROL_ID + 28)
-#define BUTTON_ID_EMPTY_TRASH		(CONTROL_ID + 29)
-#define BUTTON_ID_REOVER_CONTACT	(CONTROL_ID + 30)
-#define LV_CONTACTS_ID				(CONTROL_ID + 31)
-#define EDIT_ID_SEARCH				(CONTROL_ID + 32)
-#define BUTTON_ID_GO_TO_WEBSITE		(CONTROL_ID + 33)
-#define BUTTON_ID_SEND_EMAIL		(CONTROL_ID + 34)
-#define BUTTON_ID_SEE_ON_MAP		(CONTROL_ID + 35)
-#define BUTTON_ID_SKYPE_HANDLE		(CONTROL_ID + 36)
+#define BUTTON_ID_EMPTY_TRASH		(CONTROL_ID + 28)
+#define BUTTON_ID_REOVER_CONTACT	(CONTROL_ID + 29)
+#define LV_CONTACTS_ID				(CONTROL_ID + 30)
+#define EDIT_ID_SEARCH				(CONTROL_ID + 31)
+#define BUTTON_ID_GO_TO_WEBSITE		(CONTROL_ID + 32)
+#define BUTTON_ID_SEND_EMAIL		(CONTROL_ID + 33)
+#define BUTTON_ID_SEE_ON_MAP		(CONTROL_ID + 34)
+#define BUTTON_ID_SKYPE_HANDLE		(CONTROL_ID + 35)
 
 typedef enum {	SCREEN_MAIN, SCREEN_CONTACTS, SCREEN_MEM_INFO, SCREEN_TRASH, SCREEN_CALL_MODE, 
 				SCREEN_CONTACT_INFO, SCREEN_CONTACT_ADD, SCREEN_CONTACT_EDIT, SCREEN_CLOCK }
@@ -357,6 +359,7 @@ void fillContactDetails(Contact *contact, int inEditMode)
 	{							// last editbutton to be set is the first in the array
 		getChildInParentOffset(getEditButtonHwnd(ebContactInfo[i]), &pt);
 		MoveWindow(getEditButtonHwnd(ebContactInfo[i]), pt.x, pt.y, virtSize.cx, 44, FALSE);
+		setEditButtonEditStyles(ebContactInfo[i], 0);
 		if (inEditMode)
 		{
 			lockEditButton(ebContactInfo[i], FALSE);
@@ -376,7 +379,8 @@ void fillContactDetails(Contact *contact, int inEditMode)
 
 	setEditButtonText(ebContactInfo[fieldCount++], contact->firstName);	//TEXT("First name")
 	setEditButtonText(ebContactInfo[fieldCount++], contact->lastName);	//TEXT("Last name")
-	setEditButtonText(ebContactInfo[fieldCount++], contact->phone);		//TEXT("Phone number")
+	setEditButtonText(ebContactInfo[fieldCount], contact->phone);		//TEXT("Phone number")
+		setEditButtonEditStyles(ebContactInfo[fieldCount++], ES_NUMBER);// Set text field to numeric.
 	if (_tcslen(contact->skypeName) > 0 || inEditMode)
 	{
 		if (!inEditMode)
@@ -419,6 +423,7 @@ void fillContactDetails(Contact *contact, int inEditMode)
 	if (contact->age > 0 || inEditMode)
 	{
 		SetWindowText(hlblContactInfo[fieldCount], TEXT("Age"));
+		setEditButtonEditStyles(ebContactInfo[fieldCount], ES_NUMBER);
 		if (!inEditMode)
 		{
 			TCHAR ageStr[20];
@@ -485,21 +490,22 @@ void fillContactDetails(Contact *contact, int inEditMode)
 void saveContactDetails(Contact *contact)
 {
 	int fieldCount = 0;
-	getEditButtonText(ebContactInfo[fieldCount++], contact->firstName, MAX_FNAME-1);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->lastName, MAX_LNAME-1);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->phone, MAX_PHONE-1);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->skypeName, MAX_SKYPE-1);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->email, MAX_EMAIL-1);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->webSite, MAX_SITE-1);
+	// Only update text if value is saved in the editbutton
+	getEditButtonText(ebContactInfo[fieldCount++], contact->firstName, MAX_FNAME-1, FALSE);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->lastName, MAX_LNAME-1, FALSE);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->phone, MAX_PHONE-1, FALSE);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->skypeName, MAX_SKYPE-1, FALSE);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->email, MAX_EMAIL-1, FALSE);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->webSite, MAX_SITE-1, FALSE);
 	{
 		TCHAR ageStr[20];
-		getEditButtonText(ebContactInfo[fieldCount++], ageStr, 20);
+		getEditButtonText(ebContactInfo[fieldCount++], ageStr, 20, FALSE);
 		contact->age = _tstoi(ageStr);
 	}
-	getEditButtonText(ebContactInfo[fieldCount++], contact->address.country, MAX_COUNTRY-1);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->address.city, MAX_CITY-1);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->address.street, MAX_STREET-1);
-	getEditButtonText(ebContactInfo[fieldCount++], contact->address.number, MAX_NUMBER-1);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->address.country, MAX_COUNTRY-1, FALSE);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->address.city, MAX_CITY-1, FALSE);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->address.street, MAX_STREET-1, FALSE);
+	getEditButtonText(ebContactInfo[fieldCount++], contact->address.number, MAX_NUMBER-1, FALSE);
 }
 
 //
@@ -609,10 +615,9 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					SendMessage(hWnd, message, MAKELONG(BUTTON_ID_ALL_CONTACTS, wmEvent), 0);
 				}
 				break;
-			case BUTTON_ID_CANCEL_CONTACT:
-				break;
 			// Miscellaneous buttons handlers
 			case BUTTON_ID_MISC1:
+				// Skype call
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && (screenMode == SCREEN_CONTACT_INFO || screenMode == SCREEN_CONTACTS))
 				{				
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
@@ -684,6 +689,49 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					GetWindowText((HWND)lParam, str, 256);
 					fillListView(hLV, getContactListLocal(), str);
 				}
+				break;
+			case BUTTON_ID_GO_TO_WEBSITE:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
+					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
+					if (contact)
+					{
+						// TODO: Handle errors.
+						if ((unsigned int)ShellExecute(NULL, TEXT("open"), contact->webSite, TEXT(""), TEXT(""), SW_SHOWDEFAULT) > 32);
+					}
+				}
+				break;
+			case BUTTON_ID_SEND_EMAIL:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
+					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
+					if (contact)
+					{
+						TCHAR buff[MAX_EMAIL + 10];
+						_stprintf_s(buff, MAX_EMAIL + 10, TEXT("mailto:%s"), contact->email);
+						// TODO: Handle errors.
+						if ((unsigned int)ShellExecute(NULL, TEXT("open"), buff, TEXT(""), TEXT(""), SW_SHOWDEFAULT) > 32);
+					}
+				}
+				break;
+			case BUTTON_ID_SEE_ON_MAP:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
+					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
+					if (contact)
+					{
+						TCHAR buff[MAX_COUNTRY+MAX_CITY+MAX_STREET+MAX_NUMBER + 30];
+						_stprintf_s(buff, MAX_COUNTRY+MAX_CITY+MAX_STREET+MAX_NUMBER + 30,
+							TEXT("http://maps.google.com/?q=%s,%s,%s,%s"),
+							contact->address.country, contact->address.city, contact->address.street, contact->address.number);
+						// TODO: Handle errors.
+						if ((unsigned int)ShellExecute(NULL, TEXT("open"), buff, TEXT(""), TEXT(""), SW_SHOWDEFAULT) > 32);
+					}
+				}
+				break;
+			case BUTTON_ID_SKYPE_HANDLE:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+					SendMessage(hWnd, message, MAKELONG(BUTTON_ID_MISC1, wmEvent), 0);
 				break;
 			default:
 				break;
@@ -1192,7 +1240,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 		y += height;
 		for (y = 0; y < 11; y++)
 		{
-			setEditButtonImageStretch(ebContactInfo[y], TRUE);			
+			setEditButtonImageStretch(ebContactInfo[y], TRUE);
 			lockEditButton(ebContactInfo[y], TRUE);
 		}
 		hbEmail = createHoverButton(hwndScrollContainer, hInstance, 0, 0, 42, 42, BUTTON_ID_SEND_EMAIL, IDB_CONTACT_DTL_EMAIL_ON, IDB_CONTACT_DTL_EMAIL_OFF, NULL);
