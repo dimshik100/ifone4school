@@ -1,0 +1,44 @@
+==To do list:==
+
+  # Create a PDF user's manual.
+  # Add comments to code.
+  # Create a mini-website.
+
+*GUI:*
+  # Create a Message Box type dialog.
+  # Make memory info work.
+  # On incoming skype call add Accept button.
+  # Improve statup-time by rewritting the make WindowTransparentByMask function - low priority.
+
+*In Edit Mode:*
+  # Lock Skype, Edit and Delete hover buttons.
+  # Set Arial font.
+
+*In Contact Info:*
+  # Set Arial font.
+
+*Edit Button:*
+  # Apply on Enter press.
+  # Cancel on Esc press.
+  # Add tab support ?
+
+*Contact List Mode:*
+  # Prompt user if Misc button is pressed and no contact is selected.
+
+*Recycle Bin:*
+  # Prompt user (to Empty trash)
+
+*Delete function:*
+  # User clicks Delete.
+  # User is prompted with "Are you sure you want to delete "FName LName"?" + Yes + No
+
+Yes:
+  # Entry is deleted.
+  # Local contact list is emptied.
+  # If user is in Contact Details or Edit Contact mode screen changes to All Contacts.
+  # If user is in All Contacts mode, it is reloaded.
+No:
+  # Prompt disappears, user can continue work.
+
+*Save and Edit functions:*
+  # Prompt user in case they haven't entered L. Name, F. Name, P. number.
