@@ -233,7 +233,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	{
 		return FALSE;
 	}
-	//makeWindowTransparentByMask(hWnd, IDB_IPHONE_BG_MASK);
+	makeWindowTransparentByMask(hWnd, IDB_IPHONE_BG_MASK);
 
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
@@ -882,16 +882,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_ERASEBKGND:
-		{
-			RECT rc;
-			GetClientRect(hWnd, &rc);
-			setImageToDc(hInst, &rc, &rc, (HDC)wParam, IDB_IFONE_BG);
-		}
 		return TRUE;
 		break;
 	case WM_PAINT:
 		{
 			hdc = BeginPaint(hWnd, &ps);
+			setImageToDc(hInst, &ps.rcPaint, &ps.rcPaint, hdc, IDB_IFONE_BG);
 			EndPaint(hWnd, &ps);
 		}
 		break;

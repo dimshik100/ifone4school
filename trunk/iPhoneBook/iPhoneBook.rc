@@ -71,15 +71,15 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_ABOUTBOX DIALOGEX 0, 0, 254, 87
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU
 CAPTION "About iPhoneBook"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     ICON            128,IDC_STATIC,14,14,21,20
     LTEXT           "iPhoneBook, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2009",IDC_STATIC,42,26,114,8
-    DEFPUSHBUTTON   "OK",IDOK,113,41,50,14,WS_GROUP
+    DEFPUSHBUTTON   "OK",IDOK,197,66,50,14,WS_GROUP
 END
 
 
@@ -94,9 +94,9 @@ BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 163
+        RIGHTMARGIN, 247
         TOPMARGIN, 7
-        BOTTOMMARGIN, 55
+        BOTTOMMARGIN, 80
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -204,8 +204,8 @@ IDB_CONTACT_EDIT_DONE   BITMAP                  "imgs\\done_button.bmp"
 IDB_TRASH_BUTTON_EMPTY  BITMAP                  "imgs\\empty_trash_button.bmp"
 IDB_TRASH_BUTTON_RECOVER BITMAP                  "imgs\\recover_contact_button.bmp"
 IDB_TRASH_WND_TITLE     BITMAP                  "imgs\\trash_wnd_app_name_bg.bmp"
-IDB_CONTACT_EDIT_WND_APP_NAME  BITMAP                  "imgs\\edit_contact_wnd_app_name_bg.bmp"
-IDB_CONTACT_ADD_WND_APP_NAME            BITMAP                  "imgs\\new_contact_wnd_app_name_bg.bmp"
+IDB_CONTACT_EDIT_WND_APP_NAME BITMAP                  "imgs\\edit_contact_wnd_app_name_bg.bmp"
+IDB_CONTACT_ADD_WND_APP_NAME BITMAP                  "imgs\\new_contact_wnd_app_name_bg.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
