@@ -7,7 +7,7 @@
 *GUI:*
   # Create a Message Box type dialog.
   # Make memory info work.
-  # On incoming skype call add Accept button.
+  # ~~On incoming skype call add Accept button.~~ - Needs testing.
   # Improve statup-time by rewritting the make WindowTransparentByMask function - low priority.
 
 *In Edit Mode:*
