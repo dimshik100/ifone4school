@@ -744,7 +744,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			case BUTTON_ID_ANSWER_CALL: // End current call.
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
-					hangup(currentCall.callId);
+					answer(currentCall.callId);
 				}
 			// Search edit-control handler
 			case EDIT_ID_SEARCH:

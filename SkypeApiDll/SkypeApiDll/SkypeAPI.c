@@ -318,6 +318,12 @@ SKYPEAPIDLL_API void hangup(int callId)
 	sendSkypeMessage(str);
 }
 
+SKYPEAPIDLL_API void answer(int callId)
+{
+	TCHAR str[256];
+	_stprintf_s(str, 256, TEXT("SET CALL %d STATUS INPROGRESS"), callId);
+	sendSkypeMessage(str);
+}
 
 // Depending on project settings, must handle strings dfferently between UNICODE and ANSI
 #ifdef _UNICODE
