@@ -4,6 +4,7 @@
 #define SKYPEAPIDLL_API __declspec(dllexport)
 #else
 #define SKYPEAPIDLL_API __declspec(dllimport)
+#pragma comment(lib, "SkypeApiDll.lib")
 #endif
 
 typedef enum _SkypeApiInitStatus {	ATTACH_SUCCESS = 0, ATTACH_PENDING = 1, ATTACH_REFUSED = 2,
@@ -81,3 +82,4 @@ SKYPEAPIDLL_API void setSkypeConnectionStatusCallback(SkypeConnectionStatusCallb
 SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObject);
 SKYPEAPIDLL_API void call(LPTSTR name);
 SKYPEAPIDLL_API void hangup(int callId);
+SKYPEAPIDLL_API void answer(int callId);
