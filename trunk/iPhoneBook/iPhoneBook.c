@@ -493,15 +493,20 @@ void fillContactDetails(Contact *contact, int inEditMode)
 
 int saveContactDetails(Contact *contact)
 {
-	int fieldCount = 0, i;
+	int fieldCount = 0, i, len;
 	TCHAR buff[50];
+	LPTSTR requiredFields[3];
 	
+	requiredFields[0] = contact->firstName;
+	requiredFields[1] = contact->lastName;
+	requiredFields[2] = contact->phone;
 	for (i = 0; i < 3; i++)
 	{
-		getEditButtonText(ebContactInfo[i], buff, 50, FALSE);
-		if (_tcslen(buff) == 0)
+		// If [(required field is empty) AND (the returned string was not set)]
+		// OR (the returned string is empty)
+		len = getEditButtonText(ebContactInfo[i], buff, 50, FALSE);
+		if ((len < 0 && (int)_tcslen(requiredFields[i]) == 0) || len == 0)
 			return FALSE;
-		_tcscpy_s(buff, 50, TEXT(""));
 	}
 	// Only update text if value is saved in the editbutton
 	getEditButtonText(ebContactInfo[fieldCount++], contact->firstName, MAX_FNAME-1, FALSE);
@@ -818,7 +823,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
-	static int scrolling;
+	static HFONT hFont = NULL;
 
 	switch (message)
 	{
@@ -896,6 +901,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		deleteEditButtons();
 		disconnectSkype(hInst);
 		unloadCustomFont(TEXT("AtomicClockRadio.ttf"));
+		DeleteObject(hFont);
 		PostQuitMessage(0);
 		break;
 	case WM_CREATE:
@@ -907,6 +913,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);			
 			initListViewColumns(hLV);
 			loadCustomFont(TEXT("AtomicClockRadio.ttf"));
+			// Set this font to all "standard" controls that display text in our application.
+			hFont = CreateFont(getFontHeight(hWnd, 10), 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
+							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, TEXT("Arial"));
+			setChildWindowsFont(hWnd, hFont);
 		}
 		break;
 	default:
@@ -987,6 +997,10 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(getHoverButtonHwnd(hbClock), SW_HIDE);
 		break;
 	case SCREEN_CONTACTS:
+		// Unlock "Skype", "Edit", "Delete" buttons
+		lockHoverButtonImage(hbMiscActionBtn[0], FALSE);
+		lockHoverButtonImage(hbMiscActionBtn[2], FALSE);
+		lockHoverButtonImage(hbMiscActionBtn[3], FALSE);
 		setHoverButtonStateImages(hbContactsTitleBg, IDB_CONTACT_WND_APP_NAME, IDB_CONTACT_WND_APP_NAME);
 		ShowWindow(hwndSearchBox, SW_SHOW);
 		ShowWindow(getHoverButtonHwnd(hbContactsSearchBg), SW_SHOW);
@@ -1064,16 +1078,23 @@ void showChildContainers(ScreenMode screen)
 		{
 			setHoverButtonStateImages(hbContactInfoTitleBg, IDB_CONTACT_INFO_WND_APP_NAME, IDB_CONTACT_INFO_WND_APP_NAME);
 			setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_INFO_EDIT_CONTACT, IDB_CONTACT_INFO_EDIT_CONTACT);
+			// Unlock "Skype", "Edit", "Delete" buttons
+			lockHoverButtonImage(hbMiscActionBtn[0], FALSE);
+			lockHoverButtonImage(hbMiscActionBtn[2], FALSE);
+			lockHoverButtonImage(hbMiscActionBtn[3], FALSE);
 		}
 		else if (screen == SCREEN_CONTACT_ADD)
-		{
 			setHoverButtonStateImages(hbContactInfoTitleBg, IDB_CONTACT_ADD_WND_APP_NAME, IDB_CONTACT_ADD_WND_APP_NAME);
-			setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_EDIT_DONE, IDB_CONTACT_EDIT_DONE);
-		}
 		else if (screen == SCREEN_CONTACT_EDIT)
-		{
 			setHoverButtonStateImages(hbContactInfoTitleBg, IDB_CONTACT_EDIT_WND_APP_NAME, IDB_CONTACT_EDIT_WND_APP_NAME);
+
+		if (screen == SCREEN_CONTACT_ADD || screen == SCREEN_CONTACT_EDIT)
+		{
 			setHoverButtonStateImages(hbEditSaveContact, IDB_CONTACT_EDIT_DONE, IDB_CONTACT_EDIT_DONE);
+			// Lock "Skype", "Edit", "Delete" buttons
+			lockHoverButtonImage(hbMiscActionBtn[0], TRUE);
+			lockHoverButtonImage(hbMiscActionBtn[2], TRUE);
+			lockHoverButtonImage(hbMiscActionBtn[3], TRUE);
 		}
 		AnimateWindow(hwndContainerContactDetails, 400, AW_ACTIVATE | AW_HOR_POSITIVE);
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
@@ -1124,7 +1145,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hbMainUnderDateBg = createHoverButton(hWnd, hInstance, 67, 156, 320, 97, 0, IDB_MAIN_WND_UNDER_DATE_BG, IDB_MAIN_WND_UNDER_DATE_BG, NULL);
 	lockHoverButtonImage(hbMainUnderDateBg, TRUE);
 	setHoverButtonTextColor(hbMainUnderDateBg, RGB(255, 255, 255));
-	setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36);
+	setHoverButtonFont(hbMainUnderDateBg, TEXT("Arial"), 36, FALSE);
 	ClockTimerProc(NULL, 0, 0, 0); // Draw clock.
 	hbMainCenterPic = createHoverButton(hWnd, hInstance, 67, 253, 320, 271, 0, IDB_MAIN_WND_CENTER_PIC, IDB_MAIN_WND_CENTER_PIC, NULL);
 	lockHoverButtonImage(hbMainCenterPic, TRUE);
@@ -1133,7 +1154,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hbClock = createHoverButton(hWnd, hInstance, 67, 156, 320, 460, 0, IDB_CLOCK_BG, IDB_CLOCK_BG, NULL);
 	lockHoverButtonImage(hbClock, TRUE);
 	setHoverButtonTextColor(hbClock, RGB(255, 255, 255));
-	setHoverButtonFont(hbClock, TEXT("Atomic Clock Radio"), 40);
+	setHoverButtonFont(hbClock, TEXT("Atomic Clock Radio"), 40, FALSE);
 	ShowWindow(getHoverButtonHwnd(hbClock), SW_HIDE);
 	hwndContainerMainButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, 67, 524, 320, 92, hWnd, NULL, hInstance, NULL);
 	defContainerProc = (WNDPROC)SetWindowLong(hwndContainerMainButtons, GWL_WNDPROC, (LONG_PTR)ContainerProc);
@@ -1287,6 +1308,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 		y += height;
 		for (y = 0; y < 11; y++)
 		{
+			setEditButtonFont(ebContactInfo[y], TEXT("Arial"), 10, TRUE);
 			setEditButtonImageStretch(ebContactInfo[y], TRUE);
 			lockEditButton(ebContactInfo[y], TRUE);
 		}

@@ -196,7 +196,6 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 
 HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height)
 {
-	HDC hdc;
 	HIMAGELIST imageList = ImageList_Create(1, 43, ILC_COLORDDB, 0, 0);
 	hwndListView = CreateWindowEx(0, WC_LISTVIEW, NULL, 
 		WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SINGLESEL | /*LVS_OWNERDRAWFIXED |*/ LVS_NOCOLUMNHEADER | LVS_AUTOARRANGE,
@@ -206,12 +205,10 @@ HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int widt
 	ListView_SetImageList(hwndListView, imageList, LVSIL_SMALL);
 	hInst = hInstance;
 
-	hdc = GetDC(hwndListView);
-	hFontBold = CreateFont(-MulDiv(14, GetDeviceCaps(hdc, LOGPIXELSY), 72), 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
+	hFontBold = CreateFont(getFontHeight(hwndListView, 14), 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
 							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, TEXT("Arial"));
-	hFontNormal = CreateFont(-MulDiv(14, GetDeviceCaps(hdc, LOGPIXELSY), 72), 0, 0, 0, FW_DONTCARE, 0, 0, 0, DEFAULT_CHARSET,
+	hFontNormal = CreateFont(getFontHeight(hwndListView, 14), 0, 0, 0, FW_DONTCARE, 0, 0, 0, DEFAULT_CHARSET,
 							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, TEXT("Arial"));
-	ReleaseDC(hwndListView, hdc);
 
 	return hwndListView;
 }

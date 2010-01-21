@@ -5,6 +5,7 @@ DWORD WINAPI		AnimateWindowThreadProc( LPVOID lpParam );
 BOOL CALLBACK		shiftChildWindowsProc(HWND hWnd, LPARAM lParam);
 BOOL CALLBACK		invalidateChildWindowsProc(HWND hWnd, LPARAM lParam);
 BOOL CALLBACK		showChildWindowsEnumProc(HWND hWnd, LPARAM lParam);
+BOOL CALLBACK		setChildWindowsFontProc(HWND hWnd, LPARAM lParam);
 void setImageToDcActual(RECT *lprc, RECT *lprcOffset, HDC hdc, HBITMAP hbmpImage, int stretch);
 
 void getChildInParentOffset(HWND hWnd, POINT *lppt)
@@ -242,4 +243,23 @@ BOOL unloadCustomFont(LPTSTR fontFileName)
 	getModulePath(fullPath, MAX_PATH);
 	_tcscat_s(fullPath, MAX_PATH, fontFileName);
 	return RemoveFontResource(fullPath);
+}
+
+int getFontHeight(HWND hWnd, int ptSize)
+{
+	HDC hdc =  GetDC(hWnd);
+	int fontHeight = -MulDiv(ptSize, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+	ReleaseDC(hWnd, hdc);
+	return fontHeight;
+}
+
+BOOL CALLBACK		setChildWindowsFontProc(HWND hWnd, LPARAM lParam)
+{
+	SendMessage(hWnd, WM_SETFONT, (WPARAM)(HFONT)lParam, (LPARAM)TRUE);
+	return TRUE;
+}
+
+void setChildWindowsFont(HWND hWnd, HFONT hFont)
+{
+	EnumChildWindows(hWnd, setChildWindowsFontProc, (LPARAM)hFont);
 }
