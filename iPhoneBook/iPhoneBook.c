@@ -14,6 +14,7 @@
 #include "Clock.h"
 #include "SkypeHandler.h"
 #include "PhoneBook.h"
+#include "PromptBox.h"
 #include "Miscellaneous.h"
 #include "SkypeAPI.h"
 #include "shellapi.h"
@@ -77,7 +78,6 @@ TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 VOID CALLBACK		ClockTimerProc(HWND, UINT, UINT_PTR, DWORD);
 VOID CALLBACK		EndCallTimerProc(HWND, UINT, UINT_PTR, DWORD);
@@ -221,6 +221,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	HWND hWnd;
 	RECT rcSize = { 0, 0, 450, 750 }, rcOffset = { 32, 16, 30, 15 };
 	SIZE size;
+	INT_PTR d;
 
 	hInst = hInstance; // Store instance handle in our global variable
 
@@ -242,6 +243,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	// Make sure database exists and is valid, if not, create it.
 	if (!checkDataIntegrity())
 		createAccount(TEXT(""), TEXT(""));
+	d = promptBox(hwndMain, TEXT("Testing"), PB_YESNO);
+	d=d;
 
 	return TRUE;
 }
@@ -575,21 +578,6 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_CLOCK)
 				{
 					showChildContainers(SCREEN_CLOCK);
-					//if (isOsVista())
-					//{
-					//// If we support transparent confirm dialog, we must set it's position
-					//// to be centered on the ifonebook screen
-					//	POINT pt = {0, 0};
-					//	ClientToScreen(GetParent(hWnd), &pt);
-					//	MoveWindow(hwndConfirmDialog, 
-					//		pt.x + ifoneScreenRect.left + (ifoneScreenRect.right - ifoneScreenRect.left - 277) / 2,
-					//		pt.y + ifoneScreenRect.top + (ifoneScreenRect.bottom - ifoneScreenRect.top - 103) / 2,
-					//		277, 103, TRUE);
-					//}
-					//ShowWindow(hwndConfirmDialog, SW_SHOW);
-					//isConfirmOn = TRUE;
-					//enableChildContainers(FALSE);
-					//screenMode = SCREEN_CLOCK;
 				}
 				break;
 			// View all contacts button(s) handler
@@ -604,12 +592,40 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				}
 				break;
 			case BUTTON_ID_INFO:
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
+					int count, total;
+					TCHAR buff[100] = {0};
+					if (getMemoryInfo(&count, &total, db_PhoneBook))
+						_stprintf_s(buff, 100, TEXT("Phone book %d/%d used"), count, total);
+					if (getMemoryInfo(&count, &total, db_Trash))
+					{
+						if (_tcslen(buff) > 0)
+							_stprintf_s(buff, 100, TEXT("%s\nRecycle bin %d/%d used"), buff, count, total);
+						else
+							_stprintf_s(buff, 100, TEXT("Recycle bin %d/%d used"), count, total);
+					}
+					if (_tcslen(buff) > 0)
+						promptBox(hwndMain, buff, PB_OK);
+					else
+						promptBox(hwndMain, TEXT("Error retrieving memory information"), MB_OK);
+				}
 				break;
 			case BUTTON_ID_BIN:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
-					fillListView(hLV, getTrashListFromFile(), NULL);
-					showChildContainers(SCREEN_TRASH);
+					DynamicListC trashList = getTrashListFromFile();
+					if (listGetListCount(trashList) > 0)
+					{
+						fillListView(hLV, trashList, NULL);
+						showChildContainers(SCREEN_TRASH);
+					}
+					else
+					{
+						promptBox(hwndMain, TEXT("Recycle bin is empty"), PB_OK);
+						// Return to main screen
+						SendMessage(hwndMain, WM_COMMAND, (LPARAM)MAKELONG(BUTTON_ID_PWR, HOVER_BUTTON_LMOUSE_UP), 0);
+					}
 				}
 				break;
 			case BUTTON_ID_ADD_CONTACT_EMPTY:
@@ -625,11 +641,15 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				// "Recycle bin" screen
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_TRASH)
 				{
-					// Are you sure dialog here
-					emptyTrashList();
-					freeTrashListLocal();
-					// Return to main screen
-					SendMessage(hwndMain, WM_COMMAND, (LPARAM)MAKELONG(BUTTON_ID_PWR, HOVER_BUTTON_LMOUSE_UP), 0);
+					if (promptBox(hwndMain, TEXT("Are you sure you want to permanently delete all items?"), PB_YESNO) == IDYES)
+					{
+						// Are you sure dialog here
+						emptyTrashList();
+						freeTrashListLocal();
+
+						// Return to main screen
+						SendMessage(hwndMain, WM_COMMAND, (LPARAM)MAKELONG(BUTTON_ID_PWR, HOVER_BUTTON_LMOUSE_UP), 0);
+					}
 				}
 				break;
 			case BUTTON_ID_REOVER_CONTACT:
@@ -646,6 +666,8 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 							SendMessage(hwndContainerMainButtons, message, MAKELONG(BUTTON_ID_BIN, wmEvent), 0);
 						}
 					}
+					else
+						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
 			case BUTTON_ID_EDIT_SAVE_CONTACT:
@@ -662,6 +684,8 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						showChildContainers(SCREEN_CONTACT_INFO);
 						SetFocus(hwndScrollContainer);
 					}
+					else
+						promptBox(hwndMain, TEXT("Please fill in the name, last name and phone number."), PB_OK);
 				}				
 				else if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_CONTACT_INFO)
 					// Edit a contact
@@ -676,6 +700,8 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						// Return to contact list
 						SendMessage(hWnd, message, MAKELONG(BUTTON_ID_ALL_CONTACTS, wmEvent), 0);
 					}
+					else
+						promptBox(hwndMain, TEXT("Please fill in the name, last name and phone number."), PB_OK);
 				}
 				break;
 			// Miscellaneous buttons handlers
@@ -684,8 +710,15 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && (screenMode == SCREEN_CONTACT_INFO || screenMode == SCREEN_CONTACTS))
 				{				
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
-					if (contact && _tcslen(contact->skypeName) > 0)
-						call(contact->skypeName);
+					if (contact)
+					{
+						if (_tcslen(contact->skypeName) > 0)
+							call(contact->skypeName);
+						else
+							promptBox(hwndMain, TEXT("This contact has no Skype account associated with it."), PB_OK);
+					}
+					else
+						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
 			case BUTTON_ID_MISC2:
@@ -700,6 +733,8 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						showChildContainers(SCREEN_CONTACT_INFO);
 						SetFocus(hwndScrollContainer);
 					}
+					else
+						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
 			case BUTTON_ID_MISC3: 
@@ -714,6 +749,8 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						fillContactDetails(contact, TRUE);
 						showChildContainers(SCREEN_CONTACT_EDIT);
 					}
+					else
+						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
 			case BUTTON_ID_MISC4:
@@ -723,23 +760,17 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
 					if (contact)
 					{
-						if (deleteContact(contact->index))
+						TCHAR buff[100];
+						_stprintf_s(buff, 100, TEXT("Are you sure you want to delete '%s %s'?"), contact->firstName, contact->lastName);
+						if (promptBox(hwndMain, buff, PB_YESNO) == IDYES && deleteContact(contact->index))
 						{
 							freeContactListLocal();
 							// Return to contact list
 							SendMessage(hWnd, message, MAKELONG(BUTTON_ID_ALL_CONTACTS, wmEvent), 0);
 						}
 					}
-				}
-				break;
-			// Confirmation dialog handler
-			case BUTTON_ID_YES:
-			case BUTTON_ID_NO:
-				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
-				{
-					ShowWindow(hwndConfirmDialog, SW_HIDE);
-					isConfirmOn = FALSE;
-					enableChildContainers(TRUE);
+					else
+						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
 			case BUTTON_ID_END_CALL: // End current call.
@@ -868,12 +899,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				SetTimer(hWnd, PWRBTN_TIMER_ID, 3000, NULL);
 			ClockTimerProc(NULL, 0, 0, 0);
 			break;
-		case IDM_ABOUT:
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			break;
-		case IDM_EXIT:
-			DestroyWindow(hWnd);
-			break;
 		case 3:
 			if ((wmId % 10) == CID_MAIN_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP);
 			else if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP);
@@ -941,26 +966,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;
-}
-
-// Message handler for about box.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
-	{
-	case WM_INITDIALOG:
-		return (INT_PTR)TRUE;
-
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		}
-		break;
-	}
-	return (INT_PTR)FALSE;
 }
 
 VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dwTime)
@@ -1239,33 +1244,6 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	EnableWindow(hbContactsSearchBg->hButton, FALSE);
 	hwndSearchBox = CreateWindowEx(0, TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE, 35, 56, 265, 23, hwndContainerContacts, (HMENU)EDIT_ID_SEARCH, hInstance, NULL);
 	
-	// confirm dialog
-	hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_ALERT_BG));
-	if (isOsVista())
-	{
-		POINT pt = {0, 0};
-		ClientToScreen(hWnd, &pt);
-		hwndConfirmDialog = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOPMOST, TEXT("static"), NULL,  SS_BITMAP | WS_POPUP,
-			pt.x + ifoneScreenRect.left + (ifoneScreenRect.right - ifoneScreenRect.left - 277) / 2,
-			pt.y + ifoneScreenRect.top + (ifoneScreenRect.bottom - ifoneScreenRect.top - 103) / 2,
-			277, 103, hWnd, NULL, hInstance, NULL);
-		SetLayeredWindowAttributes(hwndConfirmDialog, 0, 192, LWA_ALPHA);
-	}
-	else
-	{
-		hwndConfirmDialog = CreateWindowEx(0, TEXT("static"), NULL,  WS_CHILD | WS_CLIPCHILDREN | SS_BITMAP,
-			ifoneScreenRect.left + (ifoneScreenRect.right - ifoneScreenRect.left - 277) / 2,
-			ifoneScreenRect.top + (ifoneScreenRect.bottom - ifoneScreenRect.top - 103) / 2,
-			277, 103, hWnd, NULL, hInstance, NULL);
-	}
-	SetWindowLong(hwndConfirmDialog, GWL_WNDPROC, (LONG_PTR)ContainerProc);
-	SendMessage(hwndConfirmDialog, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
-	hbYes = createHoverButton(hwndConfirmDialog, hInstance, 8, 53, 128, 43, BUTTON_ID_YES, IDB_ALERT_YES_ON, IDB_ALERT_YES_OFF, NULL);
-	hbNo = createHoverButton(hwndConfirmDialog, hInstance, 143, 53, 128, 43, BUTTON_ID_NO, IDB_ALERT_NO_ON, IDB_ALERT_NO_OFF, NULL);
-
-
-	//createClock(hWnd, hInstance, 450, 0, 320, 480, 0, IDB_CLOCK_WND_BG);
-
 	{
 		// create contact details 
 		// reference http://www.codeproject.com/KB/dialog/scroll_dialog.aspx
