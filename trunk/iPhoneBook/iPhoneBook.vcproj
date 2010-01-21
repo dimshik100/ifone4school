@@ -592,6 +592,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\PromptBox.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PromptBox.h"
+				>
+			</File>
+			<File
 				RelativePath=".\ScrollContainer.c"
 				>
 			</File>

@@ -5,7 +5,7 @@
 #define IDC_MYICON                      2
 #define IDD_IPHONEBOOK_DIALOG           102
 #define IDS_APP_TITLE                   103
-#define IDD_ABOUTBOX                    103
+#define IDD_PROMPTBOX                   103
 #define IDM_ABOUT                       104
 #define IDM_EXIT                        105
 #define IDI_IPHONEBOOK                  107
@@ -85,6 +85,7 @@
 #define IDB_CONTACT_INFO_ALL_CONTACTS   256
 #define IDB_CONTACT_INFO_EDIT_CONTACT   257
 #define IDB_CONTACT_INFO_WND_BG         258
+#define IDC_PROMPTTEXT                  1000
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -94,7 +95,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        146
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
