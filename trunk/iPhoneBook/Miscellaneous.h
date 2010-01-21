@@ -10,7 +10,7 @@ void invalidateChildWindows(HWND hWnd, BOOL bErase);
 void getChildInParentOffset(HWND hWnd, POINT *lppt);
 int isOsVista();
 void rectToSize(RECT *rc, SIZE *size);
-void makeWindowTransparentByMask(HWND hWnd, int mask);
+void makeWindowTransparentByMask(HWND hWnd, RECT *maskRect, int mask);
 void getModulePath(LPWCH lpFilename, DWORD nSize);
 int loadCustomFont(LPTSTR fontFileName);
 BOOL unloadCustomFont(LPTSTR fontFileName);

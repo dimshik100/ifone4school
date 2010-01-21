@@ -239,9 +239,9 @@ LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 			if (wParam == VK_TAB)
 			{
 				if (GetKeyState(VK_LSHIFT) & 0xFFFF0000 || GetKeyState(VK_RSHIFT) & 0xFFFF0000)
-					SetFocus(GetNextDlgTabItem(GetParent(GetParent(hWnd)), GetParent(hWnd), TRUE));
+					SetFocus(GetNextDlgTabItem(GetParent(hWnd), hWnd, TRUE));
 				else
-					SetFocus(GetNextDlgTabItem(GetParent(GetParent(hWnd)), GetParent(hWnd), FALSE));
+					SetFocus(GetNextDlgTabItem(GetParent(hWnd), hWnd, FALSE));
 				return FALSE;
 			}
 			// If "Enter" is pressed, go into edit mode.
