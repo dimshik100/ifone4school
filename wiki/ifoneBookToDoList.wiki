@@ -8,7 +8,7 @@
   # Create a Message Box type dialog.
   # Make memory info work.
   # ~~On incoming skype call add Accept button.~~ - _Done_
-  # Improve statup-time by rewritting the make WindowTransparentByMask function - low priority.
+  # ~~Improve statup-time by rewritting the make WindowTransparentByMask function~~ _Done_. Performance improved by *~x30*
 
 *In Edit Mode:*
   # ~~Lock Skype, Edit and Delete hover buttons.~~ - _Done_
