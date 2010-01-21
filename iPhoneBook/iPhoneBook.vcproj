@@ -592,7 +592,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\PromptBox.cpp"
+				RelativePath=".\PromptBox.c"
 				>
 			</File>
 			<File
