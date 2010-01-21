@@ -29,7 +29,7 @@ void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption);
 void getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t length);
 void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage);
 void setHoverButtonImageStretch(HoverButton *hoverButton, int enable);
-void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize);
+void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize, int isBold);
 HFONT getHoverButtonFont(HoverButton *hoverButton);
 void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color);
 void lockHoverButtonImage(HoverButton *hoverButton, int enable);

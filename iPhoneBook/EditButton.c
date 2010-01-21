@@ -11,6 +11,7 @@ WNDPROC wndDefBtnProc = NULL;
 WNDPROC wndDefEditProc = NULL;
 
 LRESULT CALLBACK	EditBtnProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK	EditCtlProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK		FindEditInEditButtonProc(HWND hwnd, LPARAM lParam);
 
 DynamicListC editButtonList = NULL;
@@ -36,6 +37,7 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 
 	newEditButton->hInstance = hInstance;
 	newEditButton->mainButton = createHoverButton(hWndParent, hInstance, x, y, width, height, controlId, onImage, offImage, caption);
+	SetWindowLong(getHoverButtonHwnd(newEditButton->mainButton), GWL_STYLE, GetWindowLong(getHoverButtonHwnd(newEditButton->mainButton), GWL_STYLE) | WS_TABSTOP);
 	newEditButton->okButton = createHoverButton(newEditButton->mainButton->hButton, hInstance, width - 25, 5, 19, 17,
 		controlId + CID_OK_OFFSET, IDB_EDIT_BTN_OK_BTN_ON, IDB_EDIT_BTN_OK_BTN_OFF, NULL);
 	newEditButton->cancelButton = createHoverButton(newEditButton->mainButton->hButton, hInstance, width - 25, 22, 19, 17,
@@ -45,7 +47,8 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 	showEditButtonEdit(newEditButton, FALSE);
 
 	/// !!! Apply new window procedure to control !!! ///
-	wndDefEditProc = (WNDPROC)SetWindowLong(getHoverButtonHwnd(newEditButton->mainButton), GWL_WNDPROC, (LONG_PTR)EditBtnProc);
+	wndDefBtnProc = (WNDPROC)SetWindowLong(getHoverButtonHwnd(newEditButton->mainButton), GWL_WNDPROC, (LONG_PTR)EditBtnProc);
+	wndDefEditProc = (WNDPROC)SetWindowLong(newEditButton->hEdit, GWL_WNDPROC, (LONG_PTR)EditCtlProc);
 	//wndDefBtnProc = (WNDPROC)SetWindowLong(newEditButton->hButton, GWL_WNDPROC, (LONG_PTR)EditBtnProc);
 
 	return newEditButton;
@@ -68,9 +71,9 @@ void setEditButtonImageStretch(EditButton *editButton, int enable)
 	setHoverButtonImageStretch(editButton->mainButton, enable);
 }
 
-void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize)
+void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize, int isBold)
 {
-	setHoverButtonFont(editButton->mainButton, fontName, fontSize);
+	setHoverButtonFont(editButton->mainButton, fontName, fontSize, isBold);
 	SendMessage(editButton->hEdit, WM_SETFONT, (WPARAM)getHoverButtonFont(editButton->mainButton), (LPARAM)TRUE);
 }
 
@@ -92,12 +95,20 @@ void setEditButtonEditStyles(EditButton *editButton, DWORD newStyles)
 	SetWindowLong(editButton->hEdit, GWL_STYLE, styles | newStyles);
 }
 
-void getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length, int getUnsaved)
+int getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length, int getUnsaved)
 {
-	if (editButton->inEditMode && getUnsaved)
-		GetWindowText(editButton->hEdit, destination, (int)length);
+	int ret = -1;
+	if (editButton->inEditMode)
+	{
+		if (getUnsaved)
+			ret = GetWindowText(editButton->hEdit, destination, (int)length);
+	}
 	else
+	{
 		getHoverButtonText(editButton->mainButton, destination, length);
+		ret = (int)_tcslen(destination);
+	}
+	return ret;
 }
 
 void showEditButtonEdit(EditButton *editButton, int show)
@@ -138,6 +149,42 @@ int getEditButtonControlId(int cId)
 	return (cId < 5010) ? cId : ((cId - EDIT_BUTTON_CTL_ID) / 10);
 }
 
+LRESULT CALLBACK	EditCtlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_KEYDOWN:
+		{
+			EditButton *editButton;
+			// If "Enter" key was pressed, send message to Edit Button to simulate OK button press
+			if (wParam == VK_RETURN)
+			{
+				editButton = findEditButton(0, GetParent(hWnd));
+				PostMessage(GetParent(hWnd), WM_COMMAND, 
+					MAKELONG(EDIT_BUTTON_CTL_ID + (editButton->cId * 10) + CID_OK_OFFSET,	HOVER_BUTTON_LMOUSE_UP), 0);
+				return FALSE;
+			}
+			// If "Esc" key was pressed, send message to Edit Button to simulate Cancel button press
+			else if (wParam == VK_ESCAPE)
+			{
+				editButton = findEditButton(0, GetParent(hWnd));
+				PostMessage(GetParent(hWnd), WM_COMMAND, 
+					MAKELONG(EDIT_BUTTON_CTL_ID + (editButton->cId * 10) + CID_CANCEL_OFFSET,	HOVER_BUTTON_LMOUSE_UP), 0);
+				return FALSE;
+			}
+			// If "Tab" button was pressed, search for the next WS_TABSTOP enabled window
+			else if (wParam == VK_TAB)
+			{
+				if (GetKeyState(VK_LSHIFT) & 0xFFFF0000 || GetKeyState(VK_RSHIFT) & 0xFFFF0000)
+					SetFocus(GetNextDlgTabItem(GetParent(GetParent(hWnd)), GetParent(hWnd), TRUE));
+				else
+					SetFocus(GetNextDlgTabItem(GetParent(GetParent(hWnd)), GetParent(hWnd), FALSE));
+			}
+		}
+	}
+	return CallWindowProc(wndDefEditProc, hWnd, message, wParam, lParam);
+}
+
 LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	EditButton *editButton;
@@ -168,22 +215,6 @@ LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 			editButton = findEditButton(0, hWnd);
 			if (!editButton->isLocked)
 				showEditButtonEdit(editButton, TRUE);
-
-			//HoverButton *hoverButton = findHoverButton(0, hWnd);
-			//if (hoverButton && !hoverButton->isLocked)
-			//{
-			//	HWND hwndEdit = NULL;
-			//	EnumChildWindows(hWnd, FindEditInEditButtonProc, (LPARAM)&hwndEdit);
-			//	if (hwndEdit)
-			//	{
-			//		TCHAR string[256];
-			//		getHoverButtonText(hoverButton, string, 256);
-			//		SetWindowText(hwndEdit, string);
-			//		SendMessage(hwndEdit, EM_SETSEL, (WPARAM)0, (LPARAM)_tcslen(string));
-			//	}
-			//	lockHoverButtonImage(hoverButton, TRUE);
-			//	showChildWindows(hWnd, SW_SHOW);
-			//}
 		}
 		break;
 	case WM_PAINT:
@@ -199,13 +230,39 @@ LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 				editButton->editRect.right = LOWORD(lParam) - 30;
 				SetWindowPos(getHoverButtonHwnd(editButton->okButton), NULL, LOWORD(lParam) - 25, 5, 0, 0, SWP_NOSIZE);
 				SetWindowPos(getHoverButtonHwnd(editButton->cancelButton), NULL, LOWORD(lParam) - 25, 22, 0, 0, SWP_NOSIZE);
-				//invalidateButtonRect(editButton->mainButton);
 			}
 		}
 		break;
+	case WM_KEYDOWN:
+		{
+			// If Tab key is pressed, then search for next tab control.
+			if (wParam == VK_TAB)
+			{
+				if (GetKeyState(VK_LSHIFT) & 0xFFFF0000 || GetKeyState(VK_RSHIFT) & 0xFFFF0000)
+					SetFocus(GetNextDlgTabItem(GetParent(GetParent(hWnd)), GetParent(hWnd), TRUE));
+				else
+					SetFocus(GetNextDlgTabItem(GetParent(GetParent(hWnd)), GetParent(hWnd), FALSE));
+				return FALSE;
+			}
+			// If "Enter" is pressed, go into edit mode.
+			else if (wParam == VK_RETURN)
+			{
+				SendMessage(hWnd, WM_LBUTTONUP, 0, 0);
+				return FALSE;
+			}
+		}
+	// If we have a request to get focus (from Tabbing) then accept it.
+	case WM_GETDLGCODE:
+		return DLGC_WANTTAB;
+	// If we receive focus while in Edit Mode, give the focus to the edit control.
+	case WM_SETFOCUS:
+		editButton = findEditButton(0, hWnd);
+		if (editButton->inEditMode)
+			SetFocus(editButton->hEdit);
+		break;
 	}
 
-	return CallWindowProc(wndDefEditProc, hWnd, message, wParam, lParam);
+	return CallWindowProc(wndDefBtnProc, hWnd, message, wParam, lParam);
 }
 
 BOOL CALLBACK FindEditInEditButtonProc(HWND hWnd, LPARAM lParam)

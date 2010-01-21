@@ -233,12 +233,12 @@ void setScrollContainerImageStretch(HWND hWnd, int enable)
 	}
 }
 
-void setScrollContainerFont(HWND hWnd, TCHAR *fontName, int fontSize)
+void setScrollContainerFont(HWND hWnd, TCHAR *fontName, int fontSize, int isBold)
 {
 	HoverButton *hoverButton = findHoverButton(0, hWnd);
 	if (hoverButton)
 	{
-		setHoverButtonFont(hoverButton, fontName, fontSize);
+		setHoverButtonFont(hoverButton, fontName, fontSize, isBold);
 	}
 }
 

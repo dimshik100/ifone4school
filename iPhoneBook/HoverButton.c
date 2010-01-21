@@ -109,16 +109,13 @@ void getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t len
 		_tcscpy_s(destination, length, TEXT(""));
 }
 
-void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize)
+void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize, int isBold)
 {
-	HDC hdc;
-	
+	int boldVal = (isBold) ? FW_BOLD : FW_DONTCARE;
 	if (hoverButton->hFont)
 		DeleteObject(hoverButton->hFont);
-	hdc = GetDC(hoverButton->hButton);
-	hoverButton->hFont = CreateFont(-MulDiv(fontSize, GetDeviceCaps(hdc, LOGPIXELSY), 72), 0, 0, 0, FW_DONTCARE, 0, 0, 0, DEFAULT_CHARSET,
+	hoverButton->hFont = CreateFont(getFontHeight(hoverButton->hButton, fontSize), 0, 0, 0, boldVal, 0, 0, 0, DEFAULT_CHARSET,
 							OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, fontName);
-	ReleaseDC(hoverButton->hButton, hdc);
 	// Force redraw of the button
 	invalidateButtonRect(hoverButton);
 }
@@ -142,6 +139,7 @@ void lockHoverButtonImage(HoverButton *hoverButton, int enable)
 	{
 		hoverButton->isPushed = FALSE;
 		hoverButton->isHovering = FALSE;
+		hoverButton->activeImage = hoverButton->offImage;
 	}
 	invalidateButtonRect(hoverButton);
 }

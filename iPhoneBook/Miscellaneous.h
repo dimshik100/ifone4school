@@ -14,5 +14,7 @@ void makeWindowTransparentByMask(HWND hWnd, int mask);
 void getModulePath(LPWCH lpFilename, DWORD nSize);
 int loadCustomFont(LPTSTR fontFileName);
 BOOL unloadCustomFont(LPTSTR fontFileName);
+int getFontHeight(HWND hWnd, int ptSize);
+void setChildWindowsFont(HWND hWnd, HFONT hFont);
 
 #define ROUND(floatVal)(((floatVal)-(int)(floatVal)) >= 0.5 ? ((int)(floatVal) + 1) : ((int)(floatVal)))
