@@ -11,16 +11,16 @@
   # Improve statup-time by rewritting the make WindowTransparentByMask function - low priority.
 
 *In Edit Mode:*
-  # Lock Skype, Edit and Delete hover buttons.
-  # Set Arial font.
+  # ~~Lock Skype, Edit and Delete hover buttons.~~ - _Done_
+  # ~~Set Arial font.~~ - _Done_
 
 *In Contact Info:*
-  # Set Arial font.
+  # ~~Set Arial font.~~ - _Done_
 
 *Edit Button:*
-  # Apply on Enter press.
-  # Cancel on Esc press.
-  # Add tab support ?
+  # ~~Apply on Enter press.~~ - _Done_
+  # ~~Cancel on Esc press.~~ - _Done_
+  # ~~Add tab support.~~ - _Done_
 
 *Contact List Mode:*
   # Prompt user if Misc button is pressed and no contact is selected.
