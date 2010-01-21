@@ -221,7 +221,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	HWND hWnd;
 	RECT rcSize = { 0, 0, 450, 750 }, rcOffset = { 32, 16, 30, 15 };
 	SIZE size;
-	INT_PTR d;
 
 	hInst = hInstance; // Store instance handle in our global variable
 
@@ -243,8 +242,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	// Make sure database exists and is valid, if not, create it.
 	if (!checkDataIntegrity())
 		createAccount(TEXT(""), TEXT(""));
-	d = promptBox(hwndMain, TEXT("Testing"), PB_YESNO);
-	d=d;
 
 	return TRUE;
 }
