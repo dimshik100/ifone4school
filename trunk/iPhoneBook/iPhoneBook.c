@@ -1217,6 +1217,7 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	SetWindowLong(temphWnd, GWL_WNDPROC, (LONG_PTR)ContainerProc);
 	hbContainerCall = createHoverButton(temphWnd, hInst, 0, 0, 320, 271, 0, IDB_MAIN_BG_CALL, IDB_MAIN_BG_CALL, NULL);
 	lockHoverButtonImage(hbContainerCall, TRUE);
+	setHoverButtonFont(hbContainerCall, TEXT("Arial"), 12, TRUE);
 	setHoverButtonTextColor(hbContainerCall, RGB(255, 255, 255));
 	hbEndCall = createHoverButton(getHoverButtonHwnd(hbContainerCall), hInst, 177, 204, 127, 42, BUTTON_ID_END_CALL, IDB_ALERT_NO_ON, IDB_ALERT_NO_OFF, NULL);
 	setHoverButtonText(hbEndCall, TEXT("End Call"));
