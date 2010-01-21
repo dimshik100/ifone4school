@@ -169,51 +169,65 @@ void rectToSize(RECT *rc, SIZE *size)
 	}
 }
 
-void makeWindowTransparentByMask(HWND hWnd, int mask)
+void makeWindowTransparentByMask(HWND hWnd, RECT *maskRect, int mask)
 {
 	HBITMAP hbmp, hbmpOld;
 	BITMAP bm;
 	HDC hdcMem, hdc;
-	RECT rc, rcRgn = {0};
+	BITMAPINFOHEADER bmInfo = {0};
+	COLORREF *bits;
+	POINT pt;
+	RECT rc, rcRgn = {0}, maskOffsetRc = {0};
 	HRGN hrgn, hrgnTemp;
 	int x, y;
-	COLORREF color;
-	POINT pt;
 
 	hdc = GetDC(hWnd);
 	hdcMem = CreateCompatibleDC(hdc);
 	ReleaseDC(hWnd, hdc);
+	
+	hbmp = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(mask));
+	hbmpOld = (HBITMAP)SelectObject(hdcMem, hbmp);
+	GetObject(hbmp, sizeof(bm), &bm);
+	bmInfo.biSize = sizeof(BITMAPINFOHEADER);    
+	bmInfo.biWidth = bm.bmWidth;    
+	bmInfo.biHeight = -bm.bmHeight;  // Scan BMP from top to bottom
+	bmInfo.biPlanes = 1;    
+	bmInfo.biBitCount = 32;    
+	bmInfo.biCompression = BI_RGB;
+	// Get the memory size required to load the image
+	GetDIBits(hdcMem, hbmp, 0, bm.bmHeight, NULL, (LPBITMAPINFO)&bmInfo, DIB_RGB_COLORS);
+	bits = (COLORREF*)malloc(bmInfo.biSizeImage);
+	// Load image bits into memory
+	GetDIBits(hdcMem, hbmp, 0, bm.bmHeight, bits, (LPBITMAPINFO)&bmInfo, DIB_RGB_COLORS);
 
 	GetClientRect(hWnd, &rc);
 	AdjustWindowRect(&rc, GetWindowLong(hWnd, GWL_STYLE) - WS_OVERLAPPED, FALSE);
-	rcRgn.left -= rc.left;
-	rcRgn.top -= rc.top;
-	GetClientRect(hWnd, &rc);
-	rcRgn.right = rcRgn.left + rc.right;
-	rcRgn.bottom = rcRgn.top + rc.bottom;
-	// Use GetModuleHandle instead of hInst.
-	hbmp = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(mask));
-	GetObject(hbmp, sizeof(bm), &bm);
-	hbmpOld = (HBITMAP)SelectObject(hdcMem, hbmp);
+	// User provides offset from Left-Top and from Right-Bottom of rect.
+	if (maskRect)
+		memcpy(&maskOffsetRc, maskRect, sizeof(RECT));
+	rcRgn.left = maskOffsetRc.left - rc.left;
+	rcRgn.top = maskOffsetRc.top - rc.top;
+	rcRgn.right = rcRgn.left + bm.bmWidth - maskOffsetRc.left - maskOffsetRc.right;
+	rcRgn.bottom = rcRgn.top + bm.bmHeight - maskOffsetRc.top - maskOffsetRc.bottom;
 
 	getChildInParentOffset(hWnd, &pt);
-	hrgn = CreateRectRgn(rcRgn.left, rcRgn.top, bm.bmWidth + rcRgn.left, bm.bmHeight + rcRgn.top);
-	for (x = 0; x <  bm.bmWidth; x++)
+	hrgn = CreateRectRgn(rcRgn.left, rcRgn.top, rcRgn.right, rcRgn.bottom);
+	for (x = rcRgn.left; x <  rcRgn.right; x++)
 	{
-		for (y = 0; y < bm.bmHeight; y++)
+		for (y = rcRgn.top; y < rcRgn.bottom; y++)
 		{
-			color = GetPixel(hdcMem, x, y);
-			if (color == 0)
+			if (!bits[(y+rc.top)*bm.bmWidth+(x+rc.left)])
 			{
-				hrgnTemp = CreateRectRgn(x + rcRgn.left, y + rcRgn.top, x+1 + rcRgn.left, y+1 + rcRgn.top);
+				hrgnTemp = CreateRectRgn(x, y, x+1, y+1);
 				CombineRgn(hrgn, hrgn, hrgnTemp, RGN_XOR);
 				DeleteObject(hrgnTemp);
 			}
 		}
 	}
 	SetWindowRgn(hWnd, hrgn, TRUE);
+	free(bits);
 
-	SelectObject(hdcMem, hbmpOld);
+	SelectObject(hdc, hbmpOld);
 	DeleteObject(hbmp);
 	DeleteDC(hdcMem);
 }

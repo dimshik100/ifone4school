@@ -98,7 +98,7 @@ HoverButton
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton, *hbContainerCall,
 		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo, *hbAllContacts, *hbEditSaveContact,
 		*hbAddContactEmpty, *hbRecoverContact, *hbContactsSearchBg, *hbContactsTitleBg, *hbContactInfoTitleBg,
-		*hbEmail, *hbGoogleMap, *hbSkypeHandle, *hbWebsite, *hbClock, *hbAnswerCall;
+		*hbEmail, *hbGoogleMap, *hbSkypeHandle, *hbWebsite, *hbClock, *hbAnswerCall, *hbEndCall;
 
 HWND		hlblContactInfo[11];
 EditButton	*ebContactInfo[11];
@@ -219,7 +219,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	HWND hWnd;
-	RECT rcSize = { 0, 0, 450, 750 };
+	RECT rcSize = { 0, 0, 450, 750 }, rcOffset = { 32, 16, 30, 15 };
 	SIZE size;
 
 	hInst = hInstance; // Store instance handle in our global variable
@@ -234,10 +234,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	{
 		return FALSE;
 	}
-	makeWindowTransparentByMask(hWnd, IDB_IPHONE_BG_MASK);
+	makeWindowTransparentByMask(hWnd, &rcOffset, IDB_IPHONE_BG_MASK);
 
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
+
+	// Make sure database exists and is valid, if not, create it.
+	if (!checkDataIntegrity())
+		createAccount(TEXT(""), TEXT(""));
 
 	return TRUE;
 }
@@ -247,7 +251,7 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 	if (skypeCallObject && skypeCallObject->object == OBJECT_CALL)
 	{
 		TCHAR str[256] = {0};
-		TCHAR statusStr[50] = {0}, strDuration[25] = {0}, strContactName[MAX_FNAME+MAX_LNAME];
+		TCHAR statusStr[50] = {0}, strDuration[25] = {0}, strContactName[MAX_FNAME+MAX_LNAME] = {0};
 		DynamicListC contactList;
 
 		switch (skypeCallObject->status)
@@ -258,6 +262,8 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 				showChildContainers(SCREEN_CALL_MODE);
 				enableChildContainers(FALSE);
 				EnableWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), TRUE);
+				lockHoverButtonImage(hbEndCall, FALSE);
+				lockHoverButtonImage(hbAnswerCall, FALSE);
 				if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
 				{
 					_tcscpy_s(statusStr, 50, TEXT("Incoming call"));
@@ -1210,10 +1216,10 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hbContainerCall = createHoverButton(temphWnd, hInst, 0, 0, 320, 271, 0, IDB_MAIN_BG_CALL, IDB_MAIN_BG_CALL, NULL);
 	lockHoverButtonImage(hbContainerCall, TRUE);
 	setHoverButtonTextColor(hbContainerCall, RGB(255, 255, 255));
-	tempBtn = createHoverButton(getHoverButtonHwnd(hbContainerCall), hInst, 177, 204, 127, 42, BUTTON_ID_END_CALL, IDB_ALERT_NO_ON, IDB_ALERT_NO_OFF, NULL);
-	setHoverButtonText(tempBtn, TEXT("End Call"));
-	setHoverButtonFont(tempBtn, TEXT("Arial"), 12, TRUE);
-	setHoverButtonTextColor(tempBtn, RGB(255, 255, 255));
+	hbEndCall = createHoverButton(getHoverButtonHwnd(hbContainerCall), hInst, 177, 204, 127, 42, BUTTON_ID_END_CALL, IDB_ALERT_NO_ON, IDB_ALERT_NO_OFF, NULL);
+	setHoverButtonText(hbEndCall, TEXT("End Call"));
+	setHoverButtonFont(hbEndCall, TEXT("Arial"), 12, TRUE);
+	setHoverButtonTextColor(hbEndCall, RGB(255, 255, 255));
 	hbAnswerCall = createHoverButton(getHoverButtonHwnd(hbContainerCall), hInst, 17, 204, 127, 42, BUTTON_ID_ANSWER_CALL, IDB_ALERT_YES_ON, IDB_ALERT_YES_OFF, NULL);
 	setHoverButtonText(hbAnswerCall, TEXT("Answer Call"));
 	setHoverButtonFont(hbAnswerCall, TEXT("Arial"), 12, TRUE);
