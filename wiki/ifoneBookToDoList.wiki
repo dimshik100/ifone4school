@@ -5,7 +5,7 @@
   # Create a mini-website.
 
 *GUI:*
-  # Create a Message Box type dialog.
+  # ~~Create a Message Box type dialog.~~ - _Done_
   # Make memory info work.
   # ~~On incoming skype call add Accept button.~~ - _Done_
   # ~~Improve statup-time by rewritting the make WindowTransparentByMask function~~ _Done_. Performance improved by *~x30*
@@ -23,22 +23,12 @@
   # ~~Add tab support.~~ - _Done_
 
 *Contact List Mode:*
-  # Prompt user if Misc button is pressed and no contact is selected.
+  # ~~Prompt user if Misc button is pressed and no contact is selected.~~ - _Done_
 
 *Recycle Bin:*
-  # Prompt user (to Empty trash)
+  # ~~Prompt user (to Empty trash)~~ - _Done_
 
-*Delete function:*
-  # User clicks Delete.
-  # User is prompted with "Are you sure you want to delete "FName LName"?" + Yes + No
-
-Yes:
-  # Entry is deleted.
-  # Local contact list is emptied.
-  # If user is in Contact Details or Edit Contact mode screen changes to All Contacts.
-  # If user is in All Contacts mode, it is reloaded.
-No:
-  # Prompt disappears, user can continue work.
+~~*Delete function:*~~ - _Done_
 
 *Save and Edit functions:*
-  # Prompt user in case they haven't entered L. Name, F. Name, P. number.
+  # ~~Prompt user in case they haven't entered L. Name, F. Name, P. number.~~ - _Done_
