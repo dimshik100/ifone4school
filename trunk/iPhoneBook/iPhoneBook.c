@@ -38,30 +38,31 @@
 #define BUTTON_ID_YES				(CONTROL_ID + 9)
 #define BUTTON_ID_NO				(CONTROL_ID + 10)
 #define BUTTON_ID_END_CALL			(CONTROL_ID + 11)
-#define INFO_ID_LAST_NAME			(CONTROL_ID + 12)
-#define INFO_ID_FIRST_NAME			(CONTROL_ID + 13)
-#define INFO_ID_PHONE				(CONTROL_ID + 14)
-#define INFO_ID_WEB					(CONTROL_ID + 15)
-#define INFO_ID_EMAIL				(CONTROL_ID + 16)
-#define INFO_ID_AGE					(CONTROL_ID + 17)
-#define INFO_ID_ADDRESS_CNT			(CONTROL_ID + 18)
-#define INFO_ID_ADDRESS_CTY			(CONTROL_ID + 19)
-#define INFO_ID_ADDRESS_STR			(CONTROL_ID + 20)
-#define INFO_ID_ADDRESS_NUM			(CONTROL_ID + 21)
-#define INFO_ID_ADDRESS				(CONTROL_ID + 22)
-#define INFO_ID_SKYPE				(CONTROL_ID + 23)
-#define BUTTON_ID_ALL_CONTACTS		(CONTROL_ID + 24)
-#define BUTTON_ID_EDIT_CONTACT		(CONTROL_ID + 25)
-#define BUTTON_ID_EDIT_SAVE_CONTACT	(CONTROL_ID + 26)
-#define BUTTON_ID_ADD_CONTACT_EMPTY		(CONTROL_ID + 27)
-#define BUTTON_ID_EMPTY_TRASH		(CONTROL_ID + 28)
-#define BUTTON_ID_REOVER_CONTACT	(CONTROL_ID + 29)
-#define LV_CONTACTS_ID				(CONTROL_ID + 30)
-#define EDIT_ID_SEARCH				(CONTROL_ID + 31)
-#define BUTTON_ID_GO_TO_WEBSITE		(CONTROL_ID + 32)
-#define BUTTON_ID_SEND_EMAIL		(CONTROL_ID + 33)
-#define BUTTON_ID_SEE_ON_MAP		(CONTROL_ID + 34)
-#define BUTTON_ID_SKYPE_HANDLE		(CONTROL_ID + 35)
+#define BUTTON_ID_ANSWER_CALL		(CONTROL_ID + 12)
+#define INFO_ID_LAST_NAME			(CONTROL_ID + 13)
+#define INFO_ID_FIRST_NAME			(CONTROL_ID + 14)
+#define INFO_ID_PHONE				(CONTROL_ID + 15)
+#define INFO_ID_WEB					(CONTROL_ID + 16)
+#define INFO_ID_EMAIL				(CONTROL_ID + 17)
+#define INFO_ID_AGE					(CONTROL_ID + 18)
+#define INFO_ID_ADDRESS_CNT			(CONTROL_ID + 19)
+#define INFO_ID_ADDRESS_CTY			(CONTROL_ID + 20)
+#define INFO_ID_ADDRESS_STR			(CONTROL_ID + 21)
+#define INFO_ID_ADDRESS_NUM			(CONTROL_ID + 22)
+#define INFO_ID_ADDRESS				(CONTROL_ID + 23)
+#define INFO_ID_SKYPE				(CONTROL_ID + 24)
+#define BUTTON_ID_ALL_CONTACTS		(CONTROL_ID + 25)
+#define BUTTON_ID_EDIT_CONTACT		(CONTROL_ID + 26)
+#define BUTTON_ID_EDIT_SAVE_CONTACT	(CONTROL_ID + 27)
+#define BUTTON_ID_ADD_CONTACT_EMPTY	(CONTROL_ID + 28)
+#define BUTTON_ID_EMPTY_TRASH		(CONTROL_ID + 29)
+#define BUTTON_ID_REOVER_CONTACT	(CONTROL_ID + 30)
+#define LV_CONTACTS_ID				(CONTROL_ID + 31)
+#define EDIT_ID_SEARCH				(CONTROL_ID + 32)
+#define BUTTON_ID_GO_TO_WEBSITE		(CONTROL_ID + 33)
+#define BUTTON_ID_SEND_EMAIL		(CONTROL_ID + 34)
+#define BUTTON_ID_SEE_ON_MAP		(CONTROL_ID + 35)
+#define BUTTON_ID_SKYPE_HANDLE		(CONTROL_ID + 36)
 
 typedef enum {	SCREEN_MAIN, SCREEN_CONTACTS, SCREEN_MEM_INFO, SCREEN_TRASH, SCREEN_CALL_MODE, 
 				SCREEN_CONTACT_INFO, SCREEN_CONTACT_ADD, SCREEN_CONTACT_EDIT, SCREEN_CLOCK }
@@ -97,7 +98,7 @@ HoverButton
 		*hbTopBarSkype, *hbMainUnderDateBg, *hbMainCenterPic, *hbExitButton, *hbContainerCall,
 		*hbMainActionBtn[4], *hbMiscActionBtn[4], *hbYes, *hbNo, *hbAllContacts, *hbEditSaveContact,
 		*hbAddContactEmpty, *hbRecoverContact, *hbContactsSearchBg, *hbContactsTitleBg, *hbContactInfoTitleBg,
-		*hbEmail, *hbGoogleMap, *hbSkypeHandle, *hbWebsite, *hbClock;
+		*hbEmail, *hbGoogleMap, *hbSkypeHandle, *hbWebsite, *hbClock, *hbAnswerCall;
 
 HWND		hlblContactInfo[11];
 EditButton	*ebContactInfo[11];
@@ -258,9 +259,15 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 				enableChildContainers(FALSE);
 				EnableWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), TRUE);
 				if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
+				{
 					_tcscpy_s(statusStr, 50, TEXT("Incoming call"));
+					ShowWindow(getHoverButtonHwnd(hbAnswerCall), SW_SHOW);
+				}
 				else
+				{
 					_tcscpy_s(statusStr, 50, TEXT("Calling..."));
+					ShowWindow(getHoverButtonHwnd(hbAnswerCall), SW_HIDE);
+				}
 			}
 			break;
 		case CALLSTATUS_IN_PROGRESS:
@@ -734,6 +741,11 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				{
 					hangup(currentCall.callId);
 				}
+			case BUTTON_ID_ANSWER_CALL: // End current call.
+				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
+				{
+					hangup(currentCall.callId);
+				}
 			// Search edit-control handler
 			case EDIT_ID_SEARCH:
 				if (wmEvent == EN_CHANGE)
@@ -1198,7 +1210,14 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	hbContainerCall = createHoverButton(temphWnd, hInst, 0, 0, 320, 271, 0, IDB_MAIN_BG_CALL, IDB_MAIN_BG_CALL, NULL);
 	lockHoverButtonImage(hbContainerCall, TRUE);
 	setHoverButtonTextColor(hbContainerCall, RGB(255, 255, 255));
-	tempBtn = createHoverButton(getHoverButtonHwnd(hbContainerCall), hInst, 97, 204, 127, 42, BUTTON_ID_END_CALL, IDB_END_CALL_ON, IDB_END_CALL_OFF, NULL);
+	tempBtn = createHoverButton(getHoverButtonHwnd(hbContainerCall), hInst, 177, 204, 127, 42, BUTTON_ID_END_CALL, IDB_ALERT_NO_ON, IDB_ALERT_NO_OFF, NULL);
+	setHoverButtonText(tempBtn, TEXT("End Call"));
+	setHoverButtonFont(tempBtn, TEXT("Arial"), 12, TRUE);
+	setHoverButtonTextColor(tempBtn, RGB(255, 255, 255));
+	hbAnswerCall = createHoverButton(getHoverButtonHwnd(hbContainerCall), hInst, 17, 204, 127, 42, BUTTON_ID_ANSWER_CALL, IDB_ALERT_YES_ON, IDB_ALERT_YES_OFF, NULL);
+	setHoverButtonText(hbAnswerCall, TEXT("Answer Call"));
+	setHoverButtonFont(hbAnswerCall, TEXT("Arial"), 12, TRUE);
+	setHoverButtonTextColor(hbAnswerCall, RGB(255, 255, 255));
 
 
 	hwndContainerContacts = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN/* | WS_VISIBLE*/, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
