@@ -896,11 +896,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				SetTimer(hWnd, PWRBTN_TIMER_ID, 3000, NULL);
 			ClockTimerProc(NULL, 0, 0, 0);
 			break;
-		case 3:
-			if ((wmId % 10) == CID_MAIN_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP);
-			else if ((wmId % 10) == CID_OK_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP);
-			else if ((wmId % 10) == CID_CANCEL_OFFSET && wmEvent == HOVER_BUTTON_LMOUSE_UP);
-			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
@@ -940,15 +935,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		deleteHoverButtons();
 		deleteEditButtons();
 		disconnectSkype(hInst);
-		unloadCustomFont(TEXT("AtomicClockRadio.ttf"));
 		DeleteObject(hFont);
+		unloadCustomFont(TEXT("AtomicClockRadio.ttf"));
 		PostQuitMessage(0);
 		break;
 	case WM_CREATE:
 		{
 			createGUI(hWnd, hInst);
-			setSkypeCallStatusCallback(skypeCallStatusCallback);
 			setSkypeConnectionStatusCallback(skypeConnectionStatusCallback);
+			setSkypeCallStatusCallback(skypeCallStatusCallback);
 			connectSkype(hInst);
 			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);			
 			initListViewColumns(hLV);
