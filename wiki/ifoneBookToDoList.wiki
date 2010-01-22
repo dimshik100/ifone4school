@@ -5,6 +5,8 @@
   # Create a mini-website.
 
 *GUI:*
+  # Make the Call Mode background image darker (also need to edit the last lines in "main_wnd_under_date_bg.bmp" to match the darker color)
+  # Play with PromptBox opacity for best eye-candy and readibility.
   # ~~Create a Message Box type dialog.~~ - _Done_
   # ~~Make memory info work.~~ - _Done_
   # ~~On incoming skype call add Accept button.~~ - _Done_
@@ -16,6 +18,10 @@
 
 *In Contact Info:*
   # ~~Set Arial font.~~ - _Done_
+
+*Call Mode:*
+  # ~~Hold/Resume feature.~~
+  # ~~Lock and unlock Answer/Hold/Resume and End Call hover buttons when necessary.~~
 
 *Edit Button:*
   # ~~Apply on Enter press.~~ - _Done_
