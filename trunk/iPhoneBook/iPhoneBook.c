@@ -259,27 +259,36 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 		case CALLSTATUS_ROUTING:
 		case CALLSTATUS_RINGING:
 			{
-				showChildContainers(SCREEN_CALL_MODE);
 				enableChildContainers(FALSE);
 				EnableWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), TRUE);
 				lockHoverButtonImage(hbEndCall, FALSE);
-				lockHoverButtonImage(hbAnswerCall, FALSE);
 				if (skypeCallObject->type == CALLTYPE_INCOMING_P2P || skypeCallObject->type == CALLTYPE_INCOMING_PSTN)
 				{
 					_tcscpy_s(statusStr, 50, TEXT("Incoming call"));
-					ShowWindow(getHoverButtonHwnd(hbAnswerCall), SW_SHOW);
+					setHoverButtonText(hbAnswerCall, TEXT("Answer"));
+					lockHoverButtonImage(hbAnswerCall, FALSE);
 				}
 				else
 				{
 					_tcscpy_s(statusStr, 50, TEXT("Calling..."));
-					ShowWindow(getHoverButtonHwnd(hbAnswerCall), SW_HIDE);
+					setHoverButtonText(hbAnswerCall, TEXT("Hold"));
 				}
+				showChildContainers(SCREEN_CALL_MODE);
 			}
 			break;
 		case CALLSTATUS_IN_PROGRESS:
 			_tcscpy_s(statusStr, 50, TEXT("Call online"));
+			setHoverButtonText(hbAnswerCall, TEXT("Hold"));
+			lockHoverButtonImage(hbEndCall, FALSE);
+			lockHoverButtonImage(hbAnswerCall, FALSE);
+			break;
+		case CALLSTATUS_ON_HOLD:
+			_tcscpy_s(statusStr, 50, TEXT("Call on hold"));
+			setHoverButtonText(hbAnswerCall, TEXT("Resume"));
 			break;
 		case CALLSTATUS_FINISHED:
+			lockHoverButtonImage(hbEndCall, TRUE);
+			lockHoverButtonImage(hbAnswerCall, TRUE);
 			_tcscpy_s(statusStr, 50, TEXT("Call ended"));
 			_stprintf_s(strDuration, 25, TEXT("Duration: %02d:%02d:%02d"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
 			SetTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID, 5000, EndCallTimerProc);
@@ -288,6 +297,8 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 		case CALLSTATUS_FAILED:
 		case CALLSTATUS_MISSED:
 		case CALLSTATUS_REFUSED:
+			lockHoverButtonImage(hbEndCall, TRUE);
+			lockHoverButtonImage(hbAnswerCall, TRUE);
 			_tcscpy_s(statusStr, 50, TEXT("Call ended"));
 			_stprintf_s(strDuration, 25, TEXT("Duration: %02d:%02d:%02d"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
 			SetTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID, 5000, EndCallTimerProc);
@@ -772,14 +783,17 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				break;
 			case BUTTON_ID_END_CALL: // End current call.
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
-				{
-					hangup(currentCall.callId);
-				}
+					hangupCall(currentCall.callId);
+				break;
 			case BUTTON_ID_ANSWER_CALL: // End current call.
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
-					answer(currentCall.callId);
+					if (currentCall.status == CALLSTATUS_IN_PROGRESS)
+						holdCall(currentCall.callId);
+					else if (currentCall.status == CALLSTATUS_ON_HOLD || currentCall.status == CALLSTATUS_RINGING)
+						answerCall(currentCall.callId);
 				}
+				break;
 			// Search edit-control handler
 			case EDIT_ID_SEARCH:
 				if (wmEvent == EN_CHANGE)

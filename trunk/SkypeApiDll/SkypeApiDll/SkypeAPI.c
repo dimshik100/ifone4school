@@ -316,17 +316,24 @@ SKYPEAPIDLL_API void call(LPTSTR name)
 	}
 }
 
-SKYPEAPIDLL_API void hangup(int callId)
+SKYPEAPIDLL_API void hangupCall(int callId)
 {
 	TCHAR str[256];
 	_stprintf_s(str, 256, TEXT("SET CALL %d STATUS FINISHED"), callId);
 	sendSkypeMessage(str);
 }
 
-SKYPEAPIDLL_API void answer(int callId)
+SKYPEAPIDLL_API void answerCall(int callId)
 {
 	TCHAR str[256];
 	_stprintf_s(str, 256, TEXT("SET CALL %d STATUS INPROGRESS"), callId);
+	sendSkypeMessage(str);
+}
+
+SKYPEAPIDLL_API void holdCall(int callId)
+{
+	TCHAR str[256];
+	_stprintf_s(str, 256, TEXT("SET CALL %d STATUS ONHOLD"), callId);
 	sendSkypeMessage(str);
 }
 
