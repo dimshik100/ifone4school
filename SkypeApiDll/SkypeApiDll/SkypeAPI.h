@@ -81,5 +81,6 @@ SKYPEAPIDLL_API void setSkypeCallStatusCallback(SkypeCallStatusCallback skypeCal
 SKYPEAPIDLL_API void setSkypeConnectionStatusCallback(SkypeConnectionStatusCallback skypeConnectionStatusCallback);
 SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObject);
 SKYPEAPIDLL_API void call(LPTSTR name);
-SKYPEAPIDLL_API void hangup(int callId);
-SKYPEAPIDLL_API void answer(int callId);
+SKYPEAPIDLL_API void hangupCall(int callId);
+SKYPEAPIDLL_API void answerCall(int callId);
+SKYPEAPIDLL_API void holdCall(int callId);
