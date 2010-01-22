@@ -8,8 +8,13 @@
 #define CLASS_WND_NAME TEXT("iFoneBookSkypeApiWindow")
 #define CALL_OBJECT_MUTEX TEXT("SkypeCallObjectMutex")
 
-#define TIMER_ID		6000
+#define TIMER_ID		16000
 #define PING_TIMER_ID	TIMER_ID + 1
+
+//#define _SKYPEAPIDEBUG
+#ifdef _SKYPEAPIDEBUG
+void WriteDebug(LPTSTR name, SkypeObject *skypeObject);
+#endif
 
 LPTSTR					getStringFromMessage(PCOPYDATASTRUCT copyData);
 LPSTR					getAnsiStringFromString(LPTSTR string);
@@ -482,6 +487,10 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 					}
 					break;
 				}
+
+#ifdef _SKYPEAPIDEBUG
+				WriteDebug(TEXT("SkypeApiWndProc"), skypeObject);
+#endif
 			}
 			return TRUE;
 		}
@@ -497,24 +506,26 @@ DWORD WINAPI SkypeCallGetterThreadProc(__in  LPVOID lpParameter)
 {
 	COPYDATASTRUCT copyData = {0};
 	static int commandId = 1;
-	char str[256];
+	TCHAR str[256];
 
 	SkypeCallObject *callObject = (SkypeCallObject*)lpParameter;
 	if (!WaitForSingleObject(hMutex, 100))
 	{
-		copyData.lpData = str;
-		copyData.cbData = strlen(str)+1;
-		sprintf_s(str, 256, "#%d GET CALL %d TYPE", commandId++, callObject->callId);		
-		SendMessage(skypeApiWindowHandle, WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
-		sprintf_s(str, 256, "#%d GET CALL %d DURATION", commandId++, callObject->callId);		
-		SendMessage(skypeApiWindowHandle, WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
-		sprintf_s(str, 256, "#%d GET CALL %d STATUS", commandId++, callObject->callId);		
-		SendMessage(skypeApiWindowHandle, WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
-		sprintf_s(str, 256, "#%d GET CALL %d PARTNER_HANDLE", commandId++, callObject->callId);		
-		SendMessage(skypeApiWindowHandle, WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
-		sprintf_s(str, 256, "#%d GET CALL %d PARTNER_DISPNAME", commandId++, callObject->callId);		
-		SendMessage(skypeApiWindowHandle, WM_COPYDATA, (WPARAM)hiddenWindowHandle, (LPARAM)&copyData);
+		_stprintf_s(str, 256, TEXT("#%d GET CALL %d TYPE"), commandId++, callObject->callId);		
+		sendSkypeMessage(str);
+		_stprintf_s(str, 256, TEXT("#%d GET CALL %d DURATION"), commandId++, callObject->callId);		
+		sendSkypeMessage(str);
+		_stprintf_s(str, 256, TEXT("#%d GET CALL %d STATUS"), commandId++, callObject->callId);		
+		sendSkypeMessage(str);
+		_stprintf_s(str, 256, TEXT("#%d GET CALL %d PARTNER_HANDLE"), commandId++, callObject->callId);		
+		sendSkypeMessage(str);
+		_stprintf_s(str, 256, TEXT("#%d GET CALL %d PARTNER_DISPNAME"), commandId++, callObject->callId);		
+		sendSkypeMessage(str);
 		ReleaseMutex(hMutex);
+
+#ifdef _SKYPEAPIDEBUG
+		WriteDebug(TEXT("Call Getter thread"), (SkypeObject*)callObject);
+#endif
 	}
 	return 0;
 }
@@ -556,6 +567,14 @@ DWORD WINAPI SkypeQueueManagerThreadProc(__in  LPVOID lpParameter)
 						timerCnt += 50;
 						Sleep(50);
 					}
+
+#ifdef _SKYPEAPIDEBUG
+					{
+						SkypeObject *so;
+						listGetValue(callObjectQueue, listSelectFirst(callObjectQueue), &so);
+						WriteDebug(TEXT("Queue thread"), so);
+					}
+#endif
 					listDeleteNode(callObjectQueue, listSelectFirst(callObjectQueue));
 				}
 				break;
@@ -585,3 +604,35 @@ VOID CALLBACK		PingTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dw
 		skypePingStatus = 0;
 	}
 }
+
+#ifdef _SKYPEAPIDEBUG
+void WriteDebug(LPTSTR name, SkypeObject *skypeObject)
+{
+	if (skypeObject)
+	{
+		switch(skypeObject->object)
+		{
+			case OBJECT_CALL:
+			{
+				SkypeCallObject *callObject = (SkypeCallObject *)skypeObject;
+				if (!WaitForSingleObject(hMutex, 1000))
+				{
+					FILE *fp;
+					TCHAR buff[1000];
+					_tfopen_s(&fp, TEXT("Debug.txt"), TEXT("at"));
+					_stprintf_s(buff, 1000, TEXT("%s\tthread: 0x%p\tObject: %d\tCall ID: %d\tCommand ID: %d\tDuration: %d\t\tProperty: %d\t\tStatus: %d\tType: %d")
+						TEXT("\tPartner handle: %s\tPartner Display name: %s\n"), name, GetModuleHandle(NULL),
+						callObject->object, callObject->callId, callObject->commandId, callObject->duration, callObject->property, callObject->status, callObject->type, callObject->partnerHandle, callObject->partnerDisplayName);
+					_fputts(buff, fp);
+					fclose(fp);
+				}
+				ReleaseMutex(hMutex);
+			}
+			break;
+		}
+	}
+	else
+	{
+	}
+}
+#endif
