@@ -39,6 +39,8 @@ DynamicListC			callObjectList = NULL;
 DynamicListC			callObjectQueue = NULL;
 HANDLE					hMutex = NULL, queueManagerHandle = NULL;
 
+// Registers the Skype messages with Windows to allow communication between the two processes
+// Registers and creates the hidden window to recieve messages from skype
 SKYPEAPIDLL_API BOOL registerSkypeApi(HINSTANCE hInstance)
 {
 	msgIdApiAttach = RegisterWindowMessage(TEXT("SkypeControlAPIAttach"));
@@ -49,6 +51,8 @@ SKYPEAPIDLL_API BOOL registerSkypeApi(HINSTANCE hInstance)
 	return (hiddenWindowHandle) ? TRUE : FALSE;
 }
 
+// Initiates the connection with Skype, registers and initiates all the required data, 
+// Asks to connect with Skype if everything initiated correctly
 SKYPEAPIDLL_API LRESULT connectSkype(HINSTANCE hInstance)
 {
 	hInst = hInstance;
@@ -59,19 +63,26 @@ SKYPEAPIDLL_API LRESULT connectSkype(HINSTANCE hInstance)
 		listInit(&callObjectList);
 	if (!callObjectQueue)
 		listInit(&callObjectQueue);
+
+	// Create a mutex object to synchronize the worker-threads with the main thread.
 	if (!hMutex)
 	{
 		hMutex = CreateMutex(NULL, FALSE, CALL_OBJECT_MUTEX);
 		ReleaseMutex(hMutex);
 	}
+
+	// Create and start the queue manager thread.
 	if (!queueManagerActive)
 	{
 		queueManagerActive = 1;
 		queueManagerHandle = CreateThread(NULL, 0, SkypeQueueManagerThreadProc, NULL, 0, NULL);
 	}
+
+	// Send a message to all running applications notifying that we're looking to connect with Skype
 	return PostMessage(HWND_BROADCAST, msgIdApiDiscover, (WPARAM)hiddenWindowHandle, 0);
 }
 
+// Disconnects from Skype, releases all handles, frees all queues, terminates the worker threads
 SKYPEAPIDLL_API void disconnectSkype(HINSTANCE hInstance)
 {
 	DWORD exitCode = 0;
@@ -86,12 +97,15 @@ SKYPEAPIDLL_API void disconnectSkype(HINSTANCE hInstance)
 	DestroyWindow(hiddenWindowHandle);
 	hiddenWindowHandle = NULL;
 	UnregisterClass(CLASS_WND_NAME, hInstance);
+	// If the queue manager thread has not finished yet, wait for it to be done.
 	if (GetExitCodeThread(queueManagerHandle, &exitCode) && exitCode == STILL_ACTIVE)
 		WaitForSingleObject(queueManagerHandle, INFINITE);
 	CloseHandle(queueManagerHandle);
 	queueManagerHandle = NULL;
+	// Close the mutex object.
 	CloseHandle(hMutex);
 	hMutex = NULL;
+	// Clear all the queues and call list.
 	if (callObjectList)
 	{
 		SkypeCallObject *skypeCallObject;
@@ -110,6 +124,8 @@ SKYPEAPIDLL_API void disconnectSkype(HINSTANCE hInstance)
 		listFree(&callObjectQueue);
 }
 
+// Processes the attachment messages Skype send to our application.
+// Notifies subscriber about attachment status changes.
 SKYPEAPIDLL_API BOOL processAttachmentMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	BOOL ret = FALSE;
@@ -153,31 +169,38 @@ SKYPEAPIDLL_API BOOL processAttachmentMessage(UINT message, WPARAM wParam, LPARA
 	return ret;
 }
 
+// Retrieves the message value for ApiAttach notifications from Skype
 SKYPEAPIDLL_API UINT getMsgIdApiAttach()
 {
 	return msgIdApiAttach;
 }
 
+// Retrieves the message value for ApiDiscover notifications from Skype
 SKYPEAPIDLL_API UINT getMsgIdApiDiscover()
 {
 	return msgIdApiDiscover;
 }
 
+// Returns the HWND of the Skype window
 SKYPEAPIDLL_API HWND getSkypeApiWindowHandle()
 {
 	return skypeApiWindowHandle;
 }
 
+// Sets a callback function for call status notifications
 SKYPEAPIDLL_API void setSkypeCallStatusCallback(SkypeCallStatusCallback newSkypeCallStatusCallback)
 {
 	skypeCallStatusCallback = newSkypeCallStatusCallback;
 }
 
+// Sets a callback function for connection status change notifications
 SKYPEAPIDLL_API void setSkypeConnectionStatusCallback(SkypeConnectionStatusCallback newSkypeConnectionStatusCallback)
 {
 	skypeConnectionStatusCallback = newSkypeConnectionStatusCallback;
 }
 
+// Translates the string message received from Skype into Skype Objects (which are defined in SkypeAPI.h)
+// In this application we only handle the Call object, as we don't need the rest of them
 SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeObject **skypeObject)
 {
 	BOOL ret = FALSE;
@@ -192,12 +215,17 @@ SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeOb
 			LPTSTR token, next_token;
 			int commandId = 0;
 
+			// If this is a numbered command we're getting a reply for, "write down" it's number
 			token = _tcstok_s(string, seps, &next_token);
 			if (token && token[0] == TEXT('#'))
 			{
 				commandId = _tstoi(token+1);
 				token = _tcstok_s(NULL, seps, &next_token);
 			}
+			// Now we will determine the type of object Skype is notifying us about, 
+			// and retrieve all it's data to fill the appropriate Skype-Object structure.
+
+			// If this message concerns the Call object
 			if (!_tcscmp(token, TEXT("CALL")))
 			{
 				SkypeCallObject *callObject = (SkypeCallObject*)calloc(1, sizeof(SkypeCallObject));
@@ -205,9 +233,13 @@ SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeOb
 				callObject->commandId = commandId;
 				token = _tcstok_s(NULL, seps, &next_token);
 
+				// Save the Call ID
 				callObject->callId = _tstoi(token);
 				token = _tcstok_s(NULL, seps, &next_token);
 
+				// Now determine what information we're receiving about a call.
+
+				// Status changes
 				if (!_tcscmp(token, TEXT("STATUS")))
 				{
 					callObject->property = CALLPROPERTY_STATUS;
@@ -259,12 +291,14 @@ SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeOb
 					else if (!_tcscmp(token, TEXT("VM_RECORDING")))
 						callObject->status = CALLSTATUS_VM_RECORDING;
 				}
+				// Duration changes of an on-going call
 				else if (!_tcscmp(token, TEXT("DURATION")))
 				{
 					callObject->property = CALLPROPERTY_DURATION;
 					token = _tcstok_s(NULL, seps, &next_token);
 					callObject->duration = _tstoi(token);
 				}
+				// Notification about the type of call this is (incoming/outgoing)
 				else if (!_tcscmp(token, TEXT("TYPE")))
 				{
 					callObject->property = CALLPROPERTY_TYPE;
@@ -278,11 +312,13 @@ SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeOb
 					else if (!_tcscmp(token, TEXT("OUTGOING_P2P")))
 						callObject->type = CALLTYPE_OUTGOING_P2P;
 				}
+				// Sends the Skype handle of the person we're talking to.
 				else if (!_tcscmp(token, TEXT("PARTNER_HANDLE")))
 				{
 					callObject->property = CALLPROPERTY_PARTNER_HANDLE;
 					callObject->partnerHandle = _tcsdup(next_token);
 				}
+				// Sends the Skype display name (in Skype) of the person we're talking to.
 				else if (!_tcscmp(token, TEXT("PARTNER_DISPNAME")))
 				{
 					callObject->property = CALLPROPERTY_PARTNER_DISPNAME;
@@ -291,12 +327,14 @@ SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeOb
 
 				*skypeObject = (SkypeObject*)callObject;
 			}
+			// If we receive a Pong reply to our Ping.
 			else if (!_tcscmp(token, TEXT("PONG")))
 			{
 				*skypeObject = (SkypeObject*)calloc(1, sizeof(SkypeObject));
 				(*skypeObject)->commandId = commandId;
 				(*skypeObject)->object = OBJECT_PONG;
 			}
+
 			// Return true confirm we processed this message
 			ret = TRUE;
 			free(string);
@@ -306,6 +344,7 @@ SKYPEAPIDLL_API BOOL translateSkypeMessage(WPARAM wParam, LPARAM lParam, SkypeOb
 	return ret;
 }
 
+// Makes an outgoing call via Skype to "name"
 SKYPEAPIDLL_API void call(LPTSTR name)
 {
 	if (name)
@@ -316,6 +355,7 @@ SKYPEAPIDLL_API void call(LPTSTR name)
 	}
 }
 
+// Hangs up a call by ID, this has no effect when a call has already ended
 SKYPEAPIDLL_API void hangupCall(int callId)
 {
 	TCHAR str[256];
@@ -323,6 +363,7 @@ SKYPEAPIDLL_API void hangupCall(int callId)
 	sendSkypeMessage(str);
 }
 
+// Answers (or brings back online from Hold) a call by ID
 SKYPEAPIDLL_API void answerCall(int callId)
 {
 	TCHAR str[256];
@@ -330,12 +371,22 @@ SKYPEAPIDLL_API void answerCall(int callId)
 	sendSkypeMessage(str);
 }
 
+// Puts an active call on hold by ID
 SKYPEAPIDLL_API void holdCall(int callId)
 {
 	TCHAR str[256];
 	_stprintf_s(str, 256, TEXT("SET CALL %d STATUS ONHOLD"), callId);
 	sendSkypeMessage(str);
 }
+
+// Transcodes/copies a string from the COPYDATASTRUCT supplied by Skype
+// into a Unicode/Ansi (depending on project settings) string.
+/* getStringFromMessage */
+
+// If in Unicode mode, converts a unicode string into Ansi using the 'sprintf_s' function
+// In Ansi mode, simply duplicates the string.
+/* getAnsiStringFromString */
+
 
 // Depending on project settings, must handle strings dfferently between UNICODE and ANSI
 #ifdef _UNICODE
@@ -375,6 +426,7 @@ LPCSTR getAnsiStringFromString(LPTSTR string)
 
 #endif
 
+// Registers the hidden window's class.
 ATOM registerSkypeApiWindowClass(HINSTANCE hInstance)
 {
 	WNDCLASSEX wcex;
@@ -396,6 +448,7 @@ ATOM registerSkypeApiWindowClass(HINSTANCE hInstance)
 	return RegisterClassEx(&wcex);
 }
 
+// Sends a message to skype by wrapping it in the required datatype and using the correct format.
 LRESULT sendSkypeMessage(LPTSTR message)
 {
 	LRESULT ret = FALSE;
@@ -417,12 +470,14 @@ LRESULT sendSkypeMessage(LPTSTR message)
 	return ret;
 }
 
+// Hidden window's procedure. Here we receive all the messages from skype, translate them
 LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (message == WM_COPYDATA)
 	{
 		static int objectGetting = 0;
 		SkypeObject *skypeObject;
+		// Check if this message is from Skype and translate it if it is.
 		if (translateSkypeMessage(wParam, lParam, &skypeObject))
 		{			
 			if (skypeObject)
@@ -430,14 +485,17 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 				switch (skypeObject->object)
 				{
 				case OBJECT_PONG:
-					skypePingStatus = 1;
+					// Simply reset time Ping-Pong flag to signal that connection with Skype is alive
+					skypePingStatus = 1; 
 					break;
 				case OBJECT_CALL:
 					if (!WaitForSingleObject(hMutex, 100))
 					{
 						SkypeCallObject *translatedCallObject = (SkypeCallObject*)skypeObject,  *callObject = NULL, *queuedCall;
+						// If the message is not a reply to a request for information, add this object to the message queue.
 						if (translatedCallObject->commandId == 0)
 							listInsertAfterEnd(callObjectQueue, &translatedCallObject);
+						// Try to see if this call already exists in our call list and pull it out if it exists.
 						for (listSelectFirst(callObjectList); listSelectCurrent(callObjectList); listSelectNext(callObjectList, NULL))
 						{
 							listGetValue(callObjectList, NULL, &callObject);
@@ -446,6 +504,8 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 							else
 								callObject = NULL;
 						}
+						// If the call exists, then update it with the new infomation we have about it.
+						// Then update the messages in our queue as well so they can be released.
 						if (callObject)
 						{
 							switch(translatedCallObject->property)
@@ -482,6 +542,7 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 							}
 							ReleaseMutex(hMutex);
 						}
+						// Else add this call to our list of calls
 						else
 						{
 							SkypeCallObject *newCallObject = (SkypeCallObject*)malloc(sizeof(SkypeCallObject));
@@ -502,13 +563,15 @@ LRESULT CALLBACK SkypeApiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			return TRUE;
 		}
 	}
+	// If this is an AttachmentMessage then process it and return TRUE to Skype.
 	else if (processAttachmentMessage(message, wParam, lParam))
 		return TRUE;
 
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-
+// A worker-thread which asynchronously from the main thread, sends a request to 
+// Skype to retrieve the crucial information about a call object.
 DWORD WINAPI SkypeCallGetterThreadProc(__in  LPVOID lpParameter)
 {
 	COPYDATASTRUCT copyData = {0};
@@ -537,6 +600,8 @@ DWORD WINAPI SkypeCallGetterThreadProc(__in  LPVOID lpParameter)
 	return 0;
 }
 
+// A worker-thread. This thread handles the message queue from Skype. A message must contain all the required 
+// data to be passed on to the subscribers, if some of it is missing, the message gets discarded after 3 seconds.
 DWORD WINAPI SkypeQueueManagerThreadProc(__in  LPVOID lpParameter)
 {
 	int timerCnt;
@@ -582,6 +647,7 @@ DWORD WINAPI SkypeQueueManagerThreadProc(__in  LPVOID lpParameter)
 						WriteDebug(TEXT("Queue thread"), so);
 					}
 #endif
+					// Delete the first message in the queue
 					listDeleteNode(callObjectQueue, listSelectFirst(callObjectQueue));
 				}
 				break;
@@ -593,6 +659,7 @@ DWORD WINAPI SkypeQueueManagerThreadProc(__in  LPVOID lpParameter)
 	return 0;
 }
 
+// Monitors if the connection with Skype is still alive.
 VOID CALLBACK		PingTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dwTime)
 {
 	UNREFERENCED_PARAMETER(hWnd), UNREFERENCED_PARAMETER(message), UNREFERENCED_PARAMETER(idEvent), UNREFERENCED_PARAMETER(dwTime);
