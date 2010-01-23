@@ -6,7 +6,7 @@
 
 *GUI:*
   # Make the Call Mode background image darker (also need to edit the last lines in "main_wnd_under_date_bg.bmp" to match the darker color)
-  # Play with PromptBox opacity for best eye-candy and readibility.
+  # ~~Play with PromptBox opacity for best eye-candy and readibility.~~ - _Done_
   # ~~Create a Message Box type dialog.~~ - _Done_
   # ~~Make memory info work.~~ - _Done_
   # ~~On incoming skype call add Accept button.~~ - _Done_
