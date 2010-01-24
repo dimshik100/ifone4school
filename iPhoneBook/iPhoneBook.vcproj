@@ -560,14 +560,6 @@
 			Name="GUI"
 			>
 			<File
-				RelativePath=".\Clock.c"
-				>
-			</File>
-			<File
-				RelativePath=".\Clock.h"
-				>
-			</File>
-			<File
 				RelativePath=".\EditButton.c"
 				>
 			</File>

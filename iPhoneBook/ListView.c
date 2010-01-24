@@ -15,6 +15,7 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 int compareNames(Contact *target, LPTSTR name);
 void adjustColumnWidth(HWND hWndListView);
 
+// Fills and sorts the supplied contact list in the listview control.
 void fillListView(HWND hWndListView, DynamicListC pList, LPTSTR string)
 {
 	Contact *contact;
@@ -26,6 +27,8 @@ void fillListView(HWND hWndListView, DynamicListC pList, LPTSTR string)
 		return;
 
 	ListView_DeleteAllItems(hWndListView);
+
+	// If a search string was supplied, use it to filter out the contacts which are added to the list
 	if (string && _tcslen(string) > 0)
 	{
 		_tcslwr_s(string, _tcslen(string) + 1);
@@ -46,6 +49,7 @@ void fillListView(HWND hWndListView, DynamicListC pList, LPTSTR string)
 	}
 	ListView_SortItems(hWndListView, sortListViewItems, Sort_Ascending);
 	listCount = ListView_GetItemCount(hWndListView);
+	// Add seperators by first letter of last name
 	for (i = 0; i < listCount; i++)
 	{
 		lvItem.iItem = i;
@@ -98,6 +102,7 @@ BOOL addListViewItem(HWND hWndListView, Contact *contact)
     return TRUE; 
 }
 
+// Retrieves the lParam of the selected item in the listview
 LPARAM getListViewSelectedItemParam(HWND hWndListView)
 {
 	int index = ListView_GetSelectionMark(hWndListView);
@@ -114,6 +119,7 @@ LPARAM getListViewSelectedItemParam(HWND hWndListView)
 	return lParam;
 }
 
+// Adjusts the column width of the list, depending on whether the scroll bar is visible. (by item count)
 void adjustColumnWidth(HWND hWndListView)
 {
 	int cx;
@@ -151,19 +157,8 @@ BOOL initListViewColumns(HWND hWndListView)
     lvc.cx = 319;     // width of column in pixels
 
 	lvc.fmt = LVCFMT_LEFT;  // left-aligned column
-	//lvc.fmt = LVCFMT_RIGHT; // right-aligned column
     if (ListView_InsertColumn(hWndListView, 0, &lvc) == -1) 
 		return FALSE; 
-
-	////Second column
-	//lvc.iSubItem = 0;
- //   lvc.pszText = szText;	
- //   lvc.cx = 50;     // width of column in pixels
-
-	////lvc.fmt = LVCFMT_LEFT;  // left-aligned column
-	//lvc.fmt = LVCFMT_RIGHT; // right-aligned column
- //   if (ListView_InsertColumn(hWndListView, 1, &lvc) == -1) 
-	//	return FALSE; 
 
     return TRUE; 
 } 
@@ -182,11 +177,13 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 
 	contact1 = (Contact*)lParam1;
 	contact2 = (Contact*)lParam2;
+	// Set the direction of sorting
 	if (lParamSort == Sort_Ascending)
 		sortType = 1;
 	else if (lParamSort == Sort_Descending)
 		sortType = -1;
 
+	// Compare the contacts by last name, if thay are identical, then compare by first name.
 	ret = sortType*(_tcsicmp(contact1->lastName, contact2->lastName));
 	if (!ret)
 		ret = sortType*(_tcsicmp(contact1->firstName, contact2->firstName));
@@ -194,11 +191,12 @@ int CALLBACK sortListViewItems(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort
 	return ret;
 }
 
+// Creates a listview control and creates the standard and bold fonts to be used to display the list.
 HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int width, int height)
 {
 	HIMAGELIST imageList = ImageList_Create(1, 43, ILC_COLORDDB, 0, 0);
 	hwndListView = CreateWindowEx(0, WC_LISTVIEW, NULL, 
-		WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SINGLESEL | /*LVS_OWNERDRAWFIXED |*/ LVS_NOCOLUMNHEADER | LVS_AUTOARRANGE,
+		WS_CHILD | WS_VISIBLE | LVS_SHOWSELALWAYS | LVS_REPORT | LVS_SINGLESEL | LVS_NOCOLUMNHEADER | LVS_AUTOARRANGE,
 		x, y, width, height, hWndParent, NULL, hInstance, NULL);
 	ShowScrollBar(hwndListView, SB_VERT, FALSE);
 	ListView_SetExtendedListViewStyle(hwndListView, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_ONECLICKACTIVATE | LVS_EX_UNDERLINEHOT);
@@ -213,6 +211,7 @@ HWND createListView(HWND hWndParent, HINSTANCE hInstance, int x, int y, int widt
 	return hwndListView;
 }
 
+// Checks if the supplied string is found in the contact's first and last names.
 int compareNames(Contact *target, LPTSTR name)
 {
 	TCHAR origName[200], lastName[100], firstName[100], *token, *nextToken, delims[] = TEXT(" "), *tempStr;
@@ -256,6 +255,7 @@ int compareNames(Contact *target, LPTSTR name)
 	return ret;
 }
 
+// List view handle procedure. Handles the proper drawing of items in  the list
 LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(hWnd), UNREFERENCED_PARAMETER(wParam);
@@ -302,8 +302,8 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 				ListView_GetItemRect(lpNMCustomDraw->nmcd.hdr.hwndFrom, lpNMCustomDraw->nmcd.dwItemSpec, &lpNMCustomDraw->nmcd.rc, LVIR_BOUNDS);
 				lpNMCustomDraw->nmcd.rc.right++;
 				// If item is a "letter seperator"
-				// Else If item is being hovered on, draw a differet colored rect around it.
-				// Else draw it with blue-ish background
+				// Else If item is selected, draw a differet colored rect around it.
+				// Else draw it with white background
 				contact = (Contact*)lvItem.lParam;
 				if (!contact)
 					setImageToDcStretched(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_LET_SEP);
@@ -311,10 +311,13 @@ LRESULT	ListViewProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 					setImageToDcStretched(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_ON);
 				else
 					setImageToDcStretched(hInst, &lpNMCustomDraw->nmcd.rc, &rcOffset, lpNMCustomDraw->nmcd.hdc, IDB_CONTACT_WND_NAME_BG_OFF);
-				// Print text to item's DC.
 
+				// Print text to item's DC.
 				rcOffset.left = 10;
 				SetBkMode(lpNMCustomDraw->nmcd.hdc, TRANSPARENT);
+				// If this item is a contact calculate the proper placement of the text 
+				// and apply the correct fonts to first and last names
+				// Else draw name seperator.
 				if (contact)
 				{
 					hFont = (HFONT)SelectObject(lpNMCustomDraw->nmcd.hdc, hFontNormal);

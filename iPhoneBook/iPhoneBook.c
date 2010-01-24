@@ -109,10 +109,11 @@ EditButton	*ebContactInfo[11];
 	3- Skype Name
 	4- Email
 	5- Website
-	6- Address Country
-	7- Address City
-	8- Address Street
-	9- Address Number
+	6- Age
+	7- Address Country
+	8- Address City
+	9- Address Street
+	10- Address Number
 	*/
 
 HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts, hwndContainerContactDetails;
@@ -140,6 +141,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
 
+	// Initiate XP/Vista type of control styles.
 	initCommCtl.dwICC = ICC_LISTVIEW_CLASSES | ICC_PROGRESS_CLASS | ICC_STANDARD_CLASSES;
 	initCommCtl.dwSize = sizeof(INITCOMMONCONTROLSEX);
 	InitCommonControlsEx(&initCommCtl);
@@ -374,6 +376,8 @@ void CALLBACK skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatu
 	}
 }
 
+// Fills in the contact details. And sets the EditButton controls into the 
+// right state depending on inEditMode.
 void fillContactDetails(Contact *contact, int inEditMode)
 {
 	int fieldCount = 0;
@@ -381,7 +385,7 @@ void fillContactDetails(Contact *contact, int inEditMode)
 	SIZE size = { 320, 350 }, virtSize;
 	POINT pt;
 	
-	virtSize.cx = 320 - GetSystemMetrics(SM_CXVSCROLL);
+	virtSize.cx = 320 - GetSystemMetrics(SM_CXVSCROLL); // 320 - the width of the scrollbar
 	// Initiate fields
 	for (i = 10; i >= 0; i--)	// Go in oposite direction so that the 
 	{							// last editbutton to be set is the first in the array
@@ -651,7 +655,6 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				{
 					if (promptBox(hwndMain, TEXT("Are you sure you want to permanently delete all items?"), PB_YESNO) == IDYES)
 					{
-						// Are you sure dialog here
 						emptyTrashList();
 						freeTrashListLocal();
 

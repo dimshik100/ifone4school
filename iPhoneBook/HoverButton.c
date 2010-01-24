@@ -3,7 +3,6 @@
 #include "Miscellaneous.h"
 #include "DynamicListC.h"
 
-WNDPROC wndDefHoverBtnProc = NULL;
 WNDPROC wndDefHoverProc = NULL;
 
 LRESULT CALLBACK	HoverBtnProc(HWND, UINT, WPARAM, LPARAM);
@@ -47,16 +46,14 @@ HoverButton *createHoverButton(HWND hWndParent, HINSTANCE hInstance, int x, int 
 	return newHoverButton;
 }
 
-void setDefaultHoverButtonProc(WNDPROC wndProc)
-{
-	wndDefHoverBtnProc = wndProc;
-}
 
+// Gets the HWND of the control
 HWND getHoverButtonHwnd(HoverButton *hoverButton)
 {
 	return hoverButton->hButton;
 }
 
+// Frees the list of EditButton objects
 void deleteHoverButtons()
 {
 	HoverButton *hoverButton;
@@ -71,6 +68,7 @@ void deleteHoverButtons()
 	listFree(&hoverButtonList);
 }
 
+// Sets the active and inactive image
 void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offImage)
 {
 	hoverButton->onImage = onImage;
@@ -80,11 +78,13 @@ void setHoverButtonStateImages(HoverButton *hoverButton, int onImage, int offIma
 	invalidateButtonRect(hoverButton);
 }
 
+// Enables or disables stretching the image into the control's Rect
 void setHoverButtonImageStretch(HoverButton *hoverButton, int enable)
 {
 	hoverButton->imgStretch = enable;
 }
 
+// Sets the text into the control
 void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption)
 {
 	if (hoverButton->caption)
@@ -101,6 +101,7 @@ void setHoverButtonText(HoverButton *hoverButton, TCHAR *caption)
 	invalidateButtonRect(hoverButton);
 }
 
+// Gets the text string from the control
 void getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t length)
 {
 	if (hoverButton->caption)
@@ -109,6 +110,7 @@ void getHoverButtonText(HoverButton *hoverButton, TCHAR *destination, size_t len
 		_tcscpy_s(destination, length, TEXT(""));
 }
 
+// Sets a new font to the control
 void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize, int isBold)
 {
 	int boldVal = (isBold) ? FW_BOLD : FW_DONTCARE;
@@ -120,11 +122,13 @@ void setHoverButtonFont(HoverButton *hoverButton, TCHAR *fontName, int fontSize,
 	invalidateButtonRect(hoverButton);
 }
 
+// Gets the font in the current control
 HFONT getHoverButtonFont(HoverButton *hoverButton)
 {
 	return hoverButton->hFont;
 }
 
+// Sets the text color of the control
 void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color)
 {
 	hoverButton->color = color;	
@@ -132,6 +136,7 @@ void setHoverButtonTextColor(HoverButton *hoverButton, COLORREF color)
 	invalidateButtonRect(hoverButton);
 }
 
+// Locks the control to only display the "off image"
 void lockHoverButtonImage(HoverButton *hoverButton, int enable)
 {
 	hoverButton->isLocked = enable;
@@ -144,11 +149,13 @@ void lockHoverButtonImage(HoverButton *hoverButton, int enable)
 	invalidateButtonRect(hoverButton);
 }
 
+// Makes the hover button function similar to a standard Windows PushButton
 void setHoverButtonAsPushButton(HoverButton *hoverButton, int enable)
 {
 	hoverButton->isPushButton = enable;
 }
 
+// Enables the firing of a mouse tracking event for when the mouse leaves the control area
 BOOL setTrackMouse(HoverButton *hoverButton)
 {
 	TRACKMOUSEEVENT tme;
@@ -159,6 +166,7 @@ BOOL setTrackMouse(HoverButton *hoverButton)
 	return TrackMouseEvent(&tme);
 }
 
+// Selects the proper way to draw the image on the HoverButton
 void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId)
 {
 	RECT rect, rcOffset = {0};
@@ -171,15 +179,19 @@ void setHoverButtonImage(HoverButton *hoverButton, HDC hdc, int imageId)
 		setImageToDc(hoverButton->hInstance, &rect, &rcOffset, hdc, imageId);
 }
 
+// The sub-classing procedure to handle messages of the control
 LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HoverButton *hoverButton;
 
 	switch (message)
 	{
+	// If we get a WM_COMMAND message, pass it on to the parent control to handle.
+	// This is very useful when we have a nested controls in our HoverButton
 	case WM_COMMAND:
 		SendMessage(GetParent(hWnd), WM_COMMAND, wParam, lParam);
 		break;
+	// Button notifications sets the appropriate state to the button and notifies the parent
 	case WM_RBUTTONDOWN:
 		hoverButton = findHoverButton(0, hWnd);
 		hoverButton->isPushed = TRUE;
@@ -223,6 +235,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 		hoverButton->isPushed = FALSE;
 		return FALSE;
 		break;
+	// When mouse moves over the control, enable the WM_MOUSELEAVE event and set image to active
 	case WM_MOUSEMOVE:
 		{
 			hoverButton = findHoverButton(0, hWnd);
@@ -243,6 +256,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			return FALSE;
 		} 
 		break;
+	// When mouse leaves the control set image to inactive and notify parent
 	case WM_MOUSELEAVE:
 		{
 			hoverButton = findHoverButton(0, hWnd);
@@ -258,6 +272,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			return FALSE;
 		}
 		break;
+	// On resize, adjust the Rect of the HoverButton control to the new dimensions.
 	case WM_SIZE:
 		{
 			hoverButton = findHoverButton(0, hWnd);
@@ -268,6 +283,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			}
 		}
 		break;
+	// On move adjust the Rect to the new position
 	case WM_MOVE:
 		{
 			hoverButton = findHoverButton(0, hWnd);
@@ -282,7 +298,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			}
 		}
 		break;
-
+	// Disable erasing the control's background, we always repaint it fully anyway
 	case WM_ERASEBKGND:
 		return TRUE;
 		break;
@@ -296,6 +312,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 			return FALSE;
 		}
 		break;
+	// During animations, we must handle these messages for the control to render properly.
 	case WM_PRINT:
 	case WM_PRINTCLIENT:
 		if (lParam & PRF_CLIENT)
@@ -310,6 +327,7 @@ LRESULT CALLBACK	HoverBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	return CallWindowProc(wndDefHoverProc, hWnd, message, wParam, lParam);
 }
 
+// Paints the button with the selected image, the set text and font
 void paintButton(HWND hWnd, HDC hdc, RECT *rcPaint)
 {
 	HoverButton *hoverButton;
@@ -337,8 +355,10 @@ void paintButton(HWND hWnd, HDC hdc, RECT *rcPaint)
 		SetTextColor(hdcMem, hoverButton->color);
 		hFontOld = (HFONT)SelectObject(hdcMem, hoverButton->hFont);
 
+		// Calculates the size of the rectangle needed to fit the text in. 
 		DrawText(hdcMem, hoverButton->caption, (int)_tcslen(hoverButton->caption), &rcText, DT_CALCRECT);
 		rectToSize(&rcText, &size);
+		// Print the text in the center of the control
 		rcText.left = ROUND((hoverButton->buttonRect.right - hoverButton->buttonRect.left - rcText.right) / 2.0f);
 		rcText.top = ROUND((hoverButton->buttonRect.bottom - hoverButton->buttonRect.top - rcText.bottom) / 2.0f);
 		rcText.right = rcText.right + rcText.left;
@@ -356,6 +376,7 @@ void paintButton(HWND hWnd, HDC hdc, RECT *rcPaint)
 	DeleteObject(hbmpImage);
 }
 
+// Retrieves a pointer to the control from the list of existing controls
 HoverButton *findHoverButton(int cId, HWND hWnd)
 {
 	HoverButton *hoverButton = NULL;
@@ -374,31 +395,8 @@ HoverButton *findHoverButton(int cId, HWND hWnd)
 
 	return hoverButton;
 }
-//{
-//	
-//	listFree(&hoverButtonList);
-//	int i;
-//
-//	if (cId)
-//	{
-//		for (i = 0; i < hoverButtonCounter; i++)
-//		{
-//			if (hoverButtons[i]->cId == cId)
-//				return hoverButtons[i];
-//		}
-//	}
-//	else if (hWnd)
-//	{
-//		for (i = 0; i < hoverButtonCounter; i++)
-//		{
-//			if (hoverButtons[i]->hButton == hWnd)
-//				return hoverButtons[i];
-//		}
-//	}
-//
-//	return NULL;
-//}
 
+// Invalidates the HoverButton's Rect to force redraw of the button
 void invalidateButtonRect(HoverButton *hoverButton)
 {
 	RECT rc;

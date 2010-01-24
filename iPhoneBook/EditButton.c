@@ -35,6 +35,7 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 	newEditButton->offImage = offImage;
 	newEditButton->cId = getEditButtonControlId(controlId);
 
+	// Create all the child controls inside the edit button
 	newEditButton->hInstance = hInstance;
 	newEditButton->mainButton = createHoverButton(hWndParent, hInstance, x, y, width, height, controlId, onImage, offImage, caption);
 	SetWindowLong(getHoverButtonHwnd(newEditButton->mainButton), GWL_STYLE, GetWindowLong(getHoverButtonHwnd(newEditButton->mainButton), GWL_STYLE) | WS_TABSTOP);
@@ -46,14 +47,14 @@ EditButton *createEditButton(HWND hWndParent, HINSTANCE hInstance, int x, int y,
 		newEditButton->mainButton->hButton, (HMENU)(controlId + CID_TEXT_OFFSET), hInstance, NULL);
 	showEditButtonEdit(newEditButton, FALSE);
 
-	/// !!! Apply new window procedure to control !!! ///
+	/// !!! Apply new window procedures to controls !!! ///
 	wndDefBtnProc = (WNDPROC)SetWindowLong(getHoverButtonHwnd(newEditButton->mainButton), GWL_WNDPROC, (LONG_PTR)EditBtnProc);
 	wndDefEditProc = (WNDPROC)SetWindowLong(newEditButton->hEdit, GWL_WNDPROC, (LONG_PTR)EditCtlProc);
-	//wndDefBtnProc = (WNDPROC)SetWindowLong(newEditButton->hButton, GWL_WNDPROC, (LONG_PTR)EditBtnProc);
 
 	return newEditButton;
 }
 
+// Sets the text into the control
 void setEditButtonText(EditButton *editButton, TCHAR *caption)
 {
 	setHoverButtonText(editButton->mainButton, caption);
@@ -61,32 +62,38 @@ void setEditButtonText(EditButton *editButton, TCHAR *caption)
 	SendMessage(editButton->hEdit, EM_SETSEL, (WPARAM)0, (LPARAM)_tcslen(caption));
 }
 
+// Sets the active and inactive image
 void setEditButtonStateImages(EditButton *editButton, int onImage, int offImage)
 {
 	setHoverButtonStateImages(editButton->mainButton, onImage, offImage);
 }
 
+// Enables or disables stretching the image into the control's Rect
 void setEditButtonImageStretch(EditButton *editButton, int enable)
 {
 	setHoverButtonImageStretch(editButton->mainButton, enable);
 }
 
+// Sets a new font to the control
 void setEditButtonFont(EditButton *editButton, TCHAR *fontName, int fontSize, int isBold)
 {
 	setHoverButtonFont(editButton->mainButton, fontName, fontSize, isBold);
 	SendMessage(editButton->hEdit, WM_SETFONT, (WPARAM)getHoverButtonFont(editButton->mainButton), (LPARAM)TRUE);
 }
 
+// Gets the font in the current control
 HFONT getEditButtonFont(EditButton *editButton)
 {
 	return getHoverButtonFont(editButton->mainButton);
 }
 
+// Sets the text color of the control (in "Locked" mode)
 void setEditButtonTextColor(EditButton *editButton, COLORREF color)
 {
 	setHoverButtonTextColor(editButton->mainButton, color);
 }
 
+// Allows to set the textbox as Password, Numeric and ReadOnly
 void setEditButtonEditStyles(EditButton *editButton, DWORD newStyles)
 {
 	DWORD styles = GetWindowLong(editButton->hEdit, GWL_STYLE) & ~(ES_PASSWORD | ES_NUMBER | ES_READONLY);
@@ -95,6 +102,7 @@ void setEditButtonEditStyles(EditButton *editButton, DWORD newStyles)
 	SetWindowLong(editButton->hEdit, GWL_STYLE, styles | newStyles);
 }
 
+// Gets the text string from the control
 int getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length, int getUnsaved)
 {
 	int ret = -1;
@@ -111,6 +119,7 @@ int getEditButtonText(EditButton *editButton, TCHAR *destination, size_t length,
 	return ret;
 }
 
+// Enables or disables the edit mode
 void showEditButtonEdit(EditButton *editButton, int show)
 {
 	editButton->inEditMode = show;
@@ -133,22 +142,26 @@ void showEditButtonEdit(EditButton *editButton, int show)
 		setHoverButtonStateImages(editButton->mainButton, editButton->onImage, editButton->offImage);
 }
 
+// Locks the control to only display the "off image" on the background
 void lockEditButton(EditButton *editButton, int enable)
 {
 	editButton->isLocked = enable;
 	lockHoverButtonImage(editButton->mainButton, enable);
 }
 
+// Gets the HWND of the parent control
 HWND getEditButtonHwnd(EditButton *editButton)
 {
 	return getHoverButtonHwnd(editButton->mainButton);
 }
 
+// Gets the control's identifier
 int getEditButtonControlId(int cId)
 {
 	return (cId < 5010) ? cId : ((cId - EDIT_BUTTON_CTL_ID) / 10);
 }
 
+// The sub-classing procedure to handle messages of the edit control
 LRESULT CALLBACK	EditCtlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -185,6 +198,7 @@ LRESULT CALLBACK	EditCtlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 	return CallWindowProc(wndDefEditProc, hWnd, message, wParam, lParam);
 }
 
+// The sub-classing procedure to handle messages of the HoverButton control (the parent)
 LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	EditButton *editButton;
@@ -265,6 +279,7 @@ LRESULT CALLBACK	EditBtnProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 	return CallWindowProc(wndDefBtnProc, hWnd, message, wParam, lParam);
 }
 
+// Retrieves the HWND of the edit control inside the EditButton
 BOOL CALLBACK FindEditInEditButtonProc(HWND hWnd, LPARAM lParam)
 {
 	TCHAR string[256];
@@ -277,11 +292,13 @@ BOOL CALLBACK FindEditInEditButtonProc(HWND hWnd, LPARAM lParam)
 	return TRUE;
 }
 
+// Frees the list of EditButton objects
 void deleteEditButtons()
 {
 	listFree(&editButtonList);
 }
 
+// Retrieves a pointer to the control from the list of existing controls
 EditButton *findEditButton(int cId, HWND hWnd)
 {
 	EditButton *editButton = NULL;

@@ -65,7 +65,7 @@ INT_PTR CALLBACK PromptBoxProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			pt.y = pt.y + 136 + 189;
 			MoveWindow(hDlg, pt.x, pt.y, 277, 103, TRUE);
 			SetWindowLong(hDlg, GWL_EXSTYLE, GetWindowLong(hDlg, GWL_EXSTYLE) | WS_EX_LAYERED);
-			SetLayeredWindowAttributes(hDlg, 0, 200, LWA_ALPHA);
+			SetLayeredWindowAttributes(hDlg, 0, 220, LWA_ALPHA);
 
 			MoveWindow(GetDlgItem(hDlg, IDC_PROMPTTEXT), 5, 5, 267, 47, TRUE);
 			SetWindowText(GetDlgItem(hDlg, IDC_PROMPTTEXT), lpText);
@@ -81,6 +81,7 @@ INT_PTR CALLBACK PromptBoxProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			}
 		}
 		break;
+	// Set the background and text mode to transparent for all label controls
 	case WM_CTLCOLORSTATIC:
 		SetBkMode((HDC)wParam, TRANSPARENT);
 		SetTextColor((HDC)wParam, 0xFFFFFF); // White color
