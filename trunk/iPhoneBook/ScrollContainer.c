@@ -26,12 +26,14 @@ HWND createScrollContainer(HWND hWndParent, HINSTANCE hInstance, DWORD dwStyle, 
 	hWndContainer = getHoverButtonHwnd(hoverButton);
 	wndDefContainerProc = (WNDPROC)SetWindowLong(hWndContainer, GWL_WNDPROC, (LONG_PTR)ScrollContainerProc);
 	SetWindowLong(hWndContainer, GWL_STYLE, GetWindowLong(hWndContainer, GWL_STYLE) | WS_VSCROLL | WS_HSCROLL | dwStyle);
+	// Adjust the size of the control and the size of the scroll area.
 	setScrollContainerSize(hWndContainer, &size, &size);
 	setScrollContainerSize(hWndContainer, &size, &virtSize);
 
 	return hWndContainer;
 }
 
+// Changes the physical dimentions of the control and adjusts the scroll area size.
 void setScrollContainerSize(HWND hWnd, SIZE *size, SIZE *virtSize)
 {
 	SCROLLINFO si = {0};
@@ -52,14 +54,18 @@ void setScrollContainerSize(HWND hWnd, SIZE *size, SIZE *virtSize)
 
 	getChildInParentOffset(hWnd, &pt);
 	MoveWindow(hWnd, pt.x, pt.y, size->cx, size->cy, TRUE);
+	// Sends a message simulating clicks on the scroll bar's arrows
+	// to adjust the position of the scroll bar in the control
 	SendMessage(hWnd, WM_VSCROLL, SB_LINEUP, (LPARAM)NULL);
 	SendMessage(hWnd, WM_HSCROLL, SB_LINEUP, (LPARAM)NULL);
 }
 
+// Procedure to handle messages for this control
 LRESULT CALLBACK	ScrollContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
+	// On resize adjust the dimentions of the scroll area and scrollbar page sizes.
 	case WM_SIZE:
 		{
 			int cx = LOWORD(lParam);
@@ -75,7 +81,7 @@ LRESULT CALLBACK	ScrollContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
 		}
 		break;
-
+	// When the mouse wheel is turned on the control scroll it.
 	case WM_MOUSEHWHEEL:
 	case WM_MOUSEWHEEL:
 		{
@@ -99,6 +105,7 @@ LRESULT CALLBACK	ScrollContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			return FALSE;
 		}
 		break;
+	// When manually scrolling the bar. Calculate the new position.
 	case WM_VSCROLL:
 	case WM_HSCROLL:
 		{
@@ -131,6 +138,7 @@ LRESULT CALLBACK	ScrollContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	return CallWindowProc(wndDefContainerProc, hWnd, message, wParam, lParam);
 }
 
+// Get the current position of the specified scroll bar
 int getCurrentScrollPos(HWND hWnd, int scrollBar)
 {
 	SCROLLINFO si;
@@ -141,6 +149,7 @@ int getCurrentScrollPos(HWND hWnd, int scrollBar)
 	return si.nPos;
 }
 
+// Gets the new position the scrollbar should be set to
 int getScrollPos(HWND hwnd, int scrollBar, UINT code)
 {
     SCROLLINFO si;
@@ -199,6 +208,7 @@ int getScrollPos(HWND hwnd, int scrollBar, UINT code)
     return result;
 }
 
+// Write a text on the background center of the scroll control
 void setScrollContainerText(HWND hWnd, TCHAR *caption)
 {
 	HoverButton *hoverButton = findHoverButton(0, hWnd);
@@ -208,6 +218,7 @@ void setScrollContainerText(HWND hWnd, TCHAR *caption)
 	}
 }
 
+// Gets the text from the scroll control's background
 void getScrollContainerText(HWND hWnd, TCHAR *destination, size_t length)
 {
 	HoverButton *hoverButton = findHoverButton(0, hWnd);
@@ -215,6 +226,7 @@ void getScrollContainerText(HWND hWnd, TCHAR *destination, size_t length)
 		getHoverButtonText(hoverButton, destination, length);
 }
 
+// Set an image background on scroll control
 void setScrollContainerImage(HWND hWnd, int imgImage)
 {
 	HoverButton *hoverButton = findHoverButton(0, hWnd);
@@ -224,6 +236,7 @@ void setScrollContainerImage(HWND hWnd, int imgImage)
 	}
 }
 
+// Enable/Disable stretching of the background image on the control
 void setScrollContainerImageStretch(HWND hWnd, int enable)
 {
 	HoverButton *hoverButton = findHoverButton(0, hWnd);
@@ -233,6 +246,7 @@ void setScrollContainerImageStretch(HWND hWnd, int enable)
 	}
 }
 
+// Set a new font to the control
 void setScrollContainerFont(HWND hWnd, TCHAR *fontName, int fontSize, int isBold)
 {
 	HoverButton *hoverButton = findHoverButton(0, hWnd);
@@ -242,6 +256,7 @@ void setScrollContainerFont(HWND hWnd, TCHAR *fontName, int fontSize, int isBold
 	}
 }
 
+// Returns the currently selected font in the scroll control
 HFONT getScrollContainerFont(HWND hWnd)
 {
 	HoverButton *hoverButton = findHoverButton(0, hWnd);
@@ -253,6 +268,7 @@ HFONT getScrollContainerFont(HWND hWnd)
 	return hFont;
 }
 
+// Set text color for the scroll control
 void setScrollContainerTextColor(HWND hWnd, COLORREF color)
 {
 	HoverButton *hoverButton = findHoverButton(0, hWnd);

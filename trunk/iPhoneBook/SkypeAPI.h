@@ -7,6 +7,8 @@
 #pragma comment(lib, "SkypeApiDll.lib")
 #endif
 
+// Declare and define all relevant Skype object.
+
 typedef enum _SkypeApiInitStatus {	ATTACH_SUCCESS = 0, ATTACH_PENDING = 1, ATTACH_REFUSED = 2,
 									ATTACH_NOT_AVAILABLE = 3, ATTACH_AVAILABLE = 0x8001, ATTACH_ACTIVE = 0x9001, 
 									ATTACH_CONNECTION_LOST = 0x9002 }
@@ -48,12 +50,15 @@ typedef enum _SkypeApiCallStatus {	CALLSTATUS_UNKNOWN = 0,
 									CALLSTATUS_VM_CANCELLED, CALLSTATUS_VM_RECORDING  }
 SkypeApiCallStatus;
 
+// Defines a generic skype object, this will help us later on if we ever 
+// expand this skype wrapper further to support more skype objects
 typedef struct _SkypeObject
 {
 	SkypeApiObjectType	object;
 	int					commandId;
 }SkypeObject;
 
+// Defines a call object
 typedef struct _SkypeCallObject
 {
 	SkypeApiObjectType		object;
@@ -67,9 +72,11 @@ typedef struct _SkypeCallObject
 	int						duration;
 }SkypeCallObject;
 
+// Function signatures.
 typedef void (CALLBACK* SkypeCallStatusCallback)(SkypeCallObject *skypeCallObject);
 typedef void (CALLBACK* SkypeConnectionStatusCallback)(SkypeApiInitStatus skypeApiInitStatus);
 
+// Exported functions.
 SKYPEAPIDLL_API BOOL registerSkypeApi(HINSTANCE hInstance);
 SKYPEAPIDLL_API LRESULT connectSkype(HINSTANCE hInstance);
 SKYPEAPIDLL_API void disconnectSkype(HINSTANCE hInstance);

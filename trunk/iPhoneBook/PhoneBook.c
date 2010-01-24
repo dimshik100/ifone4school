@@ -271,7 +271,6 @@ int deleteContactActual (int contactIndex, TCHAR *dbName, TCHAR *backupName)
 	FILE *stream;
 	HANDLE hFile;
 
-	// Make sure that the contact actually exists, if yes, try to open the file.
 	stream = _tfopen(dbName, TEXT("r+b"));
 	if (stream)
 	{
