@@ -81,7 +81,6 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 
 VOID CALLBACK		ClockTimerProc(HWND, UINT, UINT_PTR, DWORD);
 VOID CALLBACK		EndCallTimerProc(HWND, UINT, UINT_PTR, DWORD);
-LRESULT CALLBACK	TransparentLabelProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK	ContainerProc(HWND, UINT, WPARAM, LPARAM);
 void CALLBACK		skypeCallStatusCallback(SkypeCallObject *skypeCallObject);
 void CALLBACK		skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus);
@@ -119,7 +118,7 @@ EditButton	*ebContactInfo[11];
 HWND hwndContainerMainButtons, hwndContainerMiscButtons, hwndContainerContacts, hwndContainerContactDetails;
 HWND hwndSearchBox, hwndConfirmDialog, hwndMain, hwndScrollContainer;
 HWND hLV;
-WNDPROC defContainerProc, defTransparentLabelProc;
+WNDPROC defContainerProc;
 HFONT digitalClockFont;
 TCHAR digitalClockFontPath[MAX_PATH];
 const RECT ifoneScreenRect = { 67, 136, 386, 615 };
@@ -248,6 +247,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return TRUE;
 }
 
+// Skype callback which handles changes in Call status.
 void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 {
 	if (skypeCallObject && skypeCallObject->object == OBJECT_CALL)
@@ -318,6 +318,7 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 			break;
 		}
 
+		// Look up this SkypeHandle in the contact list, and display the Contact's name if it is found
 		contactList = getContactListInitiated();
 		if (contactList)
 		{
@@ -335,7 +336,6 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 				_tcscpy_s(strContactName, MAX_FNAME+MAX_LNAME, TEXT("Unknown"));
 		}
 
-		//strPos +=_stprintf_s(str+strPos, 256-strPos, TEXT("skypeCallObject = 0x%p"), skypeCallObject);
 		if (_tcslen(strDuration) > 0)
 			_stprintf_s(str, 256, TEXT("%s\n\n%s\n\n%s\n%s"), statusStr, strDuration, strContactName, skypeCallObject->partnerDisplayName);
 		else
@@ -345,6 +345,8 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 	}
 }
 
+// A callback for the Skype connection status updates
+// Also enables or disable the skype connection bar at the top and the SkypeHandle button
 void CALLBACK skypeConnectionStatusCallback(SkypeApiInitStatus skypeApiInitStatus)
 {
 	switch (skypeApiInitStatus)
@@ -387,8 +389,8 @@ void fillContactDetails(Contact *contact, int inEditMode)
 	
 	virtSize.cx = 320 - GetSystemMetrics(SM_CXVSCROLL); // 320 - the width of the scrollbar
 	// Initiate fields
-	for (i = 10; i >= 0; i--)	// Go in oposite direction so that the 
-	{							// last editbutton to be set is the first in the array
+	for (i = 10; i >= 0; i--)	// Go in oposite direction so that the last editbutton 
+	{							// to be set is the first in the array for it to have focus
 		getChildInParentOffset(getEditButtonHwnd(ebContactInfo[i]), &pt);
 		MoveWindow(getEditButtonHwnd(ebContactInfo[i]), pt.x, pt.y, virtSize.cx, 44, FALSE);
 		setEditButtonEditStyles(ebContactInfo[i], 0);
@@ -519,6 +521,7 @@ void fillContactDetails(Contact *contact, int inEditMode)
 	InvalidateRect(hwndScrollContainer, NULL, FALSE);
 }
 
+// Saves the entered contact details
 int saveContactDetails(Contact *contact)
 {
 	int fieldCount = 0, i, len;
@@ -556,25 +559,7 @@ int saveContactDetails(Contact *contact)
 	return TRUE;
 }
 
-//
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE:  Processes messages for the main window.
-//
-//  WM_COMMAND	- process the application menu
-//  WM_PAINT	- Paint the main window
-//  WM_DESTROY	- post a quit message and return
-//
-//
-
-LRESULT CALLBACK TransparentLabelProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	if (message == WM_ERASEBKGND)
-		return TRUE;
-
-	return CallWindowProc(defTransparentLabelProc, hWnd, message, wParam, lParam);
-}
-
+// The main control message processing callback function
 LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -592,7 +577,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					showChildContainers(SCREEN_CLOCK);
 				}
 				break;
-			// View all contacts button(s) handler
+			// View all contacts
 			case BUTTON_ID_CONTACTS:
 			case BUTTON_ID_ALL_CONTACTS:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
@@ -603,6 +588,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					showChildContainers(SCREEN_CONTACTS);
 				}
 				break;
+			// Display the amount of free slots in the phonebook
 			case BUTTON_ID_INFO:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
@@ -623,6 +609,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						promptBox(hwndMain, TEXT("Error retrieving memory information"), MB_OK);
 				}
 				break;
+			// Show the recycle bin
 			case BUTTON_ID_BIN:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
@@ -640,6 +627,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					}
 				}
 				break;
+			// Button serves a dual purpose, adds a new contact or empties the recycle bin.
 			case BUTTON_ID_ADD_CONTACT_EMPTY:
 				// In "All contacts" screen
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_CONTACTS)
@@ -663,6 +651,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					}
 				}
 				break;
+			// Recover the selected contact
 			case BUTTON_ID_REOVER_CONTACT:
 				// "Recycle bin" screen
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode == SCREEN_TRASH)
@@ -672,6 +661,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					{
 						if (recoverContact(contact->index))
 						{
+							// This will force the program to reload the updated contact list from the database file.
 							freeContactListLocal();
 							// Reload the "Recycle bin" screen
 							SendMessage(hwndContainerMainButtons, message, MAKELONG(BUTTON_ID_BIN, wmEvent), 0);
@@ -716,8 +706,8 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				}
 				break;
 			// Miscellaneous buttons handlers
+			// Skype call
 			case BUTTON_ID_MISC1:
-				// Skype call
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && (screenMode == SCREEN_CONTACT_INFO || screenMode == SCREEN_CONTACTS))
 				{				
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
@@ -732,6 +722,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
+			// See contact information about the selected contact
 			case BUTTON_ID_MISC2:
 				// Go to Single contact info screen
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && screenMode != SCREEN_CONTACT_INFO)
@@ -748,6 +739,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
+			// Edit the selected contact
 			case BUTTON_ID_MISC3: 
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && 
 					(screenMode == SCREEN_CONTACT_INFO || screenMode == SCREEN_CONTACTS))
@@ -764,6 +756,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
+			// Delete the selected contact
 			case BUTTON_ID_MISC4:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP && 
 					(screenMode == SCREEN_CONTACT_INFO || screenMode == SCREEN_CONTACTS))
@@ -784,11 +777,13 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
-			case BUTTON_ID_END_CALL: // End current call.
+			// End current call.
+			case BUTTON_ID_END_CALL:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 					hangupCall(currentCall.callId);
 				break;
-			case BUTTON_ID_ANSWER_CALL: // End current call.
+			// Answer/Resume/Put on hold current call.
+			case BUTTON_ID_ANSWER_CALL:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
 					if (currentCall.status == CALLSTATUS_IN_PROGRESS)
@@ -797,7 +792,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						answerCall(currentCall.callId);
 				}
 				break;
-			// Search edit-control handler
+			// Search edit-control handler, refilter the contact list on each change in the textbox
 			case EDIT_ID_SEARCH:
 				if (wmEvent == EN_CHANGE)
 				{
@@ -806,17 +801,21 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					fillListView(hLV, getContactListLocal(), str);
 				}
 				break;
+			// Open the website address in the default web browser
 			case BUTTON_ID_GO_TO_WEBSITE:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
 					Contact *contact = (Contact*)getListViewSelectedItemParam(hLV);
 					if (contact)
 					{
-						// TODO: Handle errors.
-						if ((unsigned int)ShellExecute(NULL, TEXT("open"), contact->webSite, TEXT(""), TEXT(""), SW_SHOWDEFAULT) > 32);
+						if ((unsigned int)ShellExecute(NULL, TEXT("open"), contact->webSite, TEXT(""), TEXT(""), SW_SHOWDEFAULT) <= 32)
+							promptBox(hwndMain, TEXT("An error occured while trying to launch a web browser."), PB_OK);
 					}
+					else
+						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
+			// Send an email using the default email client on the computer, if one is defined.
 			case BUTTON_ID_SEND_EMAIL:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
@@ -825,11 +824,14 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					{
 						TCHAR buff[MAX_EMAIL + 10];
 						_stprintf_s(buff, MAX_EMAIL + 10, TEXT("mailto:%s"), contact->email);
-						// TODO: Handle errors.
-						if ((unsigned int)ShellExecute(NULL, TEXT("open"), buff, TEXT(""), TEXT(""), SW_SHOWDEFAULT) > 32);
+						if ((unsigned int)ShellExecute(NULL, TEXT("open"), buff, TEXT(""), TEXT(""), SW_SHOWDEFAULT) <= 32)
+							promptBox(hwndMain, TEXT("An error occured while trying to open an email client."), PB_OK);
 					}
+					else
+						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
+			// Open the contact's location in Google maps
 			case BUTTON_ID_SEE_ON_MAP:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 				{
@@ -840,11 +842,14 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						_stprintf_s(buff, MAX_COUNTRY+MAX_CITY+MAX_STREET+MAX_NUMBER + 30,
 							TEXT("http://maps.google.com/?q=%s,%s,%s,%s"),
 							contact->address.country, contact->address.city, contact->address.street, contact->address.number);
-						// TODO: Handle errors.
-						if ((unsigned int)ShellExecute(NULL, TEXT("open"), buff, TEXT(""), TEXT(""), SW_SHOWDEFAULT) > 32);
+						if ((unsigned int)ShellExecute(NULL, TEXT("open"), buff, TEXT(""), TEXT(""), SW_SHOWDEFAULT) <= 32)
+							promptBox(hwndMain, TEXT("An error occured while trying to access the map."), PB_OK);
 					}
+					else
+						promptBox(hwndMain, TEXT("No contact was selected"), PB_OK);
 				}
 				break;
+			// On SkypeHandle button click call that person.
 			case BUTTON_ID_SKYPE_HANDLE:
 				if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 					SendMessage(hWnd, message, MAKELONG(BUTTON_ID_MISC1, wmEvent), 0);
@@ -862,6 +867,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				return ret;
 		}
 		break;
+	// Disable erasing the control's background
 	case WM_ERASEBKGND:
 		return TRUE;
 		break;
@@ -881,6 +887,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	return CallWindowProc(defContainerProc, hWnd, message, wParam, lParam);
 }
 
+// Main window processing thread
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
@@ -896,6 +903,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Parse the menu selections:
 		switch (getEditButtonControlId(wmId))
 		{
+		// If the power button was clicked.
 		case BUTTON_ID_PWR:
 			if (wmEvent == HOVER_BUTTON_LMOUSE_UP)
 			{
@@ -910,7 +918,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			else if (wmEvent == HOVER_BUTTON_MOUSE_DOWN_LEAVE)
 				KillTimer(hWnd, PWRBTN_TIMER_ID);
 			else if (wmEvent == HOVER_BUTTON_LMOUSE_DOWN)
-				SetTimer(hWnd, PWRBTN_TIMER_ID, 3000, NULL);
+				SetTimer(hWnd, PWRBTN_TIMER_ID, 2000, NULL);
+			// Update the clock
 			ClockTimerProc(NULL, 0, 0, 0);
 			break;
 		default:
@@ -918,6 +927,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_TIMER:
+		// If the power button timer has elapsed, close the program
 		if (wParam == PWRBTN_TIMER_ID)
 		{
 			DestroyWindow(hWnd);
@@ -948,10 +958,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			EndPaint(hWnd, &ps);
 		}
 		break;
-	case WM_DESTROY:		
+	case WM_DESTROY:
+		// Deletes all the HoverButton and EditButton objects
 		deleteHoverButtons();
 		deleteEditButtons();
+		// Disconnect from Skype and make DLL clean up the resources
 		disconnectSkype(hInst);
+		// Delete and unload the custom font for the Clock screen
 		DeleteObject(hFont);
 		unloadCustomFont(TEXT("AtomicClockRadio.ttf"));
 		PostQuitMessage(0);
@@ -959,10 +972,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 		{
 			createGUI(hWnd, hInst);
+			// Pass on the callback function pointers to Skype API dll so we can receive notifications from Skype
 			setSkypeConnectionStatusCallback(skypeConnectionStatusCallback);
 			setSkypeCallStatusCallback(skypeCallStatusCallback);
+			// Connect to Skype
 			connectSkype(hInst);
+			// Start the clock timer.
 			SetTimer(hWnd, CLOCK_TIMER_ID, 500, (TIMERPROC)ClockTimerProc);			
+			// Initiate our custom listview
 			initListViewColumns(hLV);
 			loadCustomFont(TEXT("AtomicClockRadio.ttf"));
 			// Set this font to all "standard" controls that display text in our application.
@@ -977,6 +994,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+// Callback for the clock timer, updates the time on the relevant screen
 VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dwTime)
 {
 	TCHAR str[1000];
@@ -1005,6 +1023,7 @@ VOID CALLBACK		ClockTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD d
 	}
 }
 
+// Callback for the end call timer, return us to the main window.
 VOID CALLBACK		EndCallTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD dwTime)
 {
 	UNREFERENCED_PARAMETER(hWnd), UNREFERENCED_PARAMETER(message), UNREFERENCED_PARAMETER(idEvent), UNREFERENCED_PARAMETER(dwTime);
@@ -1014,6 +1033,7 @@ VOID CALLBACK		EndCallTimerProc(HWND hWnd, UINT message, UINT_PTR idEvent, DWORD
 	KillTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID);
 }
 
+// Displays the appropriate screen with animations
 void showChildContainers(ScreenMode screen)
 {
 	switch(screen)
@@ -1151,6 +1171,7 @@ void showChildContainers(ScreenMode screen)
 	screenMode = screen;
 }
 
+// Enable or disable all the Containers which host the rest of the controls
 void enableChildContainers(BOOL value)
 {	
 	EnableWindow(getHoverButtonHwnd(hbMainCenterPic), value);
@@ -1162,6 +1183,7 @@ void enableChildContainers(BOOL value)
 	InvalidateRect(GetParent(hwndConfirmDialog), NULL, FALSE);
 }
 
+// Creates all the controls on the GUI with all their settings and properties.
 void createGUI(HWND hWnd, HINSTANCE hInstance)
 {
 	HoverButton *tempBtn;
@@ -1275,7 +1297,6 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 			width, ((height + 20) * 11) + (350 % 64), 0, IDB_CONTACT_INFO_WND_BG);
 
 		hlblContactInfo[0] = CreateWindowEx(0, TEXT("static"), TEXT("First name"), WS_CHILD | WS_VISIBLE, 0, y, 320, 20, hwndScrollContainer, NULL, hInstance, NULL);
-		defTransparentLabelProc = (WNDPROC)SetWindowLong(hlblContactInfo[0], GWL_WNDPROC, (LONG_PTR)TransparentLabelProc);
 		y += 20;
 		ebContactInfo[0] = createEditButton(hwndScrollContainer, hInstance, x, y, width, height, INFO_ID_LAST_NAME, IDB_CONTACT_WND_NAME_BG_ON, IDB_CONTACT_WND_NAME_BG_OFF, NULL);
 		y += height;
@@ -1331,7 +1352,4 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 		lockHoverButtonImage(hbSkypeHandle, TRUE);
 		hbWebsite = createHoverButton(hwndScrollContainer, hInstance, 0, 0, 42, 42, BUTTON_ID_GO_TO_WEBSITE, IDB_CONTACT_DTL_WWW_ON, IDB_CONTACT_DTL_WWW_OFF, NULL);
 	}
-
-	//setEditButtonFont(ebContactInfo[0], TEXT("Arial"), 10);	
-	//hwndAddressContainer = CreateWindowEx(WS_EX_TOPMOST, TEXT("static"), NULL, WS_CHILD | WS_VISIBLE | SS_BITMAP, 0, 44, 320, 264, hwndContainerContactDetails, NULL, hInstance, NULL);
 }
