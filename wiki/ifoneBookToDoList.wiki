@@ -1,7 +1,7 @@
 ==To do list:==
 
   # Create a PDF user's manual.
-  # Add comments to code.
+  # ~~Add comments to code.~~ - _Done_
   # Create a mini-website.
 
 *GUI:*
