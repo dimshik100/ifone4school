@@ -1,6 +1,6 @@
 ==To do list:==
 
-  # Create a PDF user's manual.
+  # Create a PDF user's manual. - a user's manual is done. need to create a PDF.
   # ~~Add comments to code.~~ - _Done_
   # Create a mini-website.
 
