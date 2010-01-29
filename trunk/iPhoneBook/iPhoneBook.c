@@ -305,7 +305,7 @@ void CALLBACK skypeCallStatusCallback(SkypeCallObject *skypeCallObject)
 			_stprintf_s(strDuration, 25, TEXT("Duration: %02d:%02d:%02d"), skypeCallObject->duration / 3600, (skypeCallObject->duration % 3600) / 60, (skypeCallObject->duration % 60));
 			SetTimer(getHoverButtonHwnd(hbContainerCall), END_CALL_TIMER_ID, 5000, EndCallTimerProc);
 			break;
-		}		
+		}
 		switch (skypeCallObject->property)
 		{
 		case CALLPROPERTY_DURATION:
@@ -696,8 +696,8 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					Contact contact = {0};
 					if (saveContactDetails(&contact))
 					{
-						addContactToLocalList(&contact);
 						addContact(&contact);
+						addContactToLocalList(&contact);
 						// Return to contact list
 						SendMessage(hWnd, message, MAKELONG(BUTTON_ID_ALL_CONTACTS, wmEvent), 0);
 					}

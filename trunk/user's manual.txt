@@ -1,0 +1,44 @@
+"ifonebook" Instructions:
+Home screen (main)
+	1. Status bar
+		a. Skype status icon
+			Grey when not connected to Skype.
+			Blue when Skype is connected.
+		b. Clock
+			Displays the current time - hidden while at Home screen.
+		c. Battery life
+			Always displays 3/4 full battery.
+			
+	2. Clock
+		Displays the current time.
+		
+	3. Buttons
+		a. Clock
+			Displays a screen containing current time and date.
+		b. Contacts
+			Displays the contact list (see below for more information)
+		c. Memory Info
+			Displays the memory status of our phone book, the [used]/[total] slots.
+		d. Recycle Bin
+			Displays a list similar to the contact list.
+			All deleted contacts are moved to the Recycle Bin.
+			They can later be restored or the recycle bin can be emptied.
+		
+	4. Home button (also Power button)
+		A single short click will bring you back to the home screen.
+		A press-and-hold for 2 seconds will Exit the application
+
+Clock screen
+	Simply click the Home button to return to the Home screen.
+	
+Memory Info
+	Information is displayed in a [used]/[total] slots format.
+	Provides information about Contact list slots and Recycle Bin slots.
+	
+Recycle Bin
+	1. Recover
+		Select the contact you wish to recover and click "Recover"
+	
+	2. Empty
+		Empties the Recycle Bin.
+	
