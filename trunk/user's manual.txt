@@ -118,3 +118,22 @@ Recycle Bin screen
    
     2. Empty
         Empties the Recycle Bin.
+		
+Skype Call screen
+	1. Displayed on Incoming or Outgoing Skype call.
+	2. Information displayed
+		a. Type of call: Incoming or Outgoing.
+		b. Call status: Ringing, online, on hold, ended.
+		c. Call duration.
+		d. First & Last name of the person from the Contacts list or Unknown.
+		e. Skype handle.
+	3. Buttons
+		a. End Call
+			Hangs up and ends the call, status independant.
+		b. Answer Call
+			Appears while an incoming call is ringing.
+			Answers the call.
+		c. On Hold
+			Puts an online call on hold.
+		d. Resume
+			Resumes an on-hold call.
