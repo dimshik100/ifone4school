@@ -1,44 +1,120 @@
 "ifonebook" Instructions:
 Home screen (main)
-	1. Status bar
-		a. Skype status icon
-			Grey when not connected to Skype.
-			Blue when Skype is connected.
-		b. Clock
-			Displays the current time - hidden while at Home screen.
-		c. Battery life
-			Always displays 3/4 full battery.
-			
-	2. Clock
-		Displays the current time.
-		
-	3. Buttons
-		a. Clock
-			Displays a screen containing current time and date.
-		b. Contacts
-			Displays the contact list (see below for more information)
-		c. Memory Info
-			Displays the memory status of our phone book, the [used]/[total] slots.
-		d. Recycle Bin
-			Displays a list similar to the contact list.
-			All deleted contacts are moved to the Recycle Bin.
-			They can later be restored or the recycle bin can be emptied.
-		
-	4. Home button (also Power button)
-		A single short click will bring you back to the home screen.
-		A press-and-hold for 2 seconds will Exit the application
+    1. Status bar
+        a. Skype status icon
+            Grey when not connected to Skype.
+            Blue when Skype is connected.
+        b. Clock
+            Displays the current time - hidden while at Home screen.
+        c. Battery life
+            Always displays 3/4 full battery.
+           
+    2. Clock
+        Displays the current time.
+       
+    3. Buttons
+        a. Clock
+            Displays a screen containing current time and date.
+        b. Contacts
+            Displays the contact list (see below for more information)
+        c. Memory Info
+            Displays the memory status of our phone book, the [used]/[total] slots.
+        d. Recycle Bin
+            Displays a list similar to the contact list.
+            All deleted contacts are moved to the Recycle Bin.
+            They can later be restored or the recycle bin can be emptied.
+       
+    4. Home button (also Power button)
+        A single short click will bring you back to the home screen.
+        A press-and-hold for 2 seconds will Exit the application
 
 Clock screen
-	Simply click the Home button to return to the Home screen.
-	
+    Simply click the Home button to return to the Home screen.
+
+Contacts screen
+    1. Search box
+        Start entering the name of the person you are looking for and
+        the smart search will filter the contact list as you type.
+        You can even search using partial names like "jo do" to find
+        "John Doe".
+    2. Contact list
+        Lists all found contacts (all contacts are shown if Search box is empty).
+        Contacts are sorted by family name and sub-sorted by first name.
+        The list is divided into sections by the first letter of the contact's
+        last name. (i.e "John Doe" will appear under 'D')
+    3. Buttons
+        a. Add
+            Click Add to add a new contact (see below for more information)
+        b. Skype Call
+            Pressing this button will call a contact using Skype if the    selected
+            contact has a Skype handle, and ifonebook is currently connected to Skype.
+        c. Contact Info
+            Displays detailed information about a contact.
+        d. Edit Contact
+            Edit contact information
+        e. Delete Contact
+            Deletes a contact and stores it in the Recycle Bin.
+           
+Contact Info screen
+    1. Displays detailed information about a contact.
+    2. Buttons
+        a. All Contacts
+            Returns to the Contacts screen.
+        b. Edit
+            Enters the Edit Contact mode.
+        c. "Skype"
+            Same as Skype Call - see above.
+        d. "E-mail"
+            Sends an email using the preferred email client.
+        e. "Web site"
+            Opens the URL in the default browser.
+        f. "Map"
+            Finds the location contained in Country, City, Street, Number fields
+            on Google Maps.
+        g. Skype Call
+            See above.
+        h. Contact Info
+            See above.
+        i. Edit Contact
+            See above.
+        j. Delete Contact
+            See above.
+
+Contact Edit & Add screens
+    1. Buttons
+        a. All Contacts
+            Cancels the Edit/Add function and returns to Contacts screen.
+        b. Done
+            Saves all applied information and updates the contact list.
+        c. Skype Call
+            Disabled.
+        d. Contact Info
+            See above.
+        e. Edit Contact
+            Disabled.
+        f. Delete Contact
+            Disabled.
+    2. Contact details area
+        a. You must fill in First name, Last name and Phone number fields.
+		b. The program is fully Unicode, you may enter information in any langauge;
+		   English, Russian or Hebrew are all accepted, and tested as working.		
+        c. All input fields are "EditButton" controls. All of them are in
+           "Edit" mode initially.
+        d. For a field to be considered as "changed" it must be in "Display" mode
+           Press Enter or click the OK button to save changes.
+           Press Esc or click the Cancel button to ignore last changes.
+        e. To reach all fields, use the Scroll-bar or scroll-wheel on your mouse.
+        f. After saving changes to a field, the following field will be automatically
+           selected.
+        g. You can Tab or Shift-Tab between fields (in both "Display" or "Edit" modes)
+
 Memory Info
-	Information is displayed in a [used]/[total] slots format.
-	Provides information about Contact list slots and Recycle Bin slots.
-	
-Recycle Bin
-	1. Recover
-		Select the contact you wish to recover and click "Recover"
-	
-	2. Empty
-		Empties the Recycle Bin.
-	
+    Information is displayed in a [used]/[total] slots format.
+    Provides information about Contact list slots and Recycle Bin slots.
+   
+Recycle Bin screen
+    1. Recover
+        Select the contact you wish to recover and click "Recover"
+   
+    2. Empty
+        Empties the Recycle Bin.
