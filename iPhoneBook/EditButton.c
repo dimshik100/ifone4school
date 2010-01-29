@@ -175,6 +175,8 @@ LRESULT CALLBACK	EditCtlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 				editButton = findEditButton(0, GetParent(hWnd));
 				PostMessage(GetParent(hWnd), WM_COMMAND, 
 					MAKELONG(EDIT_BUTTON_CTL_ID + (editButton->cId * 10) + CID_OK_OFFSET,	HOVER_BUTTON_LMOUSE_UP), 0);
+				// Set focus to the next item
+				SetFocus(GetNextDlgTabItem(GetParent(GetParent(hWnd)), GetParent(hWnd), FALSE));
 				return FALSE;
 			}
 			// If "Esc" key was pressed, send message to Edit Button to simulate Cancel button press
@@ -188,8 +190,10 @@ LRESULT CALLBACK	EditCtlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 			// If "Tab" button was pressed, search for the next WS_TABSTOP enabled window
 			else if (wParam == VK_TAB)
 			{
+				// Set focus to the previous item
 				if (GetKeyState(VK_LSHIFT) & 0xFFFF0000 || GetKeyState(VK_RSHIFT) & 0xFFFF0000)
 					SetFocus(GetNextDlgTabItem(GetParent(GetParent(hWnd)), GetParent(hWnd), TRUE));
+				// Set focus to the next item
 				else
 					SetFocus(GetNextDlgTabItem(GetParent(GetParent(hWnd)), GetParent(hWnd), FALSE));
 			}

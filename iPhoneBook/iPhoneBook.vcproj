@@ -184,6 +184,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\..\Test\TotalLineAccumulator\TotalLineAccumulator\TotalLineAccumulator\Program.cs"
+				>
+			</File>
+			<File
 				RelativePath=".\SkypeHandler.c"
 				>
 			</File>
