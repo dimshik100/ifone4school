@@ -1043,6 +1043,7 @@ void showChildContainers(ScreenMode screen)
 		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
 		AnimateWindow(hwndContainerMainButtons, 100, AW_VER_NEGATIVE | AW_ACTIVATE);
 		AnimateWindow(getHoverButtonHwnd(hbMainCenterPic), 200, AW_CENTER | AW_ACTIVATE);
+		setHoverButtonStateImages(hbMainUnderDateBg, IDB_MAIN_WND_UNDER_DATE_BG, IDB_MAIN_WND_UNDER_DATE_BG);
 		ShowWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), SW_HIDE);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
 		ShowWindow(hwndContainerContactDetails, SW_HIDE);
@@ -1114,6 +1115,7 @@ void showChildContainers(ScreenMode screen)
 		setHoverButtonText(hbContainerCall, NULL);
 		AnimateWindow(GetParent(getHoverButtonHwnd(hbContainerCall)), 100, AW_CENTER | AW_ACTIVATE);
 		InvalidateRect(GetParent(getHoverButtonHwnd(hbContainerCall)), NULL, FALSE);
+		setHoverButtonStateImages(hbMainUnderDateBg, IDB_CALL_WND_UNDER_DATE_BG, IDB_CALL_WND_UNDER_DATE_BG);
 		ShowWindow(getHoverButtonHwnd(hbMainCenterPic), SW_HIDE);
 		ShowWindow(hwndContainerMiscButtons, SW_HIDE);
 		ShowWindow(hwndContainerContacts, SW_HIDE);
@@ -1261,6 +1263,8 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	setHoverButtonText(hbAnswerCall, TEXT("Answer Call"));
 	setHoverButtonFont(hbAnswerCall, TEXT("Arial"), 12, TRUE);
 	setHoverButtonTextColor(hbAnswerCall, RGB(255, 255, 255));
+	lockHoverButtonImage(hbEndCall, TRUE);
+	lockHoverButtonImage(hbAnswerCall, TRUE);
 
 
 	hwndContainerContacts = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN/* | WS_VISIBLE*/, 67, 156, 320, 394, hWnd, NULL, hInstance, NULL);
