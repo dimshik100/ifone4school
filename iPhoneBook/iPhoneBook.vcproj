@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="iPhoneBook"
+	Name="iFoneBook"
 	ProjectGUID="{90D90DCD-2DB5-4478-8093-5778E29552CE}"
 	RootNamespace="iPhoneBook"
 	Keyword="Win32Proj"
@@ -188,10 +188,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SkypeHandler.c"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.c"
 				>
 				<FileConfiguration
@@ -227,10 +223,6 @@
 			</File>
 			<File
 				RelativePath=".\Resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\SkypeHandler.h"
 				>
 			</File>
 			<File
