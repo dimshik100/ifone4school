@@ -202,6 +202,7 @@ IDB_TRASH_BUTTON_RECOVER BITMAP                  "imgs\\recover_contact_button.b
 IDB_TRASH_WND_TITLE     BITMAP                  "imgs\\trash_wnd_app_name_bg.bmp"
 IDB_CONTACT_EDIT_WND_APP_NAME BITMAP                  "imgs\\edit_contact_wnd_app_name_bg.bmp"
 IDB_CONTACT_ADD_WND_APP_NAME BITMAP                  "imgs\\new_contact_wnd_app_name_bg.bmp"
+IDB_CALL_WND_UNDER_DATE_BG BITMAP                  "imgs\\main_wnd_under_date_call_bg.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
