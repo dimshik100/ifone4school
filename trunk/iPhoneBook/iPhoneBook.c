@@ -643,6 +643,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				{
 					if (promptBox(hwndMain, TEXT("Are you sure you want to permanently delete all items?"), PB_YESNO) == IDYES)
 					{
+						setHoverButtonStateImages(hbMainActionBtn[3], IDB_MAIN_WND_BIN_EMPTY_ON, IDB_MAIN_WND_BIN_EMPTY_OFF);
 						emptyTrashList();
 						freeTrashListLocal();
 
@@ -661,6 +662,10 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 					{
 						if (recoverContact(contact->index))
 						{
+							// If we had a single contact, set RecycleBin to Empty icon.
+							DynamicListC trashList = getTrashListFromFile();
+							if (trashList && listGetListCount (trashList) == 0)
+								setHoverButtonStateImages(hbMainActionBtn[3], IDB_MAIN_WND_BIN_EMPTY_ON, IDB_MAIN_WND_BIN_EMPTY_OFF);
 							// This will force the program to reload the updated contact list from the database file.
 							freeContactListLocal();
 							// Reload the "Recycle bin" screen
@@ -768,6 +773,7 @@ LRESULT CALLBACK ContainerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 						_stprintf_s(buff, 100, TEXT("Are you sure you want to delete '%s %s'?"), contact->firstName, contact->lastName);
 						if (promptBox(hwndMain, buff, PB_YESNO) == IDYES && deleteContact(contact->index))
 						{
+							setHoverButtonStateImages(hbMainActionBtn[3], IDB_MAIN_WND_BIN_FULL_ON, IDB_MAIN_WND_BIN_FULL_OFF);
 							freeContactListLocal();
 							// Return to contact list
 							SendMessage(hWnd, message, MAKELONG(BUTTON_ID_ALL_CONTACTS, wmEvent), 0);
@@ -1230,7 +1236,14 @@ void createGUI(HWND hWnd, HINSTANCE hInstance)
 	x += width;
 	hbMainActionBtn[2] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width+1, height, BUTTON_ID_INFO, IDB_MAIN_WND_INFO_ON, IDB_MAIN_WND_INFO_OFF, NULL);
 	x += width+1;
-	hbMainActionBtn[3] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_BIN, IDB_MAIN_WND_BIN_EMPTY_ON, IDB_MAIN_WND_BIN_EMPTY_OFF, NULL);
+	{
+		// Create the RecycleBin icon, and set the Empty/Full icon depending on the trash's state.
+		DynamicListC trashList = getTrashListFromFile();
+		if (trashList && listGetListCount(trashList) > 0)
+			hbMainActionBtn[3] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_BIN, IDB_MAIN_WND_BIN_FULL_ON, IDB_MAIN_WND_BIN_FULL_OFF, NULL);
+		else
+			hbMainActionBtn[3] = createHoverButton(hwndContainerMainButtons, hInstance, x, y, width, height, BUTTON_ID_BIN, IDB_MAIN_WND_BIN_EMPTY_ON, IDB_MAIN_WND_BIN_EMPTY_OFF, NULL);
+	}
 	
 	hBmp = LoadBitmap(hInst, MAKEINTRESOURCE(IDB_CONTACT_WND_BUTTON_BG));
 	hwndContainerMiscButtons = CreateWindowEx(0, TEXT("static"), NULL, WS_CHILD | WS_CLIPCHILDREN/* | WS_VISIBLE*/ | SS_BITMAP, 67, 550, 320, 66, hWnd, NULL, hInstance, NULL);
